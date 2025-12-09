@@ -1,7 +1,14 @@
 import Link from "next/link";
 import { Plus, Edit, Trash2, Eye, EyeOff } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { Button, Badge, Card, CardHeader, CardTitle, CardContent } from "@/components/ui";
+import {
+  Button,
+  Badge,
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+} from "@/components/ui";
 import { formatDate } from "@/lib/utils";
 import { DeletePackButton } from "@/components/admin/DeletePackButton";
 
@@ -9,25 +16,44 @@ export const metadata = {
   title: "Manage Packs | Soul Sample Club Admin",
 };
 
-async function getPacks() {
+// --------------------------------------
+// FIXED TYPED FETCH FUNCTION
+// --------------------------------------
+interface PackRow {
+  id: string;
+  name: string;
+  description: string | null;
+  release_date: string;
+  cover_image_url: string | null;
+  is_published: boolean;
+  samples: { count: number }[]; // <= joined count rows
+}
+
+async function getPacks(): Promise<PackRow[]> {
   const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("packs")
     .select(
       `
-      *,
+      id,
+      name,
+      description,
+      release_date,
+      cover_image_url,
+      is_published,
       samples:samples(count)
     `
     )
-    .order("release_date", { ascending: false });
+    .order("release_date", { ascending: false })
+    .returns<PackRow[]>(); // <= CRITICAL FIX FOR VERCEL
 
   if (error) {
     console.error("Error fetching packs:", error);
     return [];
   }
 
-  return data || [];
+  return data ?? [];
 }
 
 export default async function AdminPacksPage() {
@@ -62,7 +88,7 @@ export default async function AdminPacksPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {packs.map((pack: any) => (
+                  {packs.map((pack) => (
                     <tr key={pack.id}>
                       <td>
                         <div className="flex items-center gap-12">
@@ -80,12 +106,16 @@ export default async function AdminPacksPage() {
                           </span>
                         </div>
                       </td>
+
+                      {/* samples is now typed safely */}
                       <td className="text-snow/70">
-                        {pack.samples[0]?.count || 0}
+                        {pack.samples?.[0]?.count ?? 0}
                       </td>
+
                       <td className="text-snow/70">
                         {formatDate(pack.release_date)}
                       </td>
+
                       <td>
                         <Badge variant={pack.is_published ? "success" : "warning"}>
                           {pack.is_published ? (
@@ -101,6 +131,7 @@ export default async function AdminPacksPage() {
                           )}
                         </Badge>
                       </td>
+
                       <td>
                         <div className="flex items-center justify-end gap-8">
                           <Link href={`/admin/packs/${pack.id}`}>
@@ -108,7 +139,11 @@ export default async function AdminPacksPage() {
                               <Edit className="w-4 h-4" />
                             </Button>
                           </Link>
-                          <DeletePackButton packId={pack.id} packName={pack.name} />
+
+                          <DeletePackButton
+                            packId={pack.id}
+                            packName={pack.name}
+                          />
                         </div>
                       </td>
                     </tr>
