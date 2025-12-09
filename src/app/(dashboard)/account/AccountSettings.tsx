@@ -102,9 +102,10 @@ function ProfileTab({ profile }: { profile: Profile }) {
     setSuccess(false);
 
     try {
+      const updateData: { full_name: string } = { full_name: fullName };
       const { error } = await supabase
         .from("profiles")
-        .update({ full_name: fullName })
+        .update(updateData)
         .eq("id", profile.id);
 
       if (error) throw error;
