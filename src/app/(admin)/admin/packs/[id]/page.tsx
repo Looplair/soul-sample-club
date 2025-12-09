@@ -2,9 +2,17 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { PackForm } from "@/components/admin/PackForm";
 import { SampleManager } from "@/components/admin/SampleManager";
+import type { Pack, Sample } from "@/types/database";
 
 // ------------------------------
-// FIXED METADATA FUNCTION
+// TYPE DEFINITIONS
+// ------------------------------
+interface PackWithSamples extends Pack {
+  samples: Sample[];
+}
+
+// ------------------------------
+// METADATA FUNCTION
 // ------------------------------
 export async function generateMetadata({
   params,
@@ -13,31 +21,32 @@ export async function generateMetadata({
 }) {
   const supabase = await createClient();
 
-  // Force Supabase response typing so TS doesn't infer "never"
-  const { data, error } = await supabase
+  const result = await supabase
     .from("packs")
     .select("name")
     .eq("id", params.id)
-    .single<{ name: string }>();
+    .single();
 
-  if (error || !data) {
+  const pack = result.data as { name: string } | null;
+
+  if (!pack) {
     return {
       title: "Pack Not Found | Soul Sample Club Admin",
     };
   }
 
   return {
-    title: `Edit ${data.name} | Soul Sample Club Admin`,
+    title: `Edit ${pack.name} | Soul Sample Club Admin`,
   };
 }
 
 // ------------------------------
 // FETCH PACK
 // ------------------------------
-async function getPack(id: string) {
+async function getPack(id: string): Promise<PackWithSamples | null> {
   const supabase = await createClient();
 
-  const { data: pack, error } = await supabase
+  const result = await supabase
     .from("packs")
     .select(
       `
@@ -48,12 +57,14 @@ async function getPack(id: string) {
     .eq("id", id)
     .single();
 
-  if (error || !pack) return null;
+  const pack = result.data as PackWithSamples | null;
+
+  if (!pack) return null;
 
   // Safety guard: ensure samples is an array before sorting
   if (Array.isArray(pack.samples)) {
     pack.samples = pack.samples.sort(
-      (a: any, b: any) => a.order_index - b.order_index
+      (a: Sample, b: Sample) => a.order_index - b.order_index
     );
   } else {
     pack.samples = [];
