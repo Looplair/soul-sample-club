@@ -3,9 +3,9 @@ import { createClient } from "@/lib/supabase/server";
 import { PackForm } from "@/components/admin/PackForm";
 import { SampleManager } from "@/components/admin/SampleManager";
 
-// --------------------
+// ------------------------------
 // FIXED METADATA FUNCTION
-// --------------------
+// ------------------------------
 export async function generateMetadata({
   params,
 }: {
@@ -13,26 +13,27 @@ export async function generateMetadata({
 }) {
   const supabase = await createClient();
 
-  const { data: pack } = await supabase
+  // Force Supabase response typing so TS doesn't infer "never"
+  const { data, error } = await supabase
     .from("packs")
     .select("name")
     .eq("id", params.id)
-    .single();
+    .single<{ name: string }>();
 
-  if (!pack) {
+  if (error || !data) {
     return {
       title: "Pack Not Found | Soul Sample Club Admin",
     };
   }
 
   return {
-    title: `Edit ${pack.name} | Soul Sample Club Admin`,
+    title: `Edit ${data.name} | Soul Sample Club Admin`,
   };
 }
 
-// --------------------
+// ------------------------------
 // FETCH PACK
-// --------------------
+// ------------------------------
 async function getPack(id: string) {
   const supabase = await createClient();
 
@@ -49,7 +50,7 @@ async function getPack(id: string) {
 
   if (error || !pack) return null;
 
-  // Ensure samples exist before sorting
+  // Safety guard: ensure samples is an array before sorting
   if (Array.isArray(pack.samples)) {
     pack.samples = pack.samples.sort(
       (a: any, b: any) => a.order_index - b.order_index
@@ -61,9 +62,9 @@ async function getPack(id: string) {
   return pack;
 }
 
-// --------------------
+// ------------------------------
 // PAGE COMPONENT
-// --------------------
+// ------------------------------
 export default async function EditPackPage({
   params,
 }: {
