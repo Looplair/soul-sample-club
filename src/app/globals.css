@@ -116,7 +116,7 @@
 
   /* Pack card specific */
   .pack-card {
-    @apply card card-hover group cursor-pointer overflow-hidden;
+    @apply card card-hover cursor-pointer overflow-hidden;
   }
 
   .pack-card:hover .pack-title {
