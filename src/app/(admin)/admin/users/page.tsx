@@ -21,6 +21,10 @@ interface UserRow {
   }> | null;
 }
 
+interface DownloadRow {
+  user_id: string;
+}
+
 // ------------------------------
 // DATA FETCHING
 // ------------------------------
@@ -53,14 +57,15 @@ async function getUsers(): Promise<UserRow[]> {
 async function getDownloadCounts(): Promise<Record<string, number>> {
   const supabase = await createClient();
 
-  const { data } = await supabase.from("downloads").select("user_id");
+  const result = await supabase.from("downloads").select("user_id");
+
+  const data = result.data as DownloadRow[] | null;
 
   if (!data) return {};
 
   const counts: Record<string, number> = {};
   for (const row of data) {
-    const userId = row.user_id as string;
-    counts[userId] = (counts[userId] || 0) + 1;
+    counts[row.user_id] = (counts[row.user_id] || 0) + 1;
   }
 
   return counts;
