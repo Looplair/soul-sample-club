@@ -15,20 +15,22 @@ interface PackCardProps {
 export function PackCard({ pack, sampleCount, hasSubscription }: PackCardProps) {
   const isLocked = !hasSubscription;
 
+  // fallback safety to prevent Vercel runtime errors
+  const name = pack.name ?? "Untitled Pack";
+  const description = pack.description ?? "";
+  const releaseDate = pack.release_date ?? "";
+
   return (
     <Link
       href={`/packs/${pack.id}`}
-      className={cn(
-        "pack-card block relative",
-        isLocked && "cursor-not-allowed"
-      )}
+      className={cn("pack-card block relative", isLocked && "cursor-not-allowed")}
     >
       {/* Cover Image */}
       <div className="relative aspect-square rounded-image overflow-hidden mb-16 bg-steel">
         {pack.cover_image_url ? (
           <Image
             src={pack.cover_image_url}
-            alt={pack.name}
+            alt={name}
             fill
             className="object-cover transition-transform duration-500 group-hover:scale-105"
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
@@ -57,12 +59,12 @@ export function PackCard({ pack, sampleCount, hasSubscription }: PackCardProps) 
 
       {/* Content */}
       <div>
-        <h3 className="pack-title text-h3 text-snow transition-colors duration-300 line-clamp-1">
-          {pack.name}
+        <h3 className="pack-title text-h3 text-snow line-clamp-1">
+          {name}
         </h3>
 
         <p className="text-body text-snow/60 line-clamp-2 mt-4 mb-12 min-h-[48px]">
-          {pack.description}
+          {description}
         </p>
 
         {/* Metadata */}
@@ -73,7 +75,7 @@ export function PackCard({ pack, sampleCount, hasSubscription }: PackCardProps) 
           </div>
           <div className="flex items-center gap-4">
             <Calendar className="w-4 h-4" />
-            <span>{formatDate(pack.release_date)}</span>
+            <span>{formatDate(releaseDate)}</span>
           </div>
         </div>
       </div>
