@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Navbar, AdminSidebar } from "@/components/layout";
+import type { Profile } from "@/types/database";
 
 export default async function AdminLayout({
   children,
@@ -16,11 +17,13 @@ export default async function AdminLayout({
     redirect("/login");
   }
 
-  const { data: profile } = await supabase
+  const result = await supabase
     .from("profiles")
     .select("*")
     .eq("id", user.id)
     .single();
+
+  const profile = result.data as Profile | null;
 
   if (!profile?.is_admin) {
     redirect("/dashboard");
