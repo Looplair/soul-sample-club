@@ -1,4 +1,4 @@
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, Calendar, Music2, Download, Lock } from "lucide-react";
@@ -8,25 +8,38 @@ import { SampleList } from "@/components/audio/SampleList";
 import { SubscriptionBanner } from "@/components/packs/SubscriptionBanner";
 import { Badge } from "@/components/ui";
 
-export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+// -----------------------------------------
+// FIXED METADATA FUNCTION
+// -----------------------------------------
+export async function generateMetadata({
+  params,
+}: {
+  params: { id: string };
+}) {
   const supabase = await createClient();
-  const { data: pack } = await supabase
+
+  const { data, error } = await supabase
     .from("packs")
     .select("name, description")
-    .eq("id", id)
-    .single();
+    .eq("id", params.id)
+    .single<{ name: string; description: string }>();
 
-  if (!pack) {
-    return { title: "Pack Not Found | Soul Sample Club" };
+  if (error || !data) {
+    return {
+      title: "Pack Not Found | Soul Sample Club",
+      description: "This pack does not exist.",
+    };
   }
 
   return {
-    title: `${pack.name} | Soul Sample Club`,
-    description: pack.description,
+    title: `${data.name} | Soul Sample Club`,
+    description: data.description,
   };
 }
 
+// -----------------------------------------
+// FETCH PACK
+// -----------------------------------------
 async function getPack(id: string) {
   const supabase = await createClient();
 
@@ -45,11 +58,20 @@ async function getPack(id: string) {
   if (error || !pack) return null;
 
   // Sort samples by order_index
-  pack.samples = pack.samples.sort((a: any, b: any) => a.order_index - b.order_index);
+  if (Array.isArray(pack.samples)) {
+    pack.samples = pack.samples.sort(
+      (a: any, b: any) => a.order_index - b.order_index
+    );
+  } else {
+    pack.samples = [];
+  }
 
   return pack;
 }
 
+// -----------------------------------------
+// FETCH SUBSCRIPTION
+// -----------------------------------------
 async function getUserSubscription() {
   const supabase = await createClient();
   const {
@@ -68,12 +90,16 @@ async function getUserSubscription() {
   return subscription;
 }
 
+// -----------------------------------------
+// PAGE COMPONENT
+// -----------------------------------------
 export default async function PackDetailPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: { id: string };
 }) {
-  const { id } = await params;
+  const { id } = params;
+
   const [pack, subscription] = await Promise.all([
     getPack(id),
     getUserSubscription(),
@@ -84,7 +110,8 @@ export default async function PackDetailPage({
   }
 
   const hasActiveSubscription = !!subscription;
-  const isAccessible = hasActiveSubscription && isWithinRollingWindow(pack.release_date);
+  const isAccessible =
+    hasActiveSubscription && isWithinRollingWindow(pack.release_date);
 
   // Calculate total file size
   const totalSize = pack.samples.reduce(
@@ -105,7 +132,7 @@ export default async function PackDetailPage({
           Back to Packs
         </Link>
 
-        {/* Subscription Banner if needed */}
+        {/* Subscription Banner */}
         {!hasActiveSubscription && <SubscriptionBanner />}
 
         {/* Pack Header */}
@@ -152,7 +179,7 @@ export default async function PackDetailPage({
                 <span>{pack.samples.length} samples</span>
               </div>
               <div className="flex items-center gap-8 text-body text-snow/60">
-                <Download className="w-5 h-5 text-velvet" />
+                <Download className="w-5 h-5 text-vellet" />
                 <span>{totalSizeMB} MB total</span>
               </div>
               <div className="flex items-center gap-8 text-body text-snow/60">
