@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useDropzone } from "react-dropzone";
 import {
@@ -10,6 +10,9 @@ import {
   Music,
   Loader2,
   AlertCircle,
+  Play,
+  FileAudio,
+  Pencil,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button, Input, Card, CardContent } from "@/components/ui";
@@ -43,28 +46,25 @@ export function SampleManager({ packId, initialSamples }: SampleManagerProps) {
       const newUploads: UploadingSample[] = acceptedFiles.map((file) => ({
         id: Math.random().toString(36).substr(2, 9),
         file,
-        name: file.name.replace(/\.[^/.]+$/, ""), // Remove extension
+        name: file.name.replace(/\.[^/.]+$/, ""),
         progress: 0,
         status: "uploading" as const,
       }));
 
       setUploadQueue((prev) => [...prev, ...newUploads]);
 
-      // Process each file
       for (const upload of newUploads) {
         await processUpload(upload);
       }
     },
-    [packId]
+    [packId, samples.length]
   );
 
   const processUpload = async (upload: UploadingSample) => {
     try {
       const fileExt = upload.file.name.split(".").pop();
       const fileName = `${packId}/${Date.now()}-${upload.id}.${fileExt}`;
-      const previewFileName = `${packId}/${Date.now()}-${upload.id}-preview.mp3`;
 
-      // Upload full sample
       setUploadQueue((prev) =>
         prev.map((u) =>
           u.id === upload.id ? { ...u, progress: 30, status: "uploading" } : u
@@ -83,11 +83,7 @@ export function SampleManager({ packId, initialSamples }: SampleManagerProps) {
         )
       );
 
-      // Get audio duration (we'll estimate based on file size for WAV files)
-      // In production, you'd use a proper audio library or server-side processing
       const duration = estimateWavDuration(upload.file);
-
-      // Create sample record
       const nextIndex = samples.length + uploadQueue.filter(u => u.status === "done").length;
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -96,7 +92,7 @@ export function SampleManager({ packId, initialSamples }: SampleManagerProps) {
           pack_id: packId,
           name: upload.name,
           file_path: fileName,
-          preview_path: null, // Preview would be generated server-side in production
+          preview_path: fileName, // Use same file for preview initially
           file_size: upload.file.size,
           duration: duration,
           order_index: nextIndex,
@@ -115,7 +111,6 @@ export function SampleManager({ packId, initialSamples }: SampleManagerProps) {
       setSamples((prev) => [...prev, newSample]);
       router.refresh();
 
-      // Remove from queue after a delay
       setTimeout(() => {
         setUploadQueue((prev) => prev.filter((u) => u.id !== upload.id));
       }, 2000);
@@ -131,11 +126,9 @@ export function SampleManager({ packId, initialSamples }: SampleManagerProps) {
     }
   };
 
-  // Rough estimate of WAV duration based on file size
-  // Assumes 16-bit stereo 44.1kHz (standard CD quality)
   const estimateWavDuration = (file: File): number => {
-    const bytesPerSecond = 44100 * 2 * 2; // sample rate * channels * bytes per sample
-    const headerSize = 44; // WAV header
+    const bytesPerSecond = 44100 * 2 * 2;
+    const headerSize = 44;
     return (file.size - headerSize) / bytesPerSecond;
   };
 
@@ -154,14 +147,12 @@ export function SampleManager({ packId, initialSamples }: SampleManagerProps) {
       const sample = samples.find((s) => s.id === sampleId);
       if (!sample) return;
 
-      // Delete from storage
       await supabase.storage.from("samples").remove([sample.file_path]);
 
-      if (sample.preview_path) {
-        await supabase.storage.from("previews").remove([sample.preview_path]);
+      if (sample.preview_path && sample.preview_path !== sample.file_path) {
+        await supabase.storage.from("samples").remove([sample.preview_path]);
       }
 
-      // Delete from database
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await (supabase.from("samples") as any).delete().eq("id", sampleId);
 
@@ -191,29 +182,59 @@ export function SampleManager({ packId, initialSamples }: SampleManagerProps) {
     }
   };
 
+  const handleUploadPreview = async (sampleId: string, file: File) => {
+    try {
+      const sample = samples.find(s => s.id === sampleId);
+      if (!sample) return;
+
+      const fileExt = file.name.split(".").pop();
+      const previewFileName = `${packId}/${Date.now()}-preview.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("samples")
+        .upload(previewFileName, file);
+
+      if (uploadError) throw uploadError;
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error: dbError } = await (supabase.from("samples") as any)
+        .update({ preview_path: previewFileName })
+        .eq("id", sampleId);
+
+      if (dbError) throw dbError;
+
+      setSamples((prev) =>
+        prev.map((s) => (s.id === sampleId ? { ...s, preview_path: previewFileName } : s))
+      );
+      router.refresh();
+    } catch (error) {
+      console.error("Error uploading preview:", error);
+    }
+  };
+
   return (
-    <div className="space-y-24">
+    <div className="space-y-6">
       {/* Upload Zone */}
       <div
         {...getRootProps()}
         className={`
-          border-2 border-dashed rounded-card p-32 text-center cursor-pointer
-          transition-colors
+          border-2 border-dashed rounded-card p-8 text-center cursor-pointer
+          transition-all duration-200
           ${
             isDragActive
-              ? "border-velvet bg-velvet/10"
-              : "border-steel hover:border-velvet/50"
+              ? "border-purple bg-purple-muted"
+              : "border-grey-700 hover:border-purple/50 hover:bg-grey-900/50"
           }
         `}
       >
         <input {...getInputProps()} />
-        <Upload className="w-10 h-10 text-snow/30 mx-auto mb-16" />
-        <p className="text-body-lg text-snow/60">
+        <Upload className="w-10 h-10 text-text-subtle mx-auto mb-4" />
+        <p className="text-body-lg text-text-secondary">
           {isDragActive
             ? "Drop WAV files here"
             : "Drag & drop WAV files here, or click to select"}
         </p>
-        <p className="text-caption text-snow/40 mt-8">
+        <p className="text-caption text-text-subtle mt-2">
           Only WAV files are accepted
         </p>
       </div>
@@ -221,18 +242,18 @@ export function SampleManager({ packId, initialSamples }: SampleManagerProps) {
       {/* Upload Progress */}
       {uploadQueue.length > 0 && (
         <Card>
-          <CardContent className="space-y-12">
+          <CardContent className="space-y-3 pt-4">
             {uploadQueue.map((upload) => (
               <div
                 key={upload.id}
-                className="flex items-center gap-16 p-12 bg-midnight rounded-button"
+                className="flex items-center gap-4 p-3 bg-grey-900 rounded-lg"
               >
-                <Music className="w-5 h-5 text-snow/50 flex-shrink-0" />
+                <Music className="w-5 h-5 text-text-muted flex-shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-body text-snow truncate">{upload.name}</p>
-                  <div className="flex items-center gap-8 mt-4">
+                  <p className="text-body text-white truncate">{upload.name}</p>
+                  <div className="flex items-center gap-2 mt-1">
                     {upload.status === "error" ? (
-                      <span className="text-caption text-error flex items-center gap-4">
+                      <span className="text-caption text-error flex items-center gap-1">
                         <AlertCircle className="w-3 h-3" />
                         {upload.error}
                       </span>
@@ -240,13 +261,13 @@ export function SampleManager({ packId, initialSamples }: SampleManagerProps) {
                       <span className="text-caption text-success">Uploaded</span>
                     ) : (
                       <>
-                        <div className="flex-1 h-1 bg-steel rounded-full overflow-hidden">
+                        <div className="flex-1 h-1 bg-grey-700 rounded-full overflow-hidden">
                           <div
-                            className="h-full bg-velvet transition-all"
+                            className="h-full bg-purple transition-all"
                             style={{ width: `${upload.progress}%` }}
                           />
                         </div>
-                        <span className="text-caption text-snow/50">
+                        <span className="text-caption text-text-muted">
                           {upload.status === "processing"
                             ? "Processing..."
                             : "Uploading..."}
@@ -256,7 +277,7 @@ export function SampleManager({ packId, initialSamples }: SampleManagerProps) {
                   </div>
                 </div>
                 {upload.status === "uploading" && (
-                  <Loader2 className="w-4 h-4 text-velvet animate-spin" />
+                  <Loader2 className="w-4 h-4 text-purple animate-spin" />
                 )}
               </div>
             ))}
@@ -267,7 +288,7 @@ export function SampleManager({ packId, initialSamples }: SampleManagerProps) {
       {/* Sample List */}
       {samples.length > 0 ? (
         <Card>
-          <CardContent className="divide-y divide-steel/50">
+          <CardContent className="divide-y divide-grey-800/50 pt-2">
             {samples.map((sample, index) => (
               <SampleRow
                 key={sample.id}
@@ -278,15 +299,16 @@ export function SampleManager({ packId, initialSamples }: SampleManagerProps) {
                 onSave={(updates) => handleUpdateSample(sample.id, updates)}
                 onCancel={() => setEditingSampleId(null)}
                 onDelete={() => handleDeleteSample(sample.id)}
+                onUploadPreview={(file) => handleUploadPreview(sample.id, file)}
               />
             ))}
           </CardContent>
         </Card>
       ) : (
         <Card>
-          <CardContent className="text-center py-32">
-            <Music className="w-12 h-12 text-snow/20 mx-auto mb-16" />
-            <p className="text-body text-snow/60">
+          <CardContent className="text-center py-8">
+            <Music className="w-12 h-12 text-text-subtle mx-auto mb-4" />
+            <p className="text-body text-text-muted">
               No samples yet. Upload some WAV files to get started.
             </p>
           </CardContent>
@@ -304,6 +326,7 @@ interface SampleRowProps {
   onSave: (updates: Partial<Sample>) => void;
   onCancel: () => void;
   onDelete: () => void;
+  onUploadPreview: (file: File) => void;
 }
 
 function SampleRow({
@@ -314,10 +337,12 @@ function SampleRow({
   onSave,
   onCancel,
   onDelete,
+  onUploadPreview,
 }: SampleRowProps) {
   const [name, setName] = useState(sample.name);
   const [bpm, setBpm] = useState(sample.bpm?.toString() || "");
   const [key, setKey] = useState(sample.key || "");
+  const previewInputRef = useRef<HTMLInputElement>(null);
 
   const handleSave = () => {
     onSave({
@@ -327,10 +352,17 @@ function SampleRow({
     });
   };
 
+  const handlePreviewFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      onUploadPreview(file);
+    }
+  };
+
   if (isEditing) {
     return (
-      <div className="p-16 space-y-16">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-16">
+      <div className="p-4 space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="sm:col-span-2">
             <Input
               label="Name"
@@ -338,7 +370,7 @@ function SampleRow({
               onChange={(e) => setName(e.target.value)}
             />
           </div>
-          <div className="grid grid-cols-2 gap-12">
+          <div className="grid grid-cols-2 gap-3">
             <Input
               label="BPM"
               type="number"
@@ -354,7 +386,39 @@ function SampleRow({
             />
           </div>
         </div>
-        <div className="flex items-center gap-8">
+
+        {/* Preview Upload */}
+        <div>
+          <label className="label">Preview Audio (MP3 recommended)</label>
+          <input
+            ref={previewInputRef}
+            type="file"
+            accept="audio/*"
+            onChange={handlePreviewFileChange}
+            className="hidden"
+          />
+          <div className="flex items-center gap-3">
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => previewInputRef.current?.click()}
+              leftIcon={<FileAudio className="w-4 h-4" />}
+            >
+              {sample.preview_path ? "Replace Preview" : "Upload Preview"}
+            </Button>
+            {sample.preview_path && (
+              <span className="text-caption text-success flex items-center gap-1">
+                <Play className="w-3 h-3" />
+                Preview uploaded
+              </span>
+            )}
+          </div>
+          <p className="text-caption text-text-subtle mt-1">
+            Upload a shorter preview clip (MP3) or leave as-is to use the full WAV
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
           <Button size="sm" onClick={handleSave}>
             Save
           </Button>
@@ -367,29 +431,40 @@ function SampleRow({
   }
 
   return (
-    <div className="flex items-center gap-16 p-16 group">
-      <GripVertical className="w-4 h-4 text-snow/30 cursor-grab" />
-      <span className="text-label text-snow/30 w-8">{index}</span>
-      <Music className="w-5 h-5 text-snow/50 flex-shrink-0" />
+    <div className="flex items-center gap-4 p-4 group">
+      <GripVertical className="w-4 h-4 text-text-subtle cursor-grab" />
+      <span className="text-label text-text-subtle w-8">{index}</span>
+      <Music className="w-5 h-5 text-text-muted flex-shrink-0" />
       <div className="flex-1 min-w-0">
-        <p
-          className="text-body text-snow cursor-pointer hover:text-velvet-light truncate"
-          onClick={onEdit}
-        >
+        <p className="text-body text-white truncate">
           {sample.name}
         </p>
-        <div className="flex items-center gap-12 text-caption text-snow/50 mt-2">
+        <div className="flex items-center gap-3 text-caption text-text-muted mt-1">
           <span>{formatFileSize(sample.file_size)}</span>
           <span>{formatDuration(sample.duration)}</span>
           {sample.bpm && <span>{sample.bpm} BPM</span>}
           {sample.key && <span>{sample.key}</span>}
+          {sample.preview_path && (
+            <span className="text-success flex items-center gap-1">
+              <Play className="w-3 h-3" />
+              Preview
+            </span>
+          )}
         </div>
       </div>
+      <Button
+        variant="secondary"
+        size="sm"
+        onClick={onEdit}
+        leftIcon={<Pencil className="w-4 h-4" />}
+      >
+        Edit
+      </Button>
       <Button
         variant="ghost"
         size="sm"
         onClick={onDelete}
-        className="opacity-0 group-hover:opacity-100 text-error hover:bg-error/10"
+        className="text-error hover:bg-error/10"
       >
         <Trash2 className="w-4 h-4" />
       </Button>

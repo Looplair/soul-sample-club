@@ -19,14 +19,14 @@ export function SampleList({ samples, packId, canDownload }: SampleListProps) {
 
   if (samples.length === 0) {
     return (
-      <div className="card text-center py-32">
-        <p className="text-body text-snow/60">No samples in this pack yet.</p>
+      <div className="bg-grey-900/50 border border-grey-800/50 rounded-card text-center py-12">
+        <p className="text-body text-text-muted">No samples in this pack yet.</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-3">
       {samples.map((sample, index) => (
         <SampleRow
           key={sample.id}

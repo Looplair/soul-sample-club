@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 // Type for sample with pack relation
 interface SamplePreview {
   id: string;
+  file_path: string;
   preview_path: string | null;
   pack: {
     is_published: boolean;
@@ -29,12 +30,13 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Get sample with preview path
+    // Get sample with preview path and file path
     const sampleResult = await supabase
       .from("samples")
       .select(
         `
         id,
+        file_path,
         preview_path,
         pack:packs(is_published)
       `
@@ -53,19 +55,20 @@ export async function GET(
       return NextResponse.json({ error: "Pack not available" }, { status: 404 });
     }
 
-    // Check if preview exists
-    if (!sample.preview_path) {
+    // Use preview_path if available, otherwise fall back to file_path
+    const audioPath = sample.preview_path || sample.file_path;
+
+    if (!audioPath) {
       return NextResponse.json(
         { error: "Preview not available" },
         { status: 404 }
       );
     }
 
-    // Generate signed URL for preview (valid for 5 minutes)
-    // Previews are shorter clips, so we can be more generous with time
+    // Generate signed URL for preview from the samples bucket (valid for 5 minutes)
     const { data: signedUrl, error: urlError } = await adminSupabase.storage
-      .from("previews")
-      .createSignedUrl(sample.preview_path, 300);
+      .from("samples")
+      .createSignedUrl(audioPath, 300);
 
     if (urlError || !signedUrl) {
       console.error("Error generating preview URL:", urlError);

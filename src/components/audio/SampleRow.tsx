@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Download, Loader2, Lock } from "lucide-react";
+import { Download, Loader2, Lock, Music } from "lucide-react";
 import { WaveformPlayer } from "./WaveformPlayer";
 import { Button } from "@/components/ui";
 import { formatFileSize } from "@/lib/utils";
@@ -26,14 +26,9 @@ export function SampleRow({
   const [isDownloading, setIsDownloading] = useState(false);
   const [isLoadingPreview, setIsLoadingPreview] = useState(true);
 
-  // Fetch preview URL
+  // Fetch preview URL - now works with file_path fallback
   useEffect(() => {
     async function fetchPreview() {
-      if (!sample.preview_path) {
-        setIsLoadingPreview(false);
-        return;
-      }
-
       try {
         const response = await fetch(`/api/preview/${sample.id}`);
         if (response.ok) {
@@ -48,7 +43,7 @@ export function SampleRow({
     }
 
     fetchPreview();
-  }, [sample.id, sample.preview_path]);
+  }, [sample.id]);
 
   const handleDownload = async () => {
     if (!canDownload) return;
@@ -77,19 +72,22 @@ export function SampleRow({
   };
 
   return (
-    <div className="card p-16">
-      <div className="flex items-center gap-16 mb-12">
+    <div className="bg-grey-900/50 border border-grey-800/50 rounded-card p-4 hover:border-purple/30 transition-all duration-200">
+      <div className="flex items-center gap-4 mb-3">
         {/* Index */}
-        <span className="text-label text-snow/30 w-8 text-center flex-shrink-0">
+        <span className="text-label text-text-subtle w-8 text-center flex-shrink-0">
           {index.toString().padStart(2, "0")}
         </span>
 
+        {/* Music Icon */}
+        <Music className="w-5 h-5 text-text-muted flex-shrink-0" />
+
         {/* Sample Info */}
         <div className="flex-1 min-w-0">
-          <h4 className="text-body font-medium text-snow truncate">
+          <h4 className="text-body font-medium text-white truncate">
             {sample.name}
           </h4>
-          <div className="flex items-center gap-12 text-caption text-snow/50 mt-2">
+          <div className="flex items-center gap-3 text-caption text-text-muted mt-1">
             <span>{formatFileSize(sample.file_size)}</span>
             {sample.bpm && <span>{sample.bpm} BPM</span>}
             {sample.key && <span>{sample.key}</span>}
@@ -129,11 +127,11 @@ export function SampleRow({
         />
       ) : isLoadingPreview ? (
         <div className="player-bar animate-pulse">
-          <div className="w-10 h-10 rounded-full bg-steel" />
-          <div className="flex-1 h-12 bg-steel rounded" />
+          <div className="w-10 h-10 rounded-full bg-grey-800" />
+          <div className="flex-1 h-12 bg-grey-800 rounded" />
         </div>
       ) : (
-        <div className="player-bar text-snow/50 text-label">
+        <div className="player-bar text-text-muted text-label">
           Preview not available
         </div>
       )}
