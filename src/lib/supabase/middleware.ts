@@ -1,5 +1,11 @@
-import { createServerClient } from "@supabase/ssr";
+import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+
+interface CookieToSet {
+  name: string;
+  value: string;
+  options?: CookieOptions;
+}
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
@@ -14,7 +20,7 @@ export async function updateSession(request: NextRequest) {
         getAll() {
           return request.cookies.getAll();
         },
-        setAll(cookiesToSet) {
+        setAll(cookiesToSet: CookieToSet[]) {
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           );
@@ -78,11 +84,13 @@ export async function updateSession(request: NextRequest) {
     }
 
     // Check if user is admin
-    const { data: profile } = await supabase
+    const profileResult = await supabase
       .from("profiles")
       .select("is_admin")
       .eq("id", user.id)
       .single();
+
+    const profile = profileResult.data as { is_admin: boolean } | null;
 
     if (!profile?.is_admin) {
       const url = request.nextUrl.clone();

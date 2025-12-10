@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { LoginForm } from "./LoginForm";
 
 export const metadata = {
@@ -13,7 +14,9 @@ export default function LoginPage() {
           Sign in to access your sample packs
         </p>
       </div>
-      <LoginForm />
+      <Suspense fallback={<div className="animate-pulse h-64 bg-steel/20 rounded-card" />}>
+        <LoginForm />
+      </Suspense>
     </div>
   );
 }
