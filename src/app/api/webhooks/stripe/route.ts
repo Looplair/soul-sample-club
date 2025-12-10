@@ -59,7 +59,8 @@ export async function POST(request: Request) {
         );
 
         // Upsert subscription in database
-        const { error } = await supabase.from("subscriptions").upsert(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error } = await (supabase.from("subscriptions") as any).upsert(
           {
             user_id: userId,
             stripe_customer_id: session.customer as string,
@@ -106,7 +107,8 @@ export async function POST(request: Request) {
           break;
         }
 
-        const { error } = await supabase.from("subscriptions").upsert(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error } = await (supabase.from("subscriptions") as any).upsert(
           {
             user_id: userId,
             stripe_customer_id: subscription.customer as string,
@@ -134,8 +136,8 @@ export async function POST(request: Request) {
       case "customer.subscription.deleted": {
         const subscription = event.data.object as Stripe.Subscription;
 
-        const { error } = await supabase
-          .from("subscriptions")
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error } = await (supabase.from("subscriptions") as any)
           .update({
             status: "canceled",
             updated_at: new Date().toISOString(),
@@ -152,8 +154,8 @@ export async function POST(request: Request) {
         const invoice = event.data.object as Stripe.Invoice;
 
         if (invoice.subscription) {
-          const { error } = await supabase
-            .from("subscriptions")
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const { error } = await (supabase.from("subscriptions") as any)
             .update({
               status: "past_due",
               updated_at: new Date().toISOString(),
@@ -176,8 +178,8 @@ export async function POST(request: Request) {
             invoice.subscription as string
           );
 
-          const { error } = await supabase
-            .from("subscriptions")
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const { error } = await (supabase.from("subscriptions") as any)
             .update({
               status: subscription.status as any,
               current_period_start: new Date(

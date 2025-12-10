@@ -37,10 +37,25 @@ async function getStats() {
   };
 }
 
-async function getRecentDownloads() {
+// Type for recent downloads with relations
+interface RecentDownload {
+  id: string;
+  downloaded_at: string;
+  sample: {
+    name: string;
+    pack: {
+      name: string;
+    } | null;
+  } | null;
+  user: {
+    email: string;
+  } | null;
+}
+
+async function getRecentDownloads(): Promise<RecentDownload[]> {
   const supabase = await createClient();
 
-  const { data } = await supabase
+  const result = await supabase
     .from("downloads")
     .select(
       `
@@ -53,7 +68,7 @@ async function getRecentDownloads() {
     .order("downloaded_at", { ascending: false })
     .limit(10);
 
-  return data || [];
+  return (result.data as RecentDownload[]) || [];
 }
 
 export default async function AdminDashboardPage() {
@@ -117,7 +132,7 @@ export default async function AdminDashboardPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {recentDownloads.map((download: any) => (
+                  {recentDownloads.map((download: RecentDownload) => (
                     <tr key={download.id}>
                       <td className="text-snow">{download.user?.email}</td>
                       <td className="text-snow/70">{download.sample?.name}</td>

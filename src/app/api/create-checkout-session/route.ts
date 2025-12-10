@@ -14,22 +14,26 @@ export async function POST(request: Request) {
     }
 
     // Get user profile
-    const { data: profile } = await supabase
+    const profileResult = await supabase
       .from("profiles")
       .select("email")
       .eq("id", user.id)
       .single();
+
+    const profile = profileResult.data as { email: string } | null;
 
     if (!profile) {
       return NextResponse.json({ error: "Profile not found" }, { status: 404 });
     }
 
     // Check for existing subscription
-    const { data: existingSubscription } = await supabase
+    const subscriptionResult = await supabase
       .from("subscriptions")
       .select("stripe_customer_id")
       .eq("user_id", user.id)
       .single();
+
+    const existingSubscription = subscriptionResult.data as { stripe_customer_id: string } | null;
 
     let customerId = existingSubscription?.stripe_customer_id;
 

@@ -14,11 +14,13 @@ export async function POST() {
     }
 
     // Get user's subscription
-    const { data: subscription } = await supabase
+    const subscriptionResult = await supabase
       .from("subscriptions")
       .select("stripe_customer_id")
       .eq("user_id", user.id)
       .single();
+
+    const subscription = subscriptionResult.data as { stripe_customer_id: string } | null;
 
     if (!subscription?.stripe_customer_id) {
       return NextResponse.json(

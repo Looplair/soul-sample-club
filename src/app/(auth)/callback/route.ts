@@ -23,12 +23,14 @@ export async function GET(request: Request) {
       } = await supabase.auth.getUser();
 
       if (user) {
-        const { data: subscription } = await supabase
+        const subscriptionResult = await supabase
           .from("subscriptions")
           .select("status")
           .eq("user_id", user.id)
           .in("status", ["active", "trialing"])
           .single();
+
+        const subscription = subscriptionResult.data as { status: string } | null;
 
         // If no subscription, redirect to checkout
         if (!subscription) {
