@@ -28,7 +28,7 @@ export function PackCard({ pack, sampleCount, hasSubscription }: PackCardProps) 
         isLocked && "cursor-not-allowed"
       )}
     >
-      {/* Cover Image - WAVS style */}
+      {/* Cover Image - Clean hover effect */}
       <div className="pack-card-image">
         {pack.cover_image_url ? (
           <Image
@@ -39,19 +39,19 @@ export function PackCard({ pack, sampleCount, hasSubscription }: PackCardProps) 
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
           />
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-purple/20 via-grey-900 to-grey-800">
+          <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-grey-700 via-grey-800 to-charcoal">
             <Music2 className="w-16 h-16 text-text-subtle" />
           </div>
         )}
 
         {/* Gradient overlay at bottom */}
-        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black-card to-transparent opacity-60" />
+        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-grey-800 to-transparent opacity-60" />
 
         {/* Lock Overlay */}
         {isLocked && (
           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center transition-opacity">
             <div className="text-center">
-              <div className="w-12 h-12 rounded-full bg-grey-800/80 flex items-center justify-center mx-auto mb-3">
+              <div className="w-12 h-12 rounded-full bg-grey-700 flex items-center justify-center mx-auto mb-3">
                 <Lock className="w-5 h-5 text-text-muted" />
               </div>
               <p className="text-label text-text-muted">Subscribe to access</p>
@@ -59,11 +59,11 @@ export function PackCard({ pack, sampleCount, hasSubscription }: PackCardProps) 
           </div>
         )}
 
-        {/* Hover Play Indicator */}
+        {/* Hover Play Indicator - White button */}
         {!isLocked && (
           <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-            <div className="w-14 h-14 rounded-full bg-purple/90 flex items-center justify-center shadow-glow-purple transform scale-90 group-hover:scale-100 transition-transform duration-300">
-              <Play className="w-6 h-6 text-white ml-1" />
+            <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center shadow-glow-white-soft transform scale-90 group-hover:scale-100 transition-transform duration-300">
+              <Play className="w-6 h-6 text-charcoal ml-1" />
             </div>
           </div>
         )}

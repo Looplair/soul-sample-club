@@ -9,43 +9,44 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Core Background Colors - Cinematic Dark
+        // Core Background Colors - Sleek Dark
         black: "#000000",
-        "black-light": "#0A0A0B",
-        "black-elevated": "#111113",
-        "black-card": "#141416",
+        charcoal: "#1A1A1A",
+        "charcoal-light": "#1E1E1E",
+        "charcoal-elevated": "#222222",
 
-        // Grey Scale - Subtle Depth
-        "grey-900": "#18181B",
-        "grey-800": "#1C1C1F",
-        "grey-700": "#232326",
-        "grey-600": "#2A2A2E",
-        "grey-500": "#3F3F46",
-        "grey-400": "#52525B",
-        "grey-300": "#71717A",
-        "grey-200": "#A1A1AA",
-        "grey-100": "#D4D4D8",
+        // Grey Scale - Neutral Depth
+        "grey-900": "#1A1A1A",
+        "grey-800": "#2A2A2A",
+        "grey-700": "#3A3A3A",
+        "grey-600": "#4A4A4A",
+        "grey-500": "#5A5A5A",
+        "grey-400": "#6A6A6A",
+        "grey-300": "#8A8A8A",
+        "grey-200": "#AAAAAA",
+        "grey-100": "#CCCCCC",
 
         // Text Hierarchy
         "text-primary": "#FFFFFF",
-        "text-secondary": "#E4E4E7",
-        "text-muted": "#A1A1AA",
-        "text-subtle": "#71717A",
+        "text-secondary": "#E5E5E5",
+        "text-muted": "#999999",
+        "text-subtle": "#666666",
 
-        // Accent - Premium Purple
-        purple: {
-          DEFAULT: "#8B5CF6",
-          light: "#A78BFA",
-          dark: "#7C3AED",
-          glow: "rgba(139, 92, 246, 0.5)",
-          muted: "rgba(139, 92, 246, 0.15)",
+        // Accent - Clean White
+        accent: {
+          DEFAULT: "#FFFFFF",
+          muted: "rgba(255, 255, 255, 0.1)",
+          hover: "rgba(255, 255, 255, 0.15)",
         },
 
-        // Waveform Colors
+        // Border color
+        border: "#3A3A3A",
+
+        // Waveform Colors - Monochrome
         waveform: {
-          unplayed: "#3F3F46",
-          played: "#8B5CF6",
-          cursor: "#A78BFA",
+          unplayed: "#3A3A3A",
+          played: "#FFFFFF",
+          cursor: "#FFFFFF",
         },
 
         // Functional Colors
@@ -116,36 +117,40 @@ const config: Config = {
         "2xl": "20px",
         "3xl": "24px",
         "full": "9999px",
-        // Specific use cases
-        "button": "12px",
-        "card": "20px",
-        "modal": "24px",
-        "image": "16px",
-        "input": "10px",
+        // Specific use cases - Tracklib style pills
+        "button": "9999px",
+        "pill": "9999px",
+        "card": "16px",
+        "modal": "20px",
+        "image": "12px",
+        "input": "9999px",
+        "filter": "9999px",
       },
       boxShadow: {
-        // Soft shadows for depth
-        "sm": "0 1px 2px rgba(0, 0, 0, 0.4)",
-        "DEFAULT": "0 2px 8px rgba(0, 0, 0, 0.4)",
-        "md": "0 4px 16px rgba(0, 0, 0, 0.4)",
-        "lg": "0 8px 32px rgba(0, 0, 0, 0.5)",
-        "xl": "0 16px 48px rgba(0, 0, 0, 0.6)",
+        // Soft shadows for depth - very subtle
+        "sm": "0 1px 2px rgba(0, 0, 0, 0.2)",
+        "DEFAULT": "0 2px 6px rgba(0, 0, 0, 0.15)",
+        "md": "0 4px 12px rgba(0, 0, 0, 0.15)",
+        "lg": "0 8px 24px rgba(0, 0, 0, 0.2)",
+        "xl": "0 16px 40px rgba(0, 0, 0, 0.25)",
 
-        // Card shadows
-        "card": "0 4px 24px rgba(0, 0, 0, 0.35)",
-        "card-hover": "0 8px 40px rgba(0, 0, 0, 0.5)",
+        // Card shadows - subtle
+        "card": "0 2px 12px rgba(0, 0, 0, 0.15)",
+        "card-hover": "0 8px 30px rgba(0, 0, 0, 0.25)",
 
-        // Glow effects
-        "glow-purple": "0 0 20px rgba(139, 92, 246, 0.4)",
-        "glow-purple-intense": "0 0 30px rgba(139, 92, 246, 0.6)",
-        "glow-purple-soft": "0 0 40px rgba(139, 92, 246, 0.2)",
+        // White glow effects for hover
+        "glow-white": "0 0 20px rgba(255, 255, 255, 0.15)",
+        "glow-white-soft": "0 0 30px rgba(255, 255, 255, 0.1)",
+        "glow-white-intense": "0 0 40px rgba(255, 255, 255, 0.2)",
 
-        // Button press effect
-        "button-pressed": "inset 0 2px 4px rgba(0, 0, 0, 0.3)",
+        // Button shadows
+        "button": "0 2px 8px rgba(0, 0, 0, 0.15)",
+        "button-hover": "0 4px 16px rgba(0, 0, 0, 0.2)",
+        "button-pressed": "inset 0 2px 4px rgba(0, 0, 0, 0.2)",
 
-        // Ring for focus/hover states
-        "ring-purple": "0 0 0 2px rgba(139, 92, 246, 0.4)",
-        "ring-purple-glow": "0 0 0 2px rgba(139, 92, 246, 0.4), 0 0 20px rgba(139, 92, 246, 0.3)",
+        // Ring for focus states
+        "ring-white": "0 0 0 2px rgba(255, 255, 255, 0.3)",
+        "ring-white-glow": "0 0 0 2px rgba(255, 255, 255, 0.3), 0 0 15px rgba(255, 255, 255, 0.1)",
       },
       animation: {
         // Fade animations
@@ -163,7 +168,7 @@ const config: Config = {
         "slide-left": "slideLeft 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
         "slide-right": "slideRight 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
 
-        // Glow animations
+        // Glow animations - white
         "pulse-glow": "pulseGlow 2s ease-in-out infinite",
         "glow-soft": "glowSoft 3s ease-in-out infinite",
 
@@ -173,6 +178,7 @@ const config: Config = {
 
         // Hover/Active states
         "press": "press 0.15s ease-out",
+        "hover-scale": "hoverScale 0.2s ease-out forwards",
       },
       keyframes: {
         fadeIn: {
@@ -212,12 +218,12 @@ const config: Config = {
           "100%": { opacity: "1", transform: "translateX(0)" },
         },
         pulseGlow: {
-          "0%, 100%": { boxShadow: "0 0 20px rgba(139, 92, 246, 0.4)" },
-          "50%": { boxShadow: "0 0 35px rgba(139, 92, 246, 0.6)" },
+          "0%, 100%": { boxShadow: "0 0 15px rgba(255, 255, 255, 0.1)" },
+          "50%": { boxShadow: "0 0 25px rgba(255, 255, 255, 0.2)" },
         },
         glowSoft: {
-          "0%, 100%": { boxShadow: "0 0 15px rgba(139, 92, 246, 0.2)" },
-          "50%": { boxShadow: "0 0 25px rgba(139, 92, 246, 0.35)" },
+          "0%, 100%": { boxShadow: "0 0 10px rgba(255, 255, 255, 0.05)" },
+          "50%": { boxShadow: "0 0 20px rgba(255, 255, 255, 0.1)" },
         },
         shimmer: {
           "0%": { backgroundPosition: "-200% 0" },
@@ -228,13 +234,17 @@ const config: Config = {
           "50%": { transform: "scale(0.97)" },
           "100%": { transform: "scale(1)" },
         },
+        hoverScale: {
+          "0%": { transform: "scale(1)" },
+          "100%": { transform: "scale(1.02)" },
+        },
       },
       backgroundImage: {
         // Shimmer gradient for skeletons
-        "shimmer": "linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.04), transparent)",
+        "shimmer": "linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.03), transparent)",
         // Subtle gradient overlays
         "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
-        "gradient-card": "linear-gradient(180deg, rgba(20, 20, 22, 0) 0%, rgba(20, 20, 22, 0.8) 100%)",
+        "gradient-card": "linear-gradient(180deg, rgba(26, 26, 26, 0) 0%, rgba(26, 26, 26, 0.9) 100%)",
       },
       backdropBlur: {
         xs: "2px",

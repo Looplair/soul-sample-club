@@ -222,8 +222,8 @@ export function SampleManager({ packId, initialSamples }: SampleManagerProps) {
           transition-all duration-200
           ${
             isDragActive
-              ? "border-purple bg-purple-muted"
-              : "border-grey-700 hover:border-purple/50 hover:bg-grey-900/50"
+              ? "border-white bg-white/5"
+              : "border-grey-700 hover:border-grey-600 hover:bg-grey-800/50"
           }
         `}
       >
@@ -263,7 +263,7 @@ export function SampleManager({ packId, initialSamples }: SampleManagerProps) {
                       <>
                         <div className="flex-1 h-1 bg-grey-700 rounded-full overflow-hidden">
                           <div
-                            className="h-full bg-purple transition-all"
+                            className="h-full bg-white transition-all"
                             style={{ width: `${upload.progress}%` }}
                           />
                         </div>
@@ -277,7 +277,7 @@ export function SampleManager({ packId, initialSamples }: SampleManagerProps) {
                   </div>
                 </div>
                 {upload.status === "uploading" && (
-                  <Loader2 className="w-4 h-4 text-purple animate-spin" />
+                  <Loader2 className="w-4 h-4 text-white animate-spin" />
                 )}
               </div>
             ))}
@@ -288,7 +288,7 @@ export function SampleManager({ packId, initialSamples }: SampleManagerProps) {
       {/* Sample List */}
       {samples.length > 0 ? (
         <Card>
-          <CardContent className="divide-y divide-grey-800/50 pt-2">
+          <CardContent className="divide-y divide-grey-700/50 pt-2">
             {samples.map((sample, index) => (
               <SampleRow
                 key={sample.id}

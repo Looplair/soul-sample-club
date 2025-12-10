@@ -30,8 +30,8 @@ export function SubscriptionBanner() {
       <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
         <div className="flex items-start gap-4">
           {/* Icon */}
-          <div className="w-12 h-12 rounded-xl bg-purple/20 flex items-center justify-center flex-shrink-0">
-            <Sparkles className="w-6 h-6 text-purple-light" />
+          <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">
+            <Sparkles className="w-6 h-6 text-white" />
           </div>
 
           {/* Content */}
@@ -51,7 +51,7 @@ export function SubscriptionBanner() {
           onClick={handleSubscribe}
           isLoading={isLoading}
           rightIcon={!isLoading && <ArrowRight className="w-4 h-4" />}
-          className="flex-shrink-0 shadow-glow-purple-soft hover:shadow-glow-purple"
+          className="flex-shrink-0"
         >
           Start Free Trial
         </Button>

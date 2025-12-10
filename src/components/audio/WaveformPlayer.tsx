@@ -34,15 +34,15 @@ export function WaveformPlayer({
   const [isMuted, setIsMuted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Initialize WaveSurfer with Tracklib-style monochrome waveform
+  // Initialize WaveSurfer with monochrome waveform
   useEffect(() => {
     if (!containerRef.current) return;
 
     const wavesurfer = WaveSurfer.create({
       container: containerRef.current,
-      waveColor: "#3F3F46", // Grey unplayed - matches waveform.unplayed
-      progressColor: "#8B5CF6", // Purple played - matches waveform.played
-      cursorColor: "#A78BFA", // Purple-light cursor - matches waveform.cursor
+      waveColor: "#3A3A3A", // Grey unplayed
+      progressColor: "#FFFFFF", // White played
+      cursorColor: "#FFFFFF", // White cursor
       cursorWidth: 2,
       barWidth: 2,
       barGap: 2,
@@ -110,21 +110,21 @@ export function WaveformPlayer({
 
   return (
     <div className="player-bar group">
-      {/* Play Button - Premium purple with glow */}
+      {/* Play Button - White with subtle glow */}
       <button
         onClick={handlePlayPause}
         disabled={!isReady}
         className={cn(
           "player-button flex-shrink-0",
-          isPlaying && "shadow-glow-purple"
+          isPlaying && "shadow-glow-white-soft"
         )}
       >
         {isLoading ? (
-          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+          <div className="w-4 h-4 border-2 border-charcoal/30 border-t-charcoal rounded-full animate-spin" />
         ) : isPlaying ? (
-          <Pause className="w-4 h-4 text-white" />
+          <Pause className="w-4 h-4 text-charcoal" />
         ) : (
-          <Play className="w-4 h-4 text-white ml-0.5" />
+          <Play className="w-4 h-4 text-charcoal ml-0.5" />
         )}
       </button>
 
@@ -148,12 +148,12 @@ export function WaveformPlayer({
       {/* Metadata - Clean minimal badges */}
       <div className="hidden sm:flex items-center gap-2 flex-shrink-0">
         {bpm && (
-          <span className="px-2 py-1 rounded-md bg-grey-800 text-caption text-text-muted">
+          <span className="px-2 py-1 rounded-full bg-grey-700 text-caption text-text-muted border border-grey-600">
             {bpm} BPM
           </span>
         )}
         {musicalKey && (
-          <span className="px-2 py-1 rounded-md bg-grey-800 text-caption text-text-muted">
+          <span className="px-2 py-1 rounded-full bg-grey-700 text-caption text-text-muted border border-grey-600">
             {musicalKey}
           </span>
         )}

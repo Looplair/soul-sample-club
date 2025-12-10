@@ -72,7 +72,7 @@ export function SampleRow({
   };
 
   return (
-    <div className="bg-grey-900/50 border border-grey-800/50 rounded-card p-4 hover:border-purple/30 transition-all duration-200">
+    <div className="bg-grey-800/50 border border-grey-700 rounded-card p-4 hover:border-grey-600 transition-all duration-200">
       <div className="flex items-center gap-4 mb-3">
         {/* Index */}
         <span className="text-label text-text-subtle w-8 text-center flex-shrink-0">

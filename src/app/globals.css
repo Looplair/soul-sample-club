@@ -3,14 +3,14 @@
 @tailwind utilities;
 
 /* ============================================
-   SOUL SAMPLE CLUB - Premium Dark UI
-   Inspired by WAVS.com & Tracklib
+   SOUL SAMPLE CLUB - Tracklib + WAVS Inspired
+   Black / White / Grey Monochrome Aesthetic
    ============================================ */
 
 @layer base {
   /* Reset & Base */
   * {
-    @apply border-grey-700;
+    @apply border-border;
   }
 
   html {
@@ -20,7 +20,7 @@
   }
 
   body {
-    @apply bg-black text-text-secondary antialiased;
+    @apply bg-charcoal text-text-secondary antialiased;
     font-feature-settings: "ss01", "ss02", "cv01", "cv02";
   }
 
@@ -46,23 +46,23 @@
   /* Firefox Scrollbar */
   * {
     scrollbar-width: thin;
-    scrollbar-color: #2A2A2E transparent;
+    scrollbar-color: #3A3A3A transparent;
   }
 
   /* Selection */
   ::selection {
-    @apply bg-purple/30 text-white;
+    @apply bg-white/20 text-white;
   }
 
   /* Focus visible for keyboard navigation */
   :focus-visible {
-    @apply outline-none ring-2 ring-purple/50 ring-offset-2 ring-offset-black;
+    @apply outline-none ring-2 ring-white/30 ring-offset-2 ring-offset-charcoal;
   }
 }
 
 @layer components {
   /* ==========================================
-     BUTTONS - Premium, flush, rounded
+     BUTTONS - Pill-shaped, soft shadows, monochrome
      ========================================== */
 
   .btn {
@@ -74,17 +74,17 @@
   }
 
   .btn-primary {
-    @apply btn bg-purple text-white
-           hover:bg-purple-light
-           shadow-md hover:shadow-glow-purple
+    @apply btn bg-white text-charcoal
+           shadow-button
+           hover:shadow-glow-white-soft hover:scale-[1.02]
            active:shadow-button-pressed active:scale-[0.98];
   }
 
   .btn-secondary {
     @apply btn bg-grey-800 text-text-secondary
-           border border-grey-600
+           border border-grey-700
            shadow-sm
-           hover:bg-grey-700 hover:text-white hover:border-grey-500
+           hover:bg-grey-700 hover:text-white hover:border-grey-600 hover:shadow-glow-white-soft
            active:shadow-button-pressed active:scale-[0.98];
   }
 
@@ -102,7 +102,7 @@
   }
 
   .btn-icon {
-    @apply p-2.5 rounded-lg text-text-muted
+    @apply p-2.5 rounded-full text-text-muted
            hover:text-white hover:bg-grey-800
            transition-all duration-150;
   }
@@ -116,19 +116,38 @@
   }
 
   /* ==========================================
-     CARDS - WAVS style with hover effects
+     FILTER PILLS - Tracklib style
+     ========================================== */
+
+  .filter-pill {
+    @apply inline-flex items-center gap-2
+           px-4 py-2 rounded-pill
+           text-label text-text-muted
+           border border-grey-700
+           bg-transparent
+           transition-all duration-200
+           hover:border-grey-600 hover:text-white hover:bg-grey-800/50
+           cursor-pointer select-none;
+  }
+
+  .filter-pill-active {
+    @apply filter-pill border-white/30 text-white bg-grey-800;
+  }
+
+  /* ==========================================
+     CARDS - Clean with subtle shadows
      ========================================== */
 
   .card {
-    @apply bg-black-card rounded-card p-6
-           border border-grey-800/50
+    @apply bg-grey-800 rounded-card p-6
+           border border-grey-700
            shadow-card
            transition-all duration-300 ease-smooth;
   }
 
   .card-hover {
     @apply hover:scale-[1.02] hover:shadow-card-hover
-           hover:border-purple/20 hover:shadow-ring-purple-glow;
+           hover:border-grey-600;
   }
 
   .card-interactive {
@@ -136,19 +155,19 @@
   }
 
   .card-elevated {
-    @apply bg-black-elevated;
+    @apply bg-charcoal-elevated;
   }
 
   /* ==========================================
-     INPUTS - Clean, modern
+     INPUTS - Clean pill-shaped
      ========================================== */
 
   .input {
-    @apply w-full bg-grey-900 border border-grey-700
-           rounded-input px-4 py-3
+    @apply w-full bg-grey-800 border border-grey-700
+           rounded-input px-5 py-3
            text-body text-white placeholder:text-text-subtle
            transition-all duration-200
-           focus:outline-none focus:border-purple focus:ring-1 focus:ring-purple/30
+           focus:outline-none focus:border-white/40 focus:ring-1 focus:ring-white/20
            hover:border-grey-600;
   }
 
@@ -161,7 +180,7 @@
   }
 
   .textarea {
-    @apply input min-h-[120px] resize-y;
+    @apply input min-h-[120px] resize-y rounded-xl;
   }
 
   /* ==========================================
@@ -176,7 +195,7 @@
 
   .nav-link::after {
     @apply content-[''] absolute -bottom-1 left-0 w-0 h-0.5
-           bg-purple rounded-full
+           bg-white rounded-full
            transition-all duration-200;
   }
 
@@ -190,27 +209,27 @@
   }
 
   /* ==========================================
-     AUDIO PLAYER - Tracklib style waveform
+     AUDIO PLAYER - Monochrome waveform
      ========================================== */
 
   .player-bar {
-    @apply bg-grey-900 rounded-xl p-4
+    @apply bg-grey-800 rounded-xl p-4
            flex items-center gap-4
-           border border-grey-800/50;
+           border border-grey-700;
   }
 
   .player-button {
     @apply w-10 h-10 rounded-full
            flex items-center justify-center
-           bg-purple text-white
+           bg-white text-charcoal
            transition-all duration-200
-           hover:bg-purple-light hover:shadow-glow-purple
+           hover:shadow-glow-white-soft hover:scale-105
            active:scale-95
-           disabled:bg-grey-700 disabled:cursor-not-allowed;
+           disabled:bg-grey-600 disabled:cursor-not-allowed;
   }
 
   /* ==========================================
-     BADGES
+     BADGES - Minimal
      ========================================== */
 
   .badge {
@@ -219,7 +238,7 @@
   }
 
   .badge-primary {
-    @apply badge bg-purple-muted text-purple-light;
+    @apply badge bg-white/10 text-white;
   }
 
   .badge-success {
@@ -235,11 +254,11 @@
   }
 
   .badge-neutral {
-    @apply badge bg-grey-800 text-text-muted;
+    @apply badge bg-grey-700 text-text-muted;
   }
 
   /* ==========================================
-     MODALS - Dark, blurred, premium
+     MODALS - Dark, blurred
      ========================================== */
 
   .modal-overlay {
@@ -249,8 +268,8 @@
   }
 
   .modal {
-    @apply bg-black-elevated rounded-modal
-           shadow-xl border border-grey-800/50
+    @apply bg-charcoal-elevated rounded-modal
+           shadow-xl border border-grey-700
            w-full max-w-lg max-h-[90vh] overflow-y-auto
            animate-scale-in;
   }
@@ -273,8 +292,8 @@
 
   .dropdown {
     @apply absolute right-0 mt-2 min-w-[200px]
-           rounded-xl bg-black-elevated
-           shadow-xl border border-grey-800/50
+           rounded-xl bg-charcoal-elevated
+           shadow-xl border border-grey-700
            py-2 z-50
            animate-fade-in-down;
   }
@@ -295,7 +314,7 @@
      ========================================== */
 
   .table-container {
-    @apply overflow-x-auto rounded-xl border border-grey-800/50;
+    @apply overflow-x-auto rounded-xl border border-grey-700;
   }
 
   .table {
@@ -303,14 +322,14 @@
   }
 
   .table th {
-    @apply bg-grey-900 px-4 py-3
+    @apply bg-grey-800 px-4 py-3
            text-label text-text-muted font-medium
-           border-b border-grey-800;
+           border-b border-grey-700;
   }
 
   .table td {
     @apply px-4 py-3 text-body
-           border-b border-grey-800/50;
+           border-b border-grey-700/50;
   }
 
   .table tr {
@@ -318,7 +337,7 @@
   }
 
   .table tbody tr:hover td {
-    @apply bg-grey-900/50;
+    @apply bg-grey-800/50;
   }
 
   /* ==========================================
@@ -327,8 +346,8 @@
 
   .toast {
     @apply fixed bottom-6 right-6
-           bg-black-elevated rounded-xl
-           shadow-xl border border-grey-800/50
+           bg-charcoal-elevated rounded-xl
+           shadow-xl border border-grey-700
            p-4 z-50
            animate-slide-up;
   }
@@ -354,7 +373,7 @@
   }
 
   /* ==========================================
-     PACK CARD - WAVS inspired
+     PACK CARD - Clean hover effects
      ========================================== */
 
   .pack-card {
@@ -362,7 +381,7 @@
   }
 
   .pack-card-image {
-    @apply relative aspect-square rounded-t-card overflow-hidden bg-grey-900;
+    @apply relative aspect-square rounded-t-card overflow-hidden bg-grey-800;
   }
 
   .pack-card-content {
@@ -370,11 +389,11 @@
   }
 
   .pack-card:hover .pack-card-title {
-    @apply text-purple-light;
+    @apply text-white;
   }
 
   .pack-card-title {
-    @apply text-h3 text-white transition-colors duration-200;
+    @apply text-h3 text-text-secondary transition-colors duration-200;
   }
 
   /* ==========================================
@@ -383,13 +402,13 @@
 
   .subscription-banner {
     @apply relative overflow-hidden
-           bg-gradient-to-r from-purple/10 via-purple/5 to-transparent
-           border border-purple/20 rounded-2xl p-6 mb-8;
+           bg-gradient-to-r from-white/5 to-transparent
+           border border-white/10 rounded-2xl p-6 mb-8;
   }
 
   .subscription-banner::before {
     @apply content-[''] absolute inset-0
-           bg-gradient-to-r from-purple/5 to-transparent
+           bg-gradient-to-r from-white/5 to-transparent
            opacity-50;
   }
 }
@@ -400,7 +419,7 @@
      ========================================== */
 
   .text-gradient {
-    @apply bg-gradient-to-r from-purple to-purple-light
+    @apply bg-gradient-to-r from-white to-grey-300
            bg-clip-text text-transparent;
   }
 
@@ -410,15 +429,15 @@
   }
 
   /* ==========================================
-     GLOW EFFECTS
+     GLOW EFFECTS - White only
      ========================================== */
 
-  .glow-purple {
-    box-shadow: 0 0 30px rgba(139, 92, 246, 0.4);
+  .glow-white {
+    box-shadow: 0 0 30px rgba(255, 255, 255, 0.15);
   }
 
-  .glow-purple-soft {
-    box-shadow: 0 0 40px rgba(139, 92, 246, 0.2);
+  .glow-white-soft {
+    box-shadow: 0 0 40px rgba(255, 255, 255, 0.1);
   }
 
   .glow-active {
@@ -426,11 +445,11 @@
   }
 
   /* ==========================================
-     SKELETON LOADING - WAVS shimmer
+     SKELETON LOADING - Subtle shimmer
      ========================================== */
 
   .skeleton {
-    @apply bg-grey-800 rounded-lg relative overflow-hidden;
+    @apply bg-grey-700 rounded-lg relative overflow-hidden;
   }
 
   .skeleton::after {
@@ -462,12 +481,12 @@
      ========================================== */
 
   .focus-ring {
-    @apply focus:outline-none focus:ring-2 focus:ring-purple/50
-           focus:ring-offset-2 focus:ring-offset-black;
+    @apply focus:outline-none focus:ring-2 focus:ring-white/30
+           focus:ring-offset-2 focus:ring-offset-charcoal;
   }
 
   .focus-ring-inset {
-    @apply focus:outline-none focus:ring-2 focus:ring-purple/50 focus:ring-inset;
+    @apply focus:outline-none focus:ring-2 focus:ring-white/30 focus:ring-inset;
   }
 
   /* ==========================================
@@ -491,11 +510,11 @@
      ========================================== */
 
   .gradient-fade-up {
-    @apply bg-gradient-to-t from-black via-black/50 to-transparent;
+    @apply bg-gradient-to-t from-charcoal via-charcoal/50 to-transparent;
   }
 
   .gradient-fade-down {
-    @apply bg-gradient-to-b from-black via-black/50 to-transparent;
+    @apply bg-gradient-to-b from-charcoal via-charcoal/50 to-transparent;
   }
 
   /* ==========================================
