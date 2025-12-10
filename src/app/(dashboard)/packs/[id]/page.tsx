@@ -7,6 +7,14 @@ import { formatDate, isWithinRollingWindow } from "@/lib/utils";
 import { SampleList } from "@/components/audio/SampleList";
 import { SubscriptionBanner } from "@/components/packs/SubscriptionBanner";
 import { Badge } from "@/components/ui";
+import type { Pack, Sample, Subscription } from "@/types/database";
+
+// -----------------------------------------
+// TYPE DEFINITIONS
+// -----------------------------------------
+interface PackWithSamples extends Pack {
+  samples: Sample[];
+}
 
 // -----------------------------------------
 // FIXED METADATA FUNCTION
@@ -18,13 +26,15 @@ export async function generateMetadata({
 }) {
   const supabase = await createClient();
 
-  const { data, error } = await supabase
+  const result = await supabase
     .from("packs")
     .select("name, description")
     .eq("id", params.id)
-    .single<{ name: string; description: string }>();
+    .single();
 
-  if (error || !data) {
+  const data = result.data as { name: string; description: string } | null;
+
+  if (result.error || !data) {
     return {
       title: "Pack Not Found | Soul Sample Club",
       description: "This pack does not exist.",
@@ -40,10 +50,10 @@ export async function generateMetadata({
 // -----------------------------------------
 // FETCH PACK
 // -----------------------------------------
-async function getPack(id: string) {
+async function getPack(id: string): Promise<PackWithSamples | null> {
   const supabase = await createClient();
 
-  const { data: pack, error } = await supabase
+  const result = await supabase
     .from("packs")
     .select(
       `
@@ -55,12 +65,14 @@ async function getPack(id: string) {
     .eq("is_published", true)
     .single();
 
-  if (error || !pack) return null;
+  const pack = result.data as PackWithSamples | null;
+
+  if (result.error || !pack) return null;
 
   // Sort samples by order_index
   if (Array.isArray(pack.samples)) {
     pack.samples = pack.samples.sort(
-      (a: any, b: any) => a.order_index - b.order_index
+      (a: Sample, b: Sample) => a.order_index - b.order_index
     );
   } else {
     pack.samples = [];
@@ -72,7 +84,7 @@ async function getPack(id: string) {
 // -----------------------------------------
 // FETCH SUBSCRIPTION
 // -----------------------------------------
-async function getUserSubscription() {
+async function getUserSubscription(): Promise<Subscription | null> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -80,14 +92,14 @@ async function getUserSubscription() {
 
   if (!user) return null;
 
-  const { data: subscription } = await supabase
+  const result = await supabase
     .from("subscriptions")
     .select("*")
     .eq("user_id", user.id)
     .in("status", ["active", "trialing"])
     .single();
 
-  return subscription;
+  return result.data as Subscription | null;
 }
 
 // -----------------------------------------
@@ -115,7 +127,7 @@ export default async function PackDetailPage({
 
   // Calculate total file size
   const totalSize = pack.samples.reduce(
-    (acc: number, sample: any) => acc + (sample.file_size || 0),
+    (acc: number, sample: Sample) => acc + (sample.file_size || 0),
     0
   );
   const totalSizeMB = (totalSize / (1024 * 1024)).toFixed(1);

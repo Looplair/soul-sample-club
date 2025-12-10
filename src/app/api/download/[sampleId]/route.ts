@@ -1,6 +1,16 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import type { Sample } from "@/types/database";
+
+// Type for sample with pack relation
+interface SampleWithPack extends Sample {
+  pack: {
+    id: string;
+    release_date: string;
+    is_published: boolean;
+  } | null;
+}
 
 export async function GET(
   request: Request,
@@ -21,12 +31,14 @@ export async function GET(
     }
 
     // Check subscription status
-    const { data: subscription } = await supabase
+    const subscriptionResult = await supabase
       .from("subscriptions")
       .select("status, current_period_end")
       .eq("user_id", user.id)
       .in("status", ["active", "trialing"])
       .single();
+
+    const subscription = subscriptionResult.data as { status: string; current_period_end: string } | null;
 
     if (!subscription) {
       return NextResponse.json(
@@ -36,7 +48,7 @@ export async function GET(
     }
 
     // Get sample with pack info
-    const { data: sample, error: sampleError } = await supabase
+    const sampleResult = await supabase
       .from("samples")
       .select(
         `
@@ -47,7 +59,9 @@ export async function GET(
       .eq("id", sampleId)
       .single();
 
-    if (sampleError || !sample) {
+    const sample = sampleResult.data as SampleWithPack | null;
+
+    if (sampleResult.error || !sample) {
       return NextResponse.json({ error: "Sample not found" }, { status: 404 });
     }
 
@@ -84,7 +98,8 @@ export async function GET(
     }
 
     // Record download for analytics
-    await supabase.from("downloads").insert({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase.from("downloads") as any).insert({
       user_id: user.id,
       sample_id: sampleId,
     });

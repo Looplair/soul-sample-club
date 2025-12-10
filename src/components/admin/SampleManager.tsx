@@ -90,8 +90,8 @@ export function SampleManager({ packId, initialSamples }: SampleManagerProps) {
       // Create sample record
       const nextIndex = samples.length + uploadQueue.filter(u => u.status === "done").length;
 
-      const { data: newSample, error: dbError } = await supabase
-        .from("samples")
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: newSample, error: dbError } = await (supabase.from("samples") as any)
         .insert({
           pack_id: packId,
           name: upload.name,
@@ -162,7 +162,8 @@ export function SampleManager({ packId, initialSamples }: SampleManagerProps) {
       }
 
       // Delete from database
-      await supabase.from("samples").delete().eq("id", sampleId);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase.from("samples") as any).delete().eq("id", sampleId);
 
       setSamples((prev) => prev.filter((s) => s.id !== sampleId));
       router.refresh();
@@ -173,8 +174,8 @@ export function SampleManager({ packId, initialSamples }: SampleManagerProps) {
 
   const handleUpdateSample = async (sampleId: string, updates: Partial<Sample>) => {
     try {
-      const { error } = await supabase
-        .from("samples")
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase.from("samples") as any)
         .update(updates)
         .eq("id", sampleId);
 

@@ -22,10 +22,12 @@ export function DeletePackButton({ packId, packName }: DeletePackButtonProps) {
 
     try {
       // Get all samples for this pack to delete their files
-      const { data: samples } = await supabase
-        .from("samples")
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await (supabase.from("samples") as any)
         .select("file_path, preview_path")
         .eq("pack_id", packId);
+
+      const samples = result.data as { file_path: string; preview_path: string | null }[] | null;
 
       if (samples && samples.length > 0) {
         // Delete sample files from storage
@@ -43,8 +45,8 @@ export function DeletePackButton({ packId, packName }: DeletePackButtonProps) {
       }
 
       // Delete pack (samples will cascade delete)
-      const { error } = await supabase
-        .from("packs")
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase.from("packs") as any)
         .delete()
         .eq("id", packId);
 

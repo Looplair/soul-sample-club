@@ -3,19 +3,33 @@ import { createClient } from "@/lib/supabase/server";
 import { PackGrid } from "@/components/packs/PackGrid";
 import { SubscriptionBanner } from "@/components/packs/SubscriptionBanner";
 import { PackCardSkeleton } from "@/components/ui";
+import type { Subscription } from "@/types/database";
 
 export const metadata = {
   title: "Dashboard | Soul Sample Club",
 };
 
-async function getAccessiblePacks() {
+// Type for pack with sample count
+interface PackWithCount {
+  id: string;
+  name: string;
+  description: string;
+  cover_image_url: string | null;
+  release_date: string;
+  is_published: boolean;
+  created_at: string;
+  updated_at: string;
+  samples: { count: number }[];
+}
+
+async function getAccessiblePacks(): Promise<PackWithCount[]> {
   const supabase = await createClient();
 
   // Get packs from the last 3 months
   const threeMonthsAgo = new Date();
   threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
 
-  const { data: packs, error } = await supabase
+  const result = await supabase
     .from("packs")
     .select(
       `
@@ -27,15 +41,15 @@ async function getAccessiblePacks() {
     .gte("release_date", threeMonthsAgo.toISOString().split("T")[0])
     .order("release_date", { ascending: false });
 
-  if (error) {
-    console.error("Error fetching packs:", error);
+  if (result.error) {
+    console.error("Error fetching packs:", result.error);
     return [];
   }
 
-  return packs || [];
+  return (result.data as PackWithCount[]) || [];
 }
 
-async function getUserSubscription() {
+async function getUserSubscription(): Promise<Subscription | null> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -43,14 +57,14 @@ async function getUserSubscription() {
 
   if (!user) return null;
 
-  const { data: subscription } = await supabase
+  const result = await supabase
     .from("subscriptions")
     .select("*")
     .eq("user_id", user.id)
     .in("status", ["active", "trialing"])
     .single();
 
-  return subscription;
+  return result.data as Subscription | null;
 }
 
 function PackGridSkeleton() {

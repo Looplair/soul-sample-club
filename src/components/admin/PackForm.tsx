@@ -91,8 +91,8 @@ export function PackForm({ pack }: PackFormProps) {
 
       if (isEditing) {
         // Update existing pack
-        const { error } = await supabase
-          .from("packs")
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error } = await (supabase.from("packs") as any)
           .update(packData)
           .eq("id", pack.id);
 
@@ -101,8 +101,8 @@ export function PackForm({ pack }: PackFormProps) {
         router.refresh();
       } else {
         // Create new pack
-        const { data, error } = await supabase
-          .from("packs")
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data, error } = await (supabase.from("packs") as any)
           .insert(packData)
           .select()
           .single();

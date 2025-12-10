@@ -1,11 +1,17 @@
 import { createClient } from "@/lib/supabase/server";
 import { AccountSettings } from "./AccountSettings";
+import type { Profile, Subscription } from "@/types/database";
 
 export const metadata = {
   title: "Account | Soul Sample Club",
 };
 
-async function getUserData() {
+interface UserData {
+  profile: Profile;
+  subscription: Subscription | null;
+}
+
+async function getUserData(): Promise<UserData | null> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -24,9 +30,14 @@ async function getUserData() {
       .single(),
   ]);
 
+  const profile = profileResult.data as Profile | null;
+  const subscription = subscriptionResult.data as Subscription | null;
+
+  if (!profile) return null;
+
   return {
-    profile: profileResult.data,
-    subscription: subscriptionResult.data,
+    profile,
+    subscription,
   };
 }
 

@@ -2,6 +2,15 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
+// Type for sample with pack relation
+interface SamplePreview {
+  id: string;
+  preview_path: string | null;
+  pack: {
+    is_published: boolean;
+  } | null;
+}
+
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ sampleId: string }> }
@@ -21,7 +30,7 @@ export async function GET(
     }
 
     // Get sample with preview path
-    const { data: sample, error: sampleError } = await supabase
+    const sampleResult = await supabase
       .from("samples")
       .select(
         `
@@ -33,7 +42,9 @@ export async function GET(
       .eq("id", sampleId)
       .single();
 
-    if (sampleError || !sample) {
+    const sample = sampleResult.data as SamplePreview | null;
+
+    if (sampleResult.error || !sample) {
       return NextResponse.json({ error: "Sample not found" }, { status: 404 });
     }
 
