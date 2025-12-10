@@ -34,20 +34,20 @@ export function WaveformPlayer({
   const [isMuted, setIsMuted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Initialize WaveSurfer
+  // Initialize WaveSurfer with Tracklib-style monochrome waveform
   useEffect(() => {
     if (!containerRef.current) return;
 
     const wavesurfer = WaveSurfer.create({
       container: containerRef.current,
-      waveColor: "#2A2C31",
-      progressColor: "#4AE3B5",
-      cursorColor: "#6D4AFF",
+      waveColor: "#3F3F46", // Grey unplayed - matches waveform.unplayed
+      progressColor: "#8B5CF6", // Purple played - matches waveform.played
+      cursorColor: "#A78BFA", // Purple-light cursor - matches waveform.cursor
       cursorWidth: 2,
       barWidth: 2,
-      barGap: 1,
+      barGap: 2,
       barRadius: 2,
-      height: 48,
+      height: 56,
       normalize: true,
       backend: "WebAudio",
     });
@@ -110,19 +110,17 @@ export function WaveformPlayer({
 
   return (
     <div className="player-bar group">
-      {/* Play Button */}
+      {/* Play Button - Premium purple with glow */}
       <button
         onClick={handlePlayPause}
         disabled={!isReady}
         className={cn(
-          "w-10 h-10 rounded-full flex items-center justify-center transition-all flex-shrink-0",
-          isReady
-            ? "bg-velvet hover:bg-velvet-light hover:shadow-glow"
-            : "bg-steel cursor-not-allowed"
+          "player-button flex-shrink-0",
+          isPlaying && "shadow-glow-purple"
         )}
       >
         {isLoading ? (
-          <div className="w-4 h-4 border-2 border-snow/30 border-t-snow rounded-full animate-spin" />
+          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
         ) : isPlaying ? (
           <Pause className="w-4 h-4 text-white" />
         ) : (
@@ -135,27 +133,36 @@ export function WaveformPlayer({
         <div
           ref={containerRef}
           className={cn(
-            "w-full transition-opacity",
-            !isReady && "opacity-50"
+            "w-full transition-opacity duration-300",
+            !isReady && "opacity-40"
           )}
         />
       </div>
 
       {/* Time Display */}
-      <div className="text-label text-snow/50 tabular-nums flex-shrink-0 w-24 text-right">
-        {formatDuration(currentTime)} / {formatDuration(duration)}
+      <div className="text-label text-text-muted tabular-nums flex-shrink-0 w-24 text-right">
+        <span className="text-white">{formatDuration(currentTime)}</span>
+        <span className="text-text-subtle"> / {formatDuration(duration)}</span>
       </div>
 
-      {/* Metadata */}
-      <div className="hidden sm:flex items-center gap-12 text-label text-snow/50 flex-shrink-0">
-        {bpm && <span>{bpm} BPM</span>}
-        {musicalKey && <span>{musicalKey}</span>}
+      {/* Metadata - Clean minimal badges */}
+      <div className="hidden sm:flex items-center gap-2 flex-shrink-0">
+        {bpm && (
+          <span className="px-2 py-1 rounded-md bg-grey-800 text-caption text-text-muted">
+            {bpm} BPM
+          </span>
+        )}
+        {musicalKey && (
+          <span className="px-2 py-1 rounded-md bg-grey-800 text-caption text-text-muted">
+            {musicalKey}
+          </span>
+        )}
       </div>
 
       {/* Volume Toggle */}
       <button
         onClick={handleMuteToggle}
-        className="text-snow/50 hover:text-snow transition-colors flex-shrink-0"
+        className="btn-icon flex-shrink-0"
       >
         {isMuted ? (
           <VolumeX className="w-5 h-5" />

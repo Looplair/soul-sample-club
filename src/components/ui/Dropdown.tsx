@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface DropdownItem {
@@ -51,9 +51,9 @@ export function Dropdown({
             initial={{ opacity: 0, y: -8, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -8, scale: 0.95 }}
-            transition={{ duration: 0.15 }}
+            transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
             className={cn(
-              "dropdown min-w-[180px]",
+              "dropdown",
               align === "left" ? "left-0" : "right-0"
             )}
           >
@@ -65,8 +65,8 @@ export function Dropdown({
                   setIsOpen(false);
                 }}
                 className={cn(
-                  "dropdown-item flex items-center gap-12",
-                  item.danger && "text-error hover:bg-error/10"
+                  "dropdown-item",
+                  item.danger && "dropdown-item-danger"
                 )}
               >
                 {item.icon}
@@ -86,6 +86,8 @@ interface SelectProps {
   options: Array<{ value: string; label: string }>;
   placeholder?: string;
   className?: string;
+  label?: string;
+  error?: string;
 }
 
 export function Select({
@@ -94,6 +96,8 @@ export function Select({
   options,
   placeholder = "Select...",
   className,
+  label,
+  error,
 }: SelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const selectRef = useRef<HTMLDivElement>(null);
@@ -115,50 +119,60 @@ export function Select({
   }, []);
 
   return (
-    <div className={cn("relative", className)} ref={selectRef}>
-      <button
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className="input flex items-center justify-between gap-8 cursor-pointer"
-      >
-        <span className={!selectedOption ? "text-snow/40" : ""}>
-          {selectedOption?.label || placeholder}
-        </span>
-        <ChevronDown
+    <div className={cn("w-full", className)} ref={selectRef}>
+      {label && <label className="label">{label}</label>}
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => setIsOpen(!isOpen)}
           className={cn(
-            "w-4 h-4 text-snow/50 transition-transform",
-            isOpen && "rotate-180"
+            "input flex items-center justify-between gap-2 cursor-pointer",
+            error && "input-error"
           )}
-        />
-      </button>
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.15 }}
-            className="absolute left-0 right-0 mt-8 bg-graphite rounded-card shadow-card-hover border border-steel/50 py-8 z-50 max-h-[200px] overflow-y-auto"
-          >
-            {options.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => {
-                  onChange(option.value);
-                  setIsOpen(false);
-                }}
-                className={cn(
-                  "dropdown-item w-full",
-                  option.value === value && "bg-velvet/20 text-velvet-light"
-                )}
-              >
-                {option.label}
-              </button>
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
+        >
+          <span className={!selectedOption ? "text-text-subtle" : "text-white"}>
+            {selectedOption?.label || placeholder}
+          </span>
+          <ChevronDown
+            className={cn(
+              "w-4 h-4 text-text-muted transition-transform duration-200",
+              isOpen && "rotate-180"
+            )}
+          />
+        </button>
+        <AnimatePresence>
+          {isOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
+              className="absolute left-0 right-0 mt-2 bg-black-elevated rounded-xl shadow-xl border border-grey-800/50 py-2 z-50 max-h-[240px] overflow-y-auto"
+            >
+              {options.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => {
+                    onChange(option.value);
+                    setIsOpen(false);
+                  }}
+                  className={cn(
+                    "dropdown-item w-full justify-between",
+                    option.value === value && "bg-purple-muted text-purple-light"
+                  )}
+                >
+                  {option.label}
+                  {option.value === value && (
+                    <Check className="w-4 h-4" />
+                  )}
+                </button>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+      {error && <p className="mt-2 text-caption text-error">{error}</p>}
     </div>
   );
 }

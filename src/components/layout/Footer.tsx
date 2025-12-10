@@ -2,35 +2,38 @@ import Link from "next/link";
 
 export function Footer() {
   return (
-    <footer className="border-t border-steel py-32 mt-auto">
+    <footer className="border-t border-grey-800/50 py-8 mt-auto">
       <div className="container-app">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-16">
-          <div className="flex items-center gap-12">
-            <div className="w-8 h-8 rounded-lg bg-velvet flex items-center justify-center">
-              <span className="text-white font-bold text-sm">L</span>
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+          {/* Logo and Brand */}
+          <div className="flex items-center gap-3">
+            <div className="w-7 h-7 rounded-lg bg-purple/80 flex items-center justify-center">
+              <span className="text-white font-bold text-xs">S</span>
             </div>
-            <span className="text-label text-snow/50">
+            <span className="text-caption text-text-subtle">
               Soul Sample Club by Looplair
             </span>
           </div>
-          <div className="flex items-center gap-24 text-label text-snow/50">
+
+          {/* Links */}
+          <div className="flex items-center gap-6 text-caption text-text-subtle">
             <Link
               href="https://looplair.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:text-snow transition-colors"
+              className="hover:text-white transition-colors"
             >
               Looplair
             </Link>
             <Link
               href="/terms"
-              className="hover:text-snow transition-colors"
+              className="hover:text-white transition-colors"
             >
               Terms
             </Link>
             <Link
               href="/privacy"
-              className="hover:text-snow transition-colors"
+              className="hover:text-white transition-colors"
             >
               Privacy
             </Link>

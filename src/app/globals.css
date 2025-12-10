@@ -2,157 +2,300 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================
+   SOUL SAMPLE CLUB - Premium Dark UI
+   Inspired by WAVS.com & Tracklib
+   ============================================ */
+
 @layer base {
+  /* Reset & Base */
   * {
-    @apply border-steel;
+    @apply border-grey-700;
+  }
+
+  html {
+    @apply scroll-smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   body {
-    @apply bg-midnight text-snow antialiased;
-    font-feature-settings: "ss01", "ss02", "cv01";
+    @apply bg-black text-text-secondary antialiased;
+    font-feature-settings: "ss01", "ss02", "cv01", "cv02";
   }
 
-  /* Custom scrollbar */
+  /* Premium Scrollbar */
   ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
   }
 
   ::-webkit-scrollbar-track {
-    @apply bg-midnight;
+    @apply bg-transparent;
   }
 
   ::-webkit-scrollbar-thumb {
-    @apply bg-steel rounded-full;
+    @apply bg-grey-600 rounded-full;
+    transition: background-color 0.2s ease;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    @apply bg-steel-light;
+    @apply bg-grey-500;
+  }
+
+  /* Firefox Scrollbar */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #2A2A2E transparent;
   }
 
   /* Selection */
   ::selection {
-    @apply bg-velvet/30 text-snow;
+    @apply bg-purple/30 text-white;
+  }
+
+  /* Focus visible for keyboard navigation */
+  :focus-visible {
+    @apply outline-none ring-2 ring-purple/50 ring-offset-2 ring-offset-black;
   }
 }
 
 @layer components {
-  /* Button variants */
+  /* ==========================================
+     BUTTONS - Premium, flush, rounded
+     ========================================== */
+
   .btn {
     @apply inline-flex items-center justify-center gap-2
            font-medium text-body transition-all duration-200
-           rounded-button px-20 py-12
-           disabled:opacity-50 disabled:cursor-not-allowed;
+           rounded-button px-5 py-3
+           disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none
+           select-none;
   }
 
   .btn-primary {
-    @apply btn bg-velvet text-white hover:bg-velvet-light
-           shadow-sm hover:shadow-glow active:scale-[0.98];
+    @apply btn bg-purple text-white
+           hover:bg-purple-light
+           shadow-md hover:shadow-glow-purple
+           active:shadow-button-pressed active:scale-[0.98];
   }
 
   .btn-secondary {
-    @apply btn bg-graphite text-snow border border-steel
-           hover:bg-steel-light active:scale-[0.98];
+    @apply btn bg-grey-800 text-text-secondary
+           border border-grey-600
+           shadow-sm
+           hover:bg-grey-700 hover:text-white hover:border-grey-500
+           active:shadow-button-pressed active:scale-[0.98];
   }
 
   .btn-ghost {
-    @apply btn text-velvet-light bg-transparent
-           hover:bg-velvet/10 active:scale-[0.98];
+    @apply btn text-text-muted bg-transparent
+           hover:text-white hover:bg-grey-800
+           active:scale-[0.98];
   }
 
   .btn-danger {
-    @apply btn bg-error/10 text-error border border-error/20
-           hover:bg-error/20 active:scale-[0.98];
+    @apply btn bg-error/10 text-error
+           border border-error/20
+           hover:bg-error/20 hover:border-error/30
+           active:scale-[0.98];
+  }
+
+  .btn-icon {
+    @apply p-2.5 rounded-lg text-text-muted
+           hover:text-white hover:bg-grey-800
+           transition-all duration-150;
   }
 
   .btn-sm {
-    @apply text-label px-16 py-8;
+    @apply text-label px-4 py-2;
   }
 
   .btn-lg {
-    @apply text-body-lg px-24 py-16;
+    @apply text-body-lg px-6 py-4;
   }
 
-  /* Card */
+  /* ==========================================
+     CARDS - WAVS style with hover effects
+     ========================================== */
+
   .card {
-    @apply bg-graphite rounded-card p-24 shadow-card
-           border border-steel/50 transition-all duration-300;
+    @apply bg-black-card rounded-card p-6
+           border border-grey-800/50
+           shadow-card
+           transition-all duration-300 ease-smooth;
   }
 
   .card-hover {
-    @apply hover:shadow-card-hover hover:-translate-y-0.5;
+    @apply hover:scale-[1.02] hover:shadow-card-hover
+           hover:border-purple/20 hover:shadow-ring-purple-glow;
   }
 
-  .card-glow {
-    @apply hover:shadow-glow;
+  .card-interactive {
+    @apply card card-hover cursor-pointer;
   }
 
-  /* Input */
+  .card-elevated {
+    @apply bg-black-elevated;
+  }
+
+  /* ==========================================
+     INPUTS - Clean, modern
+     ========================================== */
+
   .input {
-    @apply w-full bg-midnight-light border border-steel rounded-button
-           px-16 py-12 text-snow placeholder:text-snow/40
-           focus:outline-none focus:border-velvet focus:ring-1 focus:ring-velvet/50
-           transition-all duration-200;
+    @apply w-full bg-grey-900 border border-grey-700
+           rounded-input px-4 py-3
+           text-body text-white placeholder:text-text-subtle
+           transition-all duration-200
+           focus:outline-none focus:border-purple focus:ring-1 focus:ring-purple/30
+           hover:border-grey-600;
   }
 
   .input-error {
-    @apply border-error focus:border-error focus:ring-error/50;
+    @apply border-error/50 focus:border-error focus:ring-error/30;
   }
 
-  /* Label */
   .label {
-    @apply block text-label text-snow/70 mb-8;
+    @apply block text-label text-text-muted mb-2;
   }
 
-  /* Section */
-  .section {
-    @apply py-48 md:py-64;
+  .textarea {
+    @apply input min-h-[120px] resize-y;
   }
 
-  /* Container */
-  .container-app {
-    @apply max-w-7xl mx-auto px-24;
+  /* ==========================================
+     NAVIGATION - Tracklib inspired
+     ========================================== */
+
+  .nav-link {
+    @apply relative text-body text-text-muted
+           transition-colors duration-200
+           hover:text-white;
   }
 
-  /* Pack card specific */
-  .pack-card {
-    @apply card card-hover cursor-pointer overflow-hidden;
+  .nav-link::after {
+    @apply content-[''] absolute -bottom-1 left-0 w-0 h-0.5
+           bg-purple rounded-full
+           transition-all duration-200;
   }
 
-  .pack-card:hover .pack-title {
-    @apply text-velvet-light;
+  .nav-link:hover::after,
+  .nav-link-active::after {
+    @apply w-full;
   }
 
-  /* Audio player */
+  .nav-link-active {
+    @apply text-white;
+  }
+
+  /* ==========================================
+     AUDIO PLAYER - Tracklib style waveform
+     ========================================== */
+
   .player-bar {
-    @apply bg-midnight-light rounded-player p-16 flex items-center gap-16;
+    @apply bg-grey-900 rounded-xl p-4
+           flex items-center gap-4
+           border border-grey-800/50;
   }
 
-  /* Badge */
+  .player-button {
+    @apply w-10 h-10 rounded-full
+           flex items-center justify-center
+           bg-purple text-white
+           transition-all duration-200
+           hover:bg-purple-light hover:shadow-glow-purple
+           active:scale-95
+           disabled:bg-grey-700 disabled:cursor-not-allowed;
+  }
+
+  /* ==========================================
+     BADGES
+     ========================================== */
+
   .badge {
-    @apply inline-flex items-center px-12 py-4 rounded-full
+    @apply inline-flex items-center px-3 py-1 rounded-full
            text-caption font-medium;
   }
 
   .badge-primary {
-    @apply badge bg-velvet/20 text-velvet-light;
+    @apply badge bg-purple-muted text-purple-light;
   }
 
   .badge-success {
-    @apply badge bg-success/20 text-success;
+    @apply badge bg-success/15 text-success;
   }
 
   .badge-warning {
-    @apply badge bg-warning/20 text-warning;
+    @apply badge bg-warning/15 text-warning;
   }
 
   .badge-error {
-    @apply badge bg-error/20 text-error;
+    @apply badge bg-error/15 text-error;
   }
 
-  /* Table */
+  .badge-neutral {
+    @apply badge bg-grey-800 text-text-muted;
+  }
+
+  /* ==========================================
+     MODALS - Dark, blurred, premium
+     ========================================== */
+
+  .modal-overlay {
+    @apply fixed inset-0 z-50
+           bg-black/80 backdrop-blur-lg
+           flex items-center justify-center p-6;
+  }
+
+  .modal {
+    @apply bg-black-elevated rounded-modal
+           shadow-xl border border-grey-800/50
+           w-full max-w-lg max-h-[90vh] overflow-y-auto
+           animate-scale-in;
+  }
+
+  .modal-header {
+    @apply p-6 pb-0;
+  }
+
+  .modal-body {
+    @apply p-6;
+  }
+
+  .modal-footer {
+    @apply p-6 pt-0 flex gap-3 justify-end;
+  }
+
+  /* ==========================================
+     DROPDOWNS
+     ========================================== */
+
+  .dropdown {
+    @apply absolute right-0 mt-2 min-w-[200px]
+           rounded-xl bg-black-elevated
+           shadow-xl border border-grey-800/50
+           py-2 z-50
+           animate-fade-in-down;
+  }
+
+  .dropdown-item {
+    @apply flex items-center gap-3 w-full px-4 py-2.5
+           text-body text-text-secondary
+           transition-colors duration-150
+           hover:bg-grey-800 hover:text-white;
+  }
+
+  .dropdown-item-danger {
+    @apply dropdown-item text-error hover:bg-error/10;
+  }
+
+  /* ==========================================
+     TABLES
+     ========================================== */
+
   .table-container {
-    @apply overflow-x-auto rounded-card border border-steel/50;
+    @apply overflow-x-auto rounded-xl border border-grey-800/50;
   }
 
   .table {
@@ -160,79 +303,239 @@
   }
 
   .table th {
-    @apply bg-graphite px-16 py-12 text-label text-snow/70 font-medium
-           border-b border-steel;
+    @apply bg-grey-900 px-4 py-3
+           text-label text-text-muted font-medium
+           border-b border-grey-800;
   }
 
   .table td {
-    @apply px-16 py-12 border-b border-steel/50;
+    @apply px-4 py-3 text-body
+           border-b border-grey-800/50;
   }
 
-  .table tr:hover td {
-    @apply bg-steel/20;
+  .table tr {
+    @apply transition-colors duration-150;
   }
 
-  /* Dropdown */
-  .dropdown {
-    @apply absolute right-0 mt-8 w-48 rounded-card bg-graphite
-           shadow-card-hover border border-steel/50 py-8 z-50;
+  .table tbody tr:hover td {
+    @apply bg-grey-900/50;
   }
 
-  .dropdown-item {
-    @apply block w-full px-16 py-8 text-left text-body text-snow
-           hover:bg-steel/50 transition-colors;
-  }
+  /* ==========================================
+     TOAST NOTIFICATIONS
+     ========================================== */
 
-  /* Modal overlay */
-  .modal-overlay {
-    @apply fixed inset-0 bg-midnight/80 backdrop-blur-sm z-50
-           flex items-center justify-center p-24;
-  }
-
-  .modal {
-    @apply bg-graphite rounded-card shadow-card-hover border border-steel/50
-           w-full max-w-lg max-h-[90vh] overflow-y-auto;
-  }
-
-  /* Toast */
   .toast {
-    @apply fixed bottom-24 right-24 bg-graphite rounded-card shadow-card-hover
-           border border-steel/50 p-16 z-50 animate-slide-up;
+    @apply fixed bottom-6 right-6
+           bg-black-elevated rounded-xl
+           shadow-xl border border-grey-800/50
+           p-4 z-50
+           animate-slide-up;
+  }
+
+  .toast-success {
+    @apply border-success/30;
+  }
+
+  .toast-error {
+    @apply border-error/30;
+  }
+
+  /* ==========================================
+     SECTION & CONTAINER
+     ========================================== */
+
+  .section {
+    @apply py-12 md:py-16;
+  }
+
+  .container-app {
+    @apply max-w-7xl mx-auto px-6;
+  }
+
+  /* ==========================================
+     PACK CARD - WAVS inspired
+     ========================================== */
+
+  .pack-card {
+    @apply card-interactive overflow-hidden p-0;
+  }
+
+  .pack-card-image {
+    @apply relative aspect-square rounded-t-card overflow-hidden bg-grey-900;
+  }
+
+  .pack-card-content {
+    @apply p-5;
+  }
+
+  .pack-card:hover .pack-card-title {
+    @apply text-purple-light;
+  }
+
+  .pack-card-title {
+    @apply text-h3 text-white transition-colors duration-200;
+  }
+
+  /* ==========================================
+     SUBSCRIPTION BANNER
+     ========================================== */
+
+  .subscription-banner {
+    @apply relative overflow-hidden
+           bg-gradient-to-r from-purple/10 via-purple/5 to-transparent
+           border border-purple/20 rounded-2xl p-6 mb-8;
+  }
+
+  .subscription-banner::before {
+    @apply content-[''] absolute inset-0
+           bg-gradient-to-r from-purple/5 to-transparent
+           opacity-50;
   }
 }
 
 @layer utilities {
-  /* Text gradient */
+  /* ==========================================
+     TEXT UTILITIES
+     ========================================== */
+
   .text-gradient {
-    @apply bg-gradient-to-r from-velvet to-velvet-light bg-clip-text text-transparent;
+    @apply bg-gradient-to-r from-purple to-purple-light
+           bg-clip-text text-transparent;
   }
 
-  /* Glow effects */
-  .glow-velvet {
-    box-shadow: 0 0 20px rgba(109, 74, 255, 0.4);
+  .text-gradient-subtle {
+    @apply bg-gradient-to-r from-text-secondary to-text-muted
+           bg-clip-text text-transparent;
   }
 
-  .glow-mint {
-    box-shadow: 0 0 20px rgba(74, 227, 181, 0.4);
+  /* ==========================================
+     GLOW EFFECTS
+     ========================================== */
+
+  .glow-purple {
+    box-shadow: 0 0 30px rgba(139, 92, 246, 0.4);
   }
 
-  /* Skeleton loading */
+  .glow-purple-soft {
+    box-shadow: 0 0 40px rgba(139, 92, 246, 0.2);
+  }
+
+  .glow-active {
+    @apply animate-pulse-glow;
+  }
+
+  /* ==========================================
+     SKELETON LOADING - WAVS shimmer
+     ========================================== */
+
   .skeleton {
-    @apply bg-steel/50 animate-pulse rounded;
+    @apply bg-grey-800 rounded-lg relative overflow-hidden;
   }
 
-  /* Hide scrollbar */
+  .skeleton::after {
+    @apply content-[''] absolute inset-0
+           bg-shimmer bg-[length:200%_100%]
+           animate-shimmer;
+  }
+
+  /* ==========================================
+     SCROLLBAR UTILITIES
+     ========================================== */
+
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
+
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
 
-  /* Focus ring */
+  .thin-scrollbar::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+
+  /* ==========================================
+     FOCUS UTILITIES
+     ========================================== */
+
   .focus-ring {
-    @apply focus:outline-none focus:ring-2 focus:ring-velvet/50 focus:ring-offset-2
-           focus:ring-offset-midnight;
+    @apply focus:outline-none focus:ring-2 focus:ring-purple/50
+           focus:ring-offset-2 focus:ring-offset-black;
+  }
+
+  .focus-ring-inset {
+    @apply focus:outline-none focus:ring-2 focus:ring-purple/50 focus:ring-inset;
+  }
+
+  /* ==========================================
+     ANIMATION UTILITIES
+     ========================================== */
+
+  .hover-lift {
+    @apply transition-transform duration-200 hover:-translate-y-0.5;
+  }
+
+  .hover-scale {
+    @apply transition-transform duration-200 hover:scale-[1.02];
+  }
+
+  .press-effect {
+    @apply active:scale-[0.98] transition-transform duration-150;
+  }
+
+  /* ==========================================
+     GRADIENT OVERLAYS
+     ========================================== */
+
+  .gradient-fade-up {
+    @apply bg-gradient-to-t from-black via-black/50 to-transparent;
+  }
+
+  .gradient-fade-down {
+    @apply bg-gradient-to-b from-black via-black/50 to-transparent;
+  }
+
+  /* ==========================================
+     LINE CLAMP
+     ========================================== */
+
+  .line-clamp-1 {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* ==========================================
+     ASPECT RATIOS
+     ========================================== */
+
+  .aspect-square {
+    aspect-ratio: 1 / 1;
+  }
+
+  .aspect-video {
+    aspect-ratio: 16 / 9;
+  }
+
+  .aspect-album {
+    aspect-ratio: 1 / 1;
   }
 }

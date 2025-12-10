@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Mail, Lock, ArrowRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button, Input } from "@/components/ui";
 
@@ -45,9 +45,9 @@ export function LoginForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-24">
+    <form onSubmit={handleSubmit} className="space-y-6">
       {error && (
-        <div className="bg-error/10 border border-error/50 rounded-button p-16 text-error text-body">
+        <div className="bg-error/10 border border-error/30 rounded-lg p-4 text-error text-body">
           {error}
         </div>
       )}
@@ -74,7 +74,7 @@ export function LoginForm() {
         />
         <Link
           href="/reset-password"
-          className="block text-right text-label text-velvet-light hover:text-velvet mt-8"
+          className="block text-right text-label text-purple-light hover:text-purple mt-2 transition-colors"
         >
           Forgot password?
         </Link>
@@ -89,11 +89,11 @@ export function LoginForm() {
         Sign In
       </Button>
 
-      <p className="text-center text-body text-snow/60">
+      <p className="text-center text-body text-text-muted">
         Don&apos;t have an account?{" "}
         <Link
           href="/signup"
-          className="text-velvet-light hover:text-velvet transition-colors"
+          className="text-purple-light hover:text-purple transition-colors"
         >
           Sign up
         </Link>

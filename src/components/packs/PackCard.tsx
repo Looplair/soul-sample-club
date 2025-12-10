@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Music2, Calendar, Lock } from "lucide-react";
+import { Music2, Calendar, Lock, Play } from "lucide-react";
 import { cn, formatDate } from "@/lib/utils";
 import type { Pack } from "@/types/database";
 
@@ -15,7 +15,7 @@ interface PackCardProps {
 export function PackCard({ pack, sampleCount, hasSubscription }: PackCardProps) {
   const isLocked = !hasSubscription;
 
-  // fallback safety to prevent Vercel runtime errors
+  // Fallback safety to prevent Vercel runtime errors
   const name = pack.name ?? "Untitled Pack";
   const description = pack.description ?? "";
   const releaseDate = pack.release_date ?? "";
@@ -23,10 +23,13 @@ export function PackCard({ pack, sampleCount, hasSubscription }: PackCardProps) 
   return (
     <Link
       href={`/packs/${pack.id}`}
-      className={cn("pack-card block relative", isLocked && "cursor-not-allowed")}
+      className={cn(
+        "pack-card block relative group",
+        isLocked && "cursor-not-allowed"
+      )}
     >
-      {/* Cover Image */}
-      <div className="relative aspect-square rounded-image overflow-hidden mb-16 bg-steel">
+      {/* Cover Image - WAVS style */}
+      <div className="pack-card-image">
         {pack.cover_image_url ? (
           <Image
             src={pack.cover_image_url}
@@ -36,45 +39,54 @@ export function PackCard({ pack, sampleCount, hasSubscription }: PackCardProps) 
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
           />
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-velvet/20 to-steel">
-            <Music2 className="w-16 h-16 text-snow/30" />
+          <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-purple/20 via-grey-900 to-grey-800">
+            <Music2 className="w-16 h-16 text-text-subtle" />
           </div>
         )}
 
+        {/* Gradient overlay at bottom */}
+        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black-card to-transparent opacity-60" />
+
         {/* Lock Overlay */}
         {isLocked && (
-          <div className="absolute inset-0 bg-midnight/60 backdrop-blur-sm flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center transition-opacity">
             <div className="text-center">
-              <Lock className="w-8 h-8 text-snow/70 mx-auto mb-8" />
-              <p className="text-label text-snow/70">Subscribe to access</p>
+              <div className="w-12 h-12 rounded-full bg-grey-800/80 flex items-center justify-center mx-auto mb-3">
+                <Lock className="w-5 h-5 text-text-muted" />
+              </div>
+              <p className="text-label text-text-muted">Subscribe to access</p>
             </div>
           </div>
         )}
 
-        {/* Hover Overlay */}
+        {/* Hover Play Indicator */}
         {!isLocked && (
-          <div className="absolute inset-0 bg-velvet/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            <div className="w-14 h-14 rounded-full bg-purple/90 flex items-center justify-center shadow-glow-purple transform scale-90 group-hover:scale-100 transition-transform duration-300">
+              <Play className="w-6 h-6 text-white ml-1" />
+            </div>
+          </div>
         )}
       </div>
 
       {/* Content */}
-      <div>
-        <h3 className="pack-title text-h3 text-snow line-clamp-1">
+      <div className="pack-card-content">
+        <h3 className="pack-card-title line-clamp-1">
           {name}
         </h3>
 
-        <p className="text-body text-snow/60 line-clamp-2 mt-4 mb-12 min-h-[48px]">
+        <p className="text-body-sm text-text-muted line-clamp-2 mt-1.5 mb-4 min-h-[40px]">
           {description}
         </p>
 
         {/* Metadata */}
-        <div className="flex items-center gap-16 text-label text-snow/50">
-          <div className="flex items-center gap-4">
-            <Music2 className="w-4 h-4" />
+        <div className="flex items-center gap-4 text-caption text-text-subtle">
+          <div className="flex items-center gap-1.5">
+            <Music2 className="w-3.5 h-3.5" />
             <span>{sampleCount} samples</span>
           </div>
-          <div className="flex items-center gap-4">
-            <Calendar className="w-4 h-4" />
+          <div className="flex items-center gap-1.5">
+            <Calendar className="w-3.5 h-3.5" />
             <span>{formatDate(releaseDate)}</span>
           </div>
         </div>

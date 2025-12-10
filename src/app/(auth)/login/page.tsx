@@ -8,13 +8,13 @@ export const metadata = {
 export default function LoginPage() {
   return (
     <div className="card">
-      <div className="text-center mb-32">
-        <h1 className="text-h2 text-snow">Welcome back</h1>
-        <p className="text-body text-snow/60 mt-8">
+      <div className="text-center mb-8">
+        <h1 className="text-h2 text-white">Welcome back</h1>
+        <p className="text-body text-text-muted mt-2">
           Sign in to access your sample packs
         </p>
       </div>
-      <Suspense fallback={<div className="animate-pulse h-64 bg-steel/20 rounded-card" />}>
+      <Suspense fallback={<div className="animate-pulse h-64 bg-grey-800/50 rounded-xl" />}>
         <LoginForm />
       </Suspense>
     </div>

@@ -4,7 +4,8 @@ interface CardProps {
   children: React.ReactNode;
   className?: string;
   hover?: boolean;
-  glow?: boolean;
+  interactive?: boolean;
+  elevated?: boolean;
   as?: keyof JSX.IntrinsicElements;
 }
 
@@ -12,7 +13,8 @@ export function Card({
   children,
   className,
   hover = false,
-  glow = false,
+  interactive = false,
+  elevated = false,
   as: Component = "div",
 }: CardProps) {
   return (
@@ -20,7 +22,8 @@ export function Card({
       className={cn(
         "card",
         hover && "card-hover",
-        glow && "card-glow",
+        interactive && "card-interactive",
+        elevated && "card-elevated",
         className
       )}
     >
@@ -36,7 +39,7 @@ interface CardHeaderProps {
 
 export function CardHeader({ children, className }: CardHeaderProps) {
   return (
-    <div className={cn("mb-16", className)}>
+    <div className={cn("mb-4", className)}>
       {children}
     </div>
   );
@@ -50,7 +53,7 @@ interface CardTitleProps {
 
 export function CardTitle({ children, className, as: Component = "h3" }: CardTitleProps) {
   return (
-    <Component className={cn("text-h3 text-snow", className)}>
+    <Component className={cn("text-h3 text-white", className)}>
       {children}
     </Component>
   );
@@ -63,7 +66,7 @@ interface CardDescriptionProps {
 
 export function CardDescription({ children, className }: CardDescriptionProps) {
   return (
-    <p className={cn("text-body text-snow/60 mt-4", className)}>
+    <p className={cn("text-body text-text-muted mt-1", className)}>
       {children}
     </p>
   );
@@ -85,7 +88,7 @@ interface CardFooterProps {
 
 export function CardFooter({ children, className }: CardFooterProps) {
   return (
-    <div className={cn("mt-16 pt-16 border-t border-steel/50", className)}>
+    <div className={cn("mt-4 pt-4 border-t border-grey-800/50", className)}>
       {children}
     </div>
   );

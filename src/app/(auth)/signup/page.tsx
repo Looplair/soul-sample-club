@@ -7,9 +7,9 @@ export const metadata = {
 export default function SignupPage() {
   return (
     <div className="card">
-      <div className="text-center mb-32">
-        <h1 className="text-h2 text-snow">Create your account</h1>
-        <p className="text-body text-snow/60 mt-8">
+      <div className="text-center mb-8">
+        <h1 className="text-h2 text-white">Create your account</h1>
+        <p className="text-body text-text-muted mt-2">
           Start your 7-day free trial today
         </p>
       </div>

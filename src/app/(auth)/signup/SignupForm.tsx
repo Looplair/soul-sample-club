@@ -58,14 +58,14 @@ export function SignupForm() {
 
   if (success) {
     return (
-      <div className="text-center py-24">
-        <div className="w-16 h-16 rounded-full bg-success/20 flex items-center justify-center mx-auto mb-24">
+      <div className="text-center py-6">
+        <div className="w-16 h-16 rounded-full bg-success/15 flex items-center justify-center mx-auto mb-6">
           <Check className="w-8 h-8 text-success" />
         </div>
-        <h2 className="text-h3 text-snow mb-8">Check your email</h2>
-        <p className="text-body text-snow/60">
+        <h2 className="text-h3 text-white mb-2">Check your email</h2>
+        <p className="text-body text-text-muted">
           We&apos;ve sent you a confirmation link to{" "}
-          <span className="text-snow">{email}</span>. Click the link to activate
+          <span className="text-white">{email}</span>. Click the link to activate
           your account.
         </p>
       </div>
@@ -73,19 +73,20 @@ export function SignupForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-24">
+    <form onSubmit={handleSubmit} className="space-y-6">
       {error && (
-        <div className="bg-error/10 border border-error/50 rounded-button p-16 text-error text-body">
+        <div className="bg-error/10 border border-error/30 rounded-lg p-4 text-error text-body">
           {error}
         </div>
       )}
 
-      <div className="bg-velvet/10 border border-velvet/30 rounded-card p-16 mb-24">
-        <p className="text-label text-velvet-light mb-12">What you get:</p>
-        <ul className="space-y-8">
+      {/* Benefits Box */}
+      <div className="bg-purple-muted border border-purple/20 rounded-xl p-4 mb-6">
+        <p className="text-label text-purple-light mb-3">What you get:</p>
+        <ul className="space-y-2">
           {benefits.map((benefit) => (
-            <li key={benefit} className="flex items-center gap-8 text-body text-snow/80">
-              <Check className="w-4 h-4 text-mint" />
+            <li key={benefit} className="flex items-center gap-2 text-body-sm text-text-secondary">
+              <Check className="w-4 h-4 text-success flex-shrink-0" />
               {benefit}
             </li>
           ))}
@@ -132,23 +133,23 @@ export function SignupForm() {
         Start Free Trial
       </Button>
 
-      <p className="text-center text-body text-snow/60">
+      <p className="text-center text-body text-text-muted">
         Already have an account?{" "}
         <Link
           href="/login"
-          className="text-velvet-light hover:text-velvet transition-colors"
+          className="text-purple-light hover:text-purple transition-colors"
         >
           Sign in
         </Link>
       </p>
 
-      <p className="text-center text-caption text-snow/40">
+      <p className="text-center text-caption text-text-subtle">
         By signing up, you agree to our{" "}
-        <Link href="/terms" className="underline hover:text-snow/60">
+        <Link href="/terms" className="underline hover:text-text-muted transition-colors">
           Terms of Service
         </Link>{" "}
         and{" "}
-        <Link href="/privacy" className="underline hover:text-snow/60">
+        <Link href="/privacy" className="underline hover:text-text-muted transition-colors">
           Privacy Policy
         </Link>
       </p>

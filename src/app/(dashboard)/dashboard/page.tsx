@@ -69,7 +69,7 @@ async function getUserSubscription(): Promise<Subscription | null> {
 
 function PackGridSkeleton() {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-24">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
       {Array.from({ length: 8 }).map((_, i) => (
         <PackCardSkeleton key={i} />
       ))}
@@ -88,23 +88,43 @@ export default async function DashboardPage() {
   return (
     <div className="section">
       <div className="container-app">
-        <div className="mb-48">
-          <h1 className="text-h1 text-snow mb-8">Sample Packs</h1>
-          <p className="text-body-lg text-snow/60">
+        {/* Header */}
+        <div className="mb-10">
+          <h1 className="text-h1 text-white mb-2">Sample Packs</h1>
+          <p className="text-body-lg text-text-muted">
             Browse and download premium sample packs from the last 3 months
           </p>
         </div>
 
+        {/* Subscription Banner */}
         {!hasActiveSubscription && <SubscriptionBanner />}
 
+        {/* Pack Grid */}
         <Suspense fallback={<PackGridSkeleton />}>
           <PackGrid packs={packs} hasSubscription={hasActiveSubscription} />
         </Suspense>
 
+        {/* Empty State */}
         {packs.length === 0 && (
-          <div className="text-center py-64">
-            <p className="text-body-lg text-snow/60">
-              No packs available yet. Check back soon!
+          <div className="text-center py-20">
+            <div className="w-16 h-16 rounded-full bg-grey-800 flex items-center justify-center mx-auto mb-4">
+              <svg
+                className="w-8 h-8 text-text-subtle"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"
+                />
+              </svg>
+            </div>
+            <h3 className="text-h3 text-white mb-2">No packs available yet</h3>
+            <p className="text-body text-text-muted">
+              Check back soon for new sample packs!
             </p>
           </div>
         )}
