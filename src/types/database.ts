@@ -84,7 +84,7 @@ export interface Database {
           cover_image_url: string | null;
           release_date: string;
           is_published: boolean;
-          is_staff_pick?: boolean; // Optional - column may not exist yet
+          is_staff_pick?: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -118,6 +118,7 @@ export interface Database {
           name: string;
           file_path: string;
           preview_path: string | null;
+          stems_path: string | null; // ZIP file path for stems
           file_size: number;
           duration: number;
           bpm: number | null;
@@ -131,6 +132,7 @@ export interface Database {
           name: string;
           file_path: string;
           preview_path?: string | null;
+          stems_path?: string | null;
           file_size: number;
           duration: number;
           bpm?: number | null;
@@ -144,6 +146,7 @@ export interface Database {
           name?: string;
           file_path?: string;
           preview_path?: string | null;
+          stems_path?: string | null;
           file_size?: number;
           duration?: number;
           bpm?: number | null;
@@ -170,6 +173,26 @@ export interface Database {
           user_id?: string;
           sample_id?: string;
           downloaded_at?: string;
+        };
+      };
+      likes: {
+        Row: {
+          id: string;
+          user_id: string;
+          sample_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          sample_id: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          sample_id?: string;
+          created_at?: string;
         };
       };
     };
@@ -202,6 +225,7 @@ export type Subscription = Database["public"]["Tables"]["subscriptions"]["Row"];
 export type Pack = Database["public"]["Tables"]["packs"]["Row"];
 export type Sample = Database["public"]["Tables"]["samples"]["Row"];
 export type Download = Database["public"]["Tables"]["downloads"]["Row"];
+export type Like = Database["public"]["Tables"]["likes"]["Row"];
 
 // Extended types with relations
 export type PackWithSamples = Pack & {
@@ -214,4 +238,10 @@ export type SampleWithPack = Sample & {
 
 export type ProfileWithSubscription = Profile & {
   subscription: Subscription | null;
+};
+
+// Sample with like status
+export type SampleWithLike = Sample & {
+  is_liked?: boolean;
+  pack?: Pack;
 };

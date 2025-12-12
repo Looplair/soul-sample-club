@@ -51,7 +51,7 @@ const feedTypeConfig: Record<FeedItemType, {
   },
   expired_pack: {
     icon: Archive,
-    label: "Archived",
+    label: "In the Archive",
     color: "text-text-muted",
     bgColor: "bg-grey-700"
   },
@@ -63,7 +63,7 @@ const feedTypeConfig: Record<FeedItemType, {
   },
   trending_sample: {
     icon: Music,
-    label: "Hot Sample",
+    label: "Popular Track",
     color: "text-info",
     bgColor: "bg-info/10"
   },
@@ -179,13 +179,13 @@ export function FeedItem({ item, hasSubscription }: FeedItemProps) {
               <>
                 <span className="flex items-center gap-1">
                   <Music className="w-3 h-3" />
-                  {pack.sample_count || 0} samples
+                  {pack.sample_count || 0} tracks
                 </span>
                 {expired && (
-                  <Badge variant="default" size="sm">Expired</Badge>
+                  <Badge variant="default" size="sm">Archived</Badge>
                 )}
                 {!expired && !hasSubscription && (
-                  <Badge variant="warning" size="sm">Subscribe</Badge>
+                  <Badge variant="warning" size="sm">Subscribe to Download</Badge>
                 )}
               </>
             )}

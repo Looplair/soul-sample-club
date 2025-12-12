@@ -13,6 +13,8 @@ import {
   Play,
   FileAudio,
   Pencil,
+  Archive,
+  Check,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button, Input, Card, CardContent } from "@/components/ui";
@@ -212,6 +214,35 @@ export function SampleManager({ packId, initialSamples }: SampleManagerProps) {
     }
   };
 
+  const handleUploadStems = async (sampleId: string, file: File) => {
+    try {
+      const sample = samples.find(s => s.id === sampleId);
+      if (!sample) return;
+
+      const stemsFileName = `${packId}/${Date.now()}-stems.zip`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("samples")
+        .upload(stemsFileName, file);
+
+      if (uploadError) throw uploadError;
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error: dbError } = await (supabase.from("samples") as any)
+        .update({ stems_path: stemsFileName })
+        .eq("id", sampleId);
+
+      if (dbError) throw dbError;
+
+      setSamples((prev) =>
+        prev.map((s) => (s.id === sampleId ? { ...s, stems_path: stemsFileName } : s))
+      );
+      router.refresh();
+    } catch (error) {
+      console.error("Error uploading stems:", error);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Upload Zone */}
@@ -300,6 +331,7 @@ export function SampleManager({ packId, initialSamples }: SampleManagerProps) {
                 onCancel={() => setEditingSampleId(null)}
                 onDelete={() => handleDeleteSample(sample.id)}
                 onUploadPreview={(file) => handleUploadPreview(sample.id, file)}
+                onUploadStems={(file) => handleUploadStems(sample.id, file)}
               />
             ))}
           </CardContent>
@@ -327,6 +359,7 @@ interface SampleRowProps {
   onCancel: () => void;
   onDelete: () => void;
   onUploadPreview: (file: File) => void;
+  onUploadStems: (file: File) => void;
 }
 
 function SampleRow({
@@ -338,11 +371,13 @@ function SampleRow({
   onCancel,
   onDelete,
   onUploadPreview,
+  onUploadStems,
 }: SampleRowProps) {
   const [name, setName] = useState(sample.name);
   const [bpm, setBpm] = useState(sample.bpm?.toString() || "");
   const [key, setKey] = useState(sample.key || "");
   const previewInputRef = useRef<HTMLInputElement>(null);
+  const stemsInputRef = useRef<HTMLInputElement>(null);
 
   const handleSave = () => {
     onSave({
@@ -356,6 +391,13 @@ function SampleRow({
     const file = e.target.files?.[0];
     if (file) {
       onUploadPreview(file);
+    }
+  };
+
+  const handleStemsFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      onUploadStems(file);
     }
   };
 
@@ -418,6 +460,37 @@ function SampleRow({
           </p>
         </div>
 
+        {/* Stems Upload */}
+        <div>
+          <label className="label">Stems (ZIP file)</label>
+          <input
+            ref={stemsInputRef}
+            type="file"
+            accept=".zip,application/zip"
+            onChange={handleStemsFileChange}
+            className="hidden"
+          />
+          <div className="flex items-center gap-3">
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => stemsInputRef.current?.click()}
+              leftIcon={<Archive className="w-4 h-4" />}
+            >
+              {sample.stems_path ? "Replace Stems" : "Upload Stems"}
+            </Button>
+            {sample.stems_path && (
+              <span className="text-caption text-success flex items-center gap-1">
+                <Check className="w-3 h-3" />
+                Stems uploaded
+              </span>
+            )}
+          </div>
+          <p className="text-caption text-text-subtle mt-1">
+            Upload a ZIP containing individual stems for this sample
+          </p>
+        </div>
+
         <div className="flex items-center gap-2">
           <Button size="sm" onClick={handleSave}>
             Save
@@ -448,6 +521,12 @@ function SampleRow({
             <span className="text-success flex items-center gap-1">
               <Play className="w-3 h-3" />
               Preview
+            </span>
+          )}
+          {sample.stems_path && (
+            <span className="text-success flex items-center gap-1">
+              <Archive className="w-3 h-3" />
+              Stems
             </span>
           )}
         </div>

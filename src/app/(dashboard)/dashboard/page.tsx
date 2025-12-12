@@ -132,9 +132,9 @@ export default async function DashboardPage() {
       <div className="container-app">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-h1 text-white mb-2">Sample Packs</h1>
+          <h1 className="text-h1 text-white mb-2">Releases</h1>
           <p className="text-body-lg text-text-muted">
-            Browse and download premium sample packs
+            Browse and download from the catalog
           </p>
         </div>
 
@@ -145,11 +145,11 @@ export default async function DashboardPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content - Pack Grid */}
           <div className="lg:col-span-2 order-2 lg:order-1">
-            {/* Active Packs Section */}
+            {/* Active Releases Section */}
             <div className="mb-8">
               <div className="flex items-center gap-2 mb-4">
                 <Sparkles className="w-5 h-5 text-success" />
-                <h2 className="text-h3 text-white">Available Packs</h2>
+                <h2 className="text-h3 text-white">Available Releases</h2>
                 <span className="text-caption text-text-muted ml-auto">
                   Last 3 months
                 </span>
@@ -164,7 +164,7 @@ export default async function DashboardPage() {
                   <div className="w-12 h-12 rounded-full bg-grey-700 flex items-center justify-center mx-auto mb-3">
                     <Clock className="w-6 h-6 text-text-subtle" />
                   </div>
-                  <h3 className="text-body font-medium text-white mb-1">No active packs</h3>
+                  <h3 className="text-body font-medium text-white mb-1">No active releases</h3>
                   <p className="text-body-sm text-text-muted">
                     Check back soon for new releases!
                   </p>

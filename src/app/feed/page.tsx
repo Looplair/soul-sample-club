@@ -8,8 +8,8 @@ import { TrendingUp, Sparkles, ArrowRight, LogIn, Music } from "lucide-react";
 import type { Sample, Subscription } from "@/types/database";
 
 export const metadata = {
-  title: "Feed | Soul Sample Club",
-  description: "Discover the latest sample packs, trending sounds, and staff picks",
+  title: "Catalog | Soul Sample Club",
+  description: "Discover the latest releases, trending sounds, and staff picks",
 };
 
 // Type for pack with samples
@@ -191,11 +191,11 @@ export default async function FeedPage() {
           {/* Hero Section */}
           <div className="text-center mb-12">
             <h1 className="text-display text-white mb-4">
-              Discover Sample Packs
+              Explore the Catalog
             </h1>
             <p className="text-body-lg text-text-muted max-w-2xl mx-auto">
               Browse the latest releases, trending sounds, and curated staff picks.
-              {!isLoggedIn && " Sign up to download and access the full library."}
+              {!isLoggedIn && " Sign up to preview all tracks and subscribe to download."}
             </p>
           </div>
 
@@ -251,8 +251,8 @@ export default async function FeedPage() {
                   Ready to start creating?
                 </h2>
                 <p className="text-body-lg text-text-muted mb-6 max-w-lg mx-auto">
-                  Sign up for free and get access to preview all samples.
-                  Subscribe to download unlimited packs from the last 3 months.
+                  Sign up for free and preview every track in the catalog.
+                  Subscribe to download unlimited releases from the last 3 months.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
                   <Link href="/signup">
@@ -276,7 +276,7 @@ export default async function FeedPage() {
       <footer className="border-t border-grey-700 py-8 mt-16">
         <div className="container-app text-center">
           <p className="text-body-sm text-text-subtle">
-            Soul Sample Club - Premium sample packs for music producers
+            Soul Sample Club - Premium sounds for music producers
           </p>
         </div>
       </footer>

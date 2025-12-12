@@ -15,7 +15,7 @@ interface PackCardProps {
 
 export function PackCard({ pack, sampleCount, hasSubscription }: PackCardProps) {
   // Fallback safety to prevent Vercel runtime errors
-  const name = pack.name ?? "Untitled Pack";
+  const name = pack.name ?? "Untitled Release";
   const description = pack.description ?? "";
   const releaseDate = pack.release_date ?? "";
 
@@ -75,14 +75,14 @@ export function PackCard({ pack, sampleCount, hasSubscription }: PackCardProps) 
           )}
         </div>
 
-        {/* Expired Overlay */}
+        {/* Archived Overlay */}
         {isExpired && (
           <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
             <div className="text-center">
               <div className="w-12 h-12 rounded-full bg-grey-700/80 flex items-center justify-center mx-auto mb-3">
                 <Archive className="w-5 h-5 text-text-muted" />
               </div>
-              <p className="text-label text-text-muted font-medium">Expired</p>
+              <p className="text-label text-text-muted font-medium">Archived</p>
               <p className="text-caption text-text-subtle mt-1">Preview only</p>
             </div>
           </div>
@@ -137,7 +137,7 @@ export function PackCard({ pack, sampleCount, hasSubscription }: PackCardProps) 
         <div className="flex items-center gap-4 text-caption text-text-subtle">
           <div className="flex items-center gap-1.5">
             <Music2 className="w-3.5 h-3.5" />
-            <span>{sampleCount} samples</span>
+            <span>{sampleCount} tracks</span>
           </div>
           <div className="flex items-center gap-1.5">
             <Calendar className="w-3.5 h-3.5" />

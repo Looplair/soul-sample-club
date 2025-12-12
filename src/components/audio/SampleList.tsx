@@ -1,21 +1,46 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { SampleRow } from "./SampleRow";
-import type { Sample } from "@/types/database";
+import type { Sample, Pack } from "@/types/database";
 
-interface SampleListProps {
-  samples: Sample[];
-  packId: string;
-  canDownload: boolean;
+// Extended sample type that may include pack info
+interface SampleWithPack extends Sample {
+  pack?: Pack;
 }
 
-export function SampleList({ samples, packId, canDownload }: SampleListProps) {
+interface SampleListProps {
+  samples: SampleWithPack[];
+  packId?: string;
+  canDownload: boolean;
+  likedSampleIds?: Set<string>;
+  showPackName?: boolean;
+}
+
+export function SampleList({
+  samples,
+  canDownload,
+  likedSampleIds = new Set(),
+  showPackName = false,
+}: SampleListProps) {
   const [activePlayerId, setActivePlayerId] = useState<string | null>(null);
+  const [likedIds, setLikedIds] = useState<Set<string>>(likedSampleIds);
 
   const handlePlay = (sampleId: string) => {
     setActivePlayerId(sampleId);
   };
+
+  const handleToggleLike = useCallback((sampleId: string) => {
+    setLikedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(sampleId)) {
+        next.delete(sampleId);
+      } else {
+        next.add(sampleId);
+      }
+      return next;
+    });
+  }, []);
 
   if (samples.length === 0) {
     return (
@@ -35,6 +60,9 @@ export function SampleList({ samples, packId, canDownload }: SampleListProps) {
           canDownload={canDownload}
           isActive={activePlayerId === sample.id}
           onPlay={() => handlePlay(sample.id)}
+          isLiked={likedIds.has(sample.id)}
+          onToggleLike={() => handleToggleLike(sample.id)}
+          packName={showPackName ? sample.pack?.name : undefined}
         />
       ))}
     </div>
