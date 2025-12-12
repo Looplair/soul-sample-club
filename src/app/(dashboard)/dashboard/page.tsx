@@ -2,30 +2,29 @@ import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { PackGrid } from "@/components/packs/PackGrid";
 import { SubscriptionBanner } from "@/components/packs/SubscriptionBanner";
+import { ActivityFeed } from "@/components/feed";
 import { PackCardSkeleton } from "@/components/ui";
-import type { Subscription } from "@/types/database";
+import { TrendingUp, Sparkles, Clock } from "lucide-react";
+import type { Subscription, Sample, Pack } from "@/types/database";
 
 export const metadata = {
   title: "Dashboard | Soul Sample Club",
 };
 
-// Type for pack with sample count
-interface PackWithCount {
-  id: string;
-  name: string;
-  description: string;
-  cover_image_url: string | null;
-  release_date: string;
-  is_published: boolean;
-  created_at: string;
-  updated_at: string;
+// Type for pack with sample count (for PackGrid)
+interface PackWithSampleCount extends Pack {
   samples: { count: number }[];
 }
 
-async function getAccessiblePacks(): Promise<PackWithCount[]> {
+// Type for pack with full samples (for ActivityFeed)
+interface PackWithSamples extends Pack {
+  samples: Sample[];
+}
+
+// Get packs from last 3 months with sample count (for PackGrid)
+async function getActivePacks(): Promise<PackWithSampleCount[]> {
   const supabase = await createClient();
 
-  // Get packs from the last 3 months
   const threeMonthsAgo = new Date();
   threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
 
@@ -46,7 +45,30 @@ async function getAccessiblePacks(): Promise<PackWithCount[]> {
     return [];
   }
 
-  return (result.data as PackWithCount[]) || [];
+  return (result.data as PackWithSampleCount[]) || [];
+}
+
+// Get ALL published packs with full samples (for ActivityFeed)
+async function getAllPacksWithSamples(): Promise<PackWithSamples[]> {
+  const supabase = await createClient();
+
+  const result = await supabase
+    .from("packs")
+    .select(
+      `
+      *,
+      samples(*)
+    `
+    )
+    .eq("is_published", true)
+    .order("release_date", { ascending: false });
+
+  if (result.error) {
+    console.error("Error fetching packs:", result.error);
+    return [];
+  }
+
+  return (result.data as PackWithSamples[]) || [];
 }
 
 async function getUserSubscription(): Promise<Subscription | null> {
@@ -77,9 +99,29 @@ function PackGridSkeleton() {
   );
 }
 
+function FeedSkeleton() {
+  return (
+    <div className="space-y-3">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <div key={i} className="bg-grey-800/50 rounded-card p-4 animate-pulse">
+          <div className="flex gap-4">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg bg-grey-700" />
+            <div className="flex-1 space-y-2">
+              <div className="h-4 bg-grey-700 rounded w-24" />
+              <div className="h-5 bg-grey-700 rounded w-48" />
+              <div className="h-3 bg-grey-700 rounded w-32" />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default async function DashboardPage() {
-  const [packs, subscription] = await Promise.all([
-    getAccessiblePacks(),
+  const [activePacks, allPacksWithSamples, subscription] = await Promise.all([
+    getActivePacks(),
+    getAllPacksWithSamples(),
     getUserSubscription(),
   ]);
 
@@ -89,45 +131,66 @@ export default async function DashboardPage() {
     <div className="section">
       <div className="container-app">
         {/* Header */}
-        <div className="mb-10">
+        <div className="mb-8">
           <h1 className="text-h1 text-white mb-2">Sample Packs</h1>
           <p className="text-body-lg text-text-muted">
-            Browse and download premium sample packs from the last 3 months
+            Browse and download premium sample packs
           </p>
         </div>
 
         {/* Subscription Banner */}
         {!hasActiveSubscription && <SubscriptionBanner />}
 
-        {/* Pack Grid */}
-        <Suspense fallback={<PackGridSkeleton />}>
-          <PackGrid packs={packs} hasSubscription={hasActiveSubscription} />
-        </Suspense>
+        {/* Mobile-first layout: Stack on mobile, side-by-side on desktop */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Main Content - Pack Grid */}
+          <div className="lg:col-span-2 order-2 lg:order-1">
+            {/* Active Packs Section */}
+            <div className="mb-8">
+              <div className="flex items-center gap-2 mb-4">
+                <Sparkles className="w-5 h-5 text-success" />
+                <h2 className="text-h3 text-white">Available Packs</h2>
+                <span className="text-caption text-text-muted ml-auto">
+                  Last 3 months
+                </span>
+              </div>
 
-        {/* Empty State */}
-        {packs.length === 0 && (
-          <div className="text-center py-20">
-            <div className="w-16 h-16 rounded-full bg-grey-800 flex items-center justify-center mx-auto mb-4">
-              <svg
-                className="w-8 h-8 text-text-subtle"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.5}
-                  d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"
-                />
-              </svg>
+              <Suspense fallback={<PackGridSkeleton />}>
+                <PackGrid packs={activePacks} hasSubscription={hasActiveSubscription} />
+              </Suspense>
+
+              {activePacks.length === 0 && (
+                <div className="text-center py-12 bg-grey-800/30 rounded-card">
+                  <div className="w-12 h-12 rounded-full bg-grey-700 flex items-center justify-center mx-auto mb-3">
+                    <Clock className="w-6 h-6 text-text-subtle" />
+                  </div>
+                  <h3 className="text-body font-medium text-white mb-1">No active packs</h3>
+                  <p className="text-body-sm text-text-muted">
+                    Check back soon for new releases!
+                  </p>
+                </div>
+              )}
             </div>
-            <h3 className="text-h3 text-white mb-2">No packs available yet</h3>
-            <p className="text-body text-text-muted">
-              Check back soon for new sample packs!
-            </p>
           </div>
-        )}
+
+          {/* Sidebar - Activity Feed */}
+          <div className="lg:col-span-1 order-1 lg:order-2">
+            <div className="lg:sticky lg:top-24">
+              <div className="flex items-center gap-2 mb-4">
+                <TrendingUp className="w-5 h-5 text-white" />
+                <h2 className="text-h3 text-white">Activity</h2>
+              </div>
+
+              <Suspense fallback={<FeedSkeleton />}>
+                <ActivityFeed
+                  packs={allPacksWithSamples}
+                  hasSubscription={hasActiveSubscription}
+                  limit={8}
+                />
+              </Suspense>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

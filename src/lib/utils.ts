@@ -46,3 +46,30 @@ export function isWithinRollingWindow(releaseDate: string | Date, months: number
   cutoff.setMonth(cutoff.getMonth() - months);
   return release >= cutoff;
 }
+
+// Pack status utilities
+export function isPackNew(releaseDate: string | Date, days: number = 7): boolean {
+  const release = new Date(releaseDate);
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - days);
+  return release >= cutoff;
+}
+
+export function isPackExpired(releaseDate: string | Date, months: number = 3): boolean {
+  return !isWithinRollingWindow(releaseDate, months);
+}
+
+export function getPackStatus(releaseDate: string | Date): "new" | "active" | "expired" {
+  if (isPackNew(releaseDate)) return "new";
+  if (isPackExpired(releaseDate)) return "expired";
+  return "active";
+}
+
+export function getDaysUntilExpiry(releaseDate: string | Date, months: number = 3): number {
+  const release = new Date(releaseDate);
+  const expiryDate = new Date(release);
+  expiryDate.setMonth(expiryDate.getMonth() + months);
+  const now = new Date();
+  const diffTime = expiryDate.getTime() - now.getTime();
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+}

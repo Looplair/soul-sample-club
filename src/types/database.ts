@@ -84,6 +84,7 @@ export interface Database {
           cover_image_url: string | null;
           release_date: string;
           is_published: boolean;
+          is_staff_pick?: boolean; // Optional - column may not exist yet
           created_at: string;
           updated_at: string;
         };
@@ -94,6 +95,7 @@ export interface Database {
           cover_image_url?: string | null;
           release_date: string;
           is_published?: boolean;
+          is_staff_pick?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -104,6 +106,7 @@ export interface Database {
           cover_image_url?: string | null;
           release_date?: string;
           is_published?: boolean;
+          is_staff_pick?: boolean;
           created_at?: string;
           updated_at?: string;
         };

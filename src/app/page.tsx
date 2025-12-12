@@ -10,6 +10,7 @@ export default async function HomePage() {
   if (user) {
     redirect("/dashboard");
   } else {
-    redirect("/login");
+    // Redirect to public feed for non-authenticated users
+    redirect("/feed");
   }
 }
