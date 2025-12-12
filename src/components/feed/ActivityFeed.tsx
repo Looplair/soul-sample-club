@@ -15,34 +15,33 @@ interface ActivityFeedProps {
   limit?: number;
 }
 
-// Generate feed items from packs data
+// Generate feed items from packs data - shows ALL packs
 function generateFeedItems(packs: PackWithSamples[]): FeedItemData[] {
   const items: FeedItemData[] = [];
 
   for (const pack of packs) {
     const sampleCount = pack.samples?.length || 0;
+    const isNew = isPackNew(pack.release_date);
+    const isExpired = isPackExpired(pack.release_date);
 
-    // New pack release (within 7 days)
-    if (isPackNew(pack.release_date)) {
-      items.push({
-        id: `new-${pack.id}`,
-        type: "new_pack",
-        timestamp: pack.release_date,
-        pack: { ...pack, sample_count: sampleCount },
-      });
-    }
-    // Expired pack (older than 3 months)
-    else if (isPackExpired(pack.release_date)) {
-      items.push({
-        id: `expired-${pack.id}`,
-        type: "expired_pack",
-        timestamp: pack.release_date,
-        pack: { ...pack, sample_count: sampleCount },
-      });
+    // Determine the feed item type based on pack status
+    let type: "new_pack" | "expired_pack" | "available_pack" = "available_pack";
+    if (isNew) {
+      type = "new_pack";
+    } else if (isExpired) {
+      type = "expired_pack";
     }
 
-    // Staff pick (if flagged)
-    if (pack.is_staff_pick && !isPackExpired(pack.release_date)) {
+    // Add every pack to the feed
+    items.push({
+      id: `pack-${pack.id}`,
+      type,
+      timestamp: pack.release_date,
+      pack: { ...pack, sample_count: sampleCount },
+    });
+
+    // Also add staff pick badge as separate item (for highlighting)
+    if (pack.is_staff_pick && !isExpired) {
       items.push({
         id: `staff-${pack.id}`,
         type: "staff_pick",

@@ -19,6 +19,7 @@ import type { Pack, Sample } from "@/types/database";
 // Feed item types
 export type FeedItemType =
   | "new_pack"
+  | "available_pack"
   | "expired_pack"
   | "trending_pack"
   | "trending_sample"
@@ -48,6 +49,12 @@ const feedTypeConfig: Record<FeedItemType, {
     label: "New Release",
     color: "text-success",
     bgColor: "bg-success/10"
+  },
+  available_pack: {
+    icon: Music,
+    label: "Available",
+    color: "text-white",
+    bgColor: "bg-white/10"
   },
   expired_pack: {
     icon: Archive,
