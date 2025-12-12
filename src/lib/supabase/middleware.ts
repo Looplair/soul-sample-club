@@ -45,8 +45,12 @@ export async function updateSession(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
 
-  // Public routes that don't require authentication
-  const publicRoutes = ["/login", "/signup", "/reset-password", "/callback", "/feed", "/packs"];
+  // Auth pages - redirect logged-in users away from these
+  const authRoutes = ["/login", "/signup", "/reset-password", "/callback"];
+  const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route));
+
+  // Public routes - accessible to everyone (logged in or not)
+  const publicRoutes = ["/feed", "/packs"];
   const isPublicRoute = publicRoutes.some((route) => pathname.startsWith(route));
 
   // API routes and static files should pass through
@@ -60,16 +64,16 @@ export async function updateSession(request: NextRequest) {
     return supabaseResponse;
   }
 
-  // Redirect unauthenticated users to login
-  if (!user && !isPublicRoute && pathname !== "/") {
+  // Redirect unauthenticated users to login (except for auth pages and public routes)
+  if (!user && !isAuthRoute && !isPublicRoute && pathname !== "/") {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("redirect", pathname);
     return NextResponse.redirect(url);
   }
 
-  // Redirect authenticated users away from auth pages
-  if (user && isPublicRoute) {
+  // Redirect authenticated users away from auth pages only (not public routes)
+  if (user && isAuthRoute) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);
