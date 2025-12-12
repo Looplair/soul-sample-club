@@ -358,8 +358,8 @@ interface SampleRowProps {
   onSave: (updates: Partial<Sample>) => void;
   onCancel: () => void;
   onDelete: () => void;
-  onUploadPreview: (file: File) => void;
-  onUploadStems: (file: File) => void;
+  onUploadPreview: (file: File) => Promise<void>;
+  onUploadStems: (file: File) => Promise<void>;
 }
 
 function SampleRow({
@@ -376,6 +376,8 @@ function SampleRow({
   const [name, setName] = useState(sample.name);
   const [bpm, setBpm] = useState(sample.bpm?.toString() || "");
   const [key, setKey] = useState(sample.key || "");
+  const [isUploadingPreview, setIsUploadingPreview] = useState(false);
+  const [isUploadingStems, setIsUploadingStems] = useState(false);
   const previewInputRef = useRef<HTMLInputElement>(null);
   const stemsInputRef = useRef<HTMLInputElement>(null);
 
@@ -387,17 +389,27 @@ function SampleRow({
     });
   };
 
-  const handlePreviewFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePreviewFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      onUploadPreview(file);
+      setIsUploadingPreview(true);
+      try {
+        await onUploadPreview(file);
+      } finally {
+        setIsUploadingPreview(false);
+      }
     }
   };
 
-  const handleStemsFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleStemsFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      onUploadStems(file);
+      setIsUploadingStems(true);
+      try {
+        await onUploadStems(file);
+      } finally {
+        setIsUploadingStems(false);
+      }
     }
   };
 
@@ -438,17 +450,19 @@ function SampleRow({
             accept="audio/*"
             onChange={handlePreviewFileChange}
             className="hidden"
+            disabled={isUploadingPreview}
           />
           <div className="flex items-center gap-3">
             <Button
               size="sm"
               variant="secondary"
               onClick={() => previewInputRef.current?.click()}
-              leftIcon={<FileAudio className="w-4 h-4" />}
+              disabled={isUploadingPreview}
+              leftIcon={isUploadingPreview ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileAudio className="w-4 h-4" />}
             >
-              {sample.preview_path ? "Replace Preview" : "Upload Preview"}
+              {isUploadingPreview ? "Uploading..." : sample.preview_path ? "Replace Preview" : "Upload Preview"}
             </Button>
-            {sample.preview_path && (
+            {sample.preview_path && !isUploadingPreview && (
               <span className="text-caption text-success flex items-center gap-1">
                 <Play className="w-3 h-3" />
                 Preview uploaded
@@ -469,17 +483,19 @@ function SampleRow({
             accept=".zip,application/zip"
             onChange={handleStemsFileChange}
             className="hidden"
+            disabled={isUploadingStems}
           />
           <div className="flex items-center gap-3">
             <Button
               size="sm"
               variant="secondary"
               onClick={() => stemsInputRef.current?.click()}
-              leftIcon={<Archive className="w-4 h-4" />}
+              disabled={isUploadingStems}
+              leftIcon={isUploadingStems ? <Loader2 className="w-4 h-4 animate-spin" /> : <Archive className="w-4 h-4" />}
             >
-              {sample.stems_path ? "Replace Stems" : "Upload Stems"}
+              {isUploadingStems ? "Uploading..." : sample.stems_path ? "Replace Stems" : "Upload Stems"}
             </Button>
-            {sample.stems_path && (
+            {sample.stems_path && !isUploadingStems && (
               <span className="text-caption text-success flex items-center gap-1">
                 <Check className="w-3 h-3" />
                 Stems uploaded

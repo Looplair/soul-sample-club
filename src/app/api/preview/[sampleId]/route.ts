@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 // Type for sample with pack relation
@@ -18,20 +17,13 @@ export async function GET(
 ) {
   try {
     const { sampleId } = await params;
-    const supabase = await createClient();
     const adminSupabase = createAdminClient();
 
-    // Get authenticated user
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    // Public preview - no authentication required
+    // Anyone can preview samples from published packs
 
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    // Get sample with preview path and file path
-    const sampleResult = await supabase
+    // Get sample with preview path and file path using admin client
+    const sampleResult = await adminSupabase
       .from("samples")
       .select(
         `

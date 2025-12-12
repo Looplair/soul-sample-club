@@ -373,30 +373,6 @@
   }
 
   /* ==========================================
-     PACK CARD - Clean hover effects
-     ========================================== */
-
-  .pack-card {
-    @apply card-interactive overflow-hidden p-0;
-  }
-
-  .pack-card-image {
-    @apply relative aspect-square rounded-t-card overflow-hidden bg-grey-800;
-  }
-
-  .pack-card-content {
-    @apply p-5;
-  }
-
-  .pack-card:hover .pack-card-title {
-    @apply text-white;
-  }
-
-  .pack-card-title {
-    @apply text-h3 text-text-secondary transition-colors duration-200;
-  }
-
-  /* ==========================================
      SUBSCRIPTION BANNER
      ========================================== */
 
