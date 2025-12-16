@@ -1,10 +1,11 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { ActivityFeed } from "@/components/feed";
 import { PackCard } from "@/components/packs/PackCard";
 import { Button } from "@/components/ui";
-import { TrendingUp, Sparkles, ArrowRight, LogIn, Music } from "lucide-react";
+import { TrendingUp, Sparkles, LogIn, Music, MessageCircle } from "lucide-react";
 import type { Sample, Subscription } from "@/types/database";
 
 export const metadata = {
@@ -26,11 +27,11 @@ interface PackWithSamples {
   samples: Sample[];
 }
 
-// Get ALL published packs for the feed
+// Get ALL published packs for the feed - uses admin client for public access
 async function getAllPacks(): Promise<PackWithSamples[]> {
-  const supabase = await createClient();
+  const adminSupabase = createAdminClient();
 
-  const result = await supabase
+  const result = await adminSupabase
     .from("packs")
     .select(
       `
@@ -49,14 +50,14 @@ async function getAllPacks(): Promise<PackWithSamples[]> {
   return (result.data as PackWithSamples[]) || [];
 }
 
-// Get new packs (last 7 days)
+// Get new packs (last 7 days) - uses admin client for public access
 async function getNewPacks(): Promise<PackWithSamples[]> {
-  const supabase = await createClient();
+  const adminSupabase = createAdminClient();
 
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-  const result = await supabase
+  const result = await adminSupabase
     .from("packs")
     .select(
       `
@@ -78,27 +79,47 @@ async function getNewPacks(): Promise<PackWithSamples[]> {
 }
 
 // Check if user is logged in and has subscription
-async function getUserState(): Promise<{ isLoggedIn: boolean; hasSubscription: boolean }> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+async function getUserState(): Promise<{ isLoggedIn: boolean; hasSubscription: boolean; hasPatreon: boolean }> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-  if (!user) {
-    return { isLoggedIn: false, hasSubscription: false };
+    if (!user) {
+      return { isLoggedIn: false, hasSubscription: false, hasPatreon: false };
+    }
+
+    // Check subscription
+    const subResult = await supabase
+      .from("subscriptions")
+      .select("*")
+      .eq("user_id", user.id)
+      .in("status", ["active", "trialing"])
+      .single();
+
+    // Check Patreon (if table exists)
+    let hasPatreon = false;
+    try {
+      const patreonResult = await supabase
+        .from("patreon_links")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("is_active", true)
+        .single();
+      hasPatreon = !!patreonResult.data;
+    } catch {
+      // Table might not exist yet
+    }
+
+    return {
+      isLoggedIn: true,
+      hasSubscription: !!(subResult.data as Subscription | null),
+      hasPatreon,
+    };
+  } catch {
+    return { isLoggedIn: false, hasSubscription: false, hasPatreon: false };
   }
-
-  const result = await supabase
-    .from("subscriptions")
-    .select("*")
-    .eq("user_id", user.id)
-    .in("status", ["active", "trialing"])
-    .single();
-
-  return {
-    isLoggedIn: true,
-    hasSubscription: !!(result.data as Subscription | null),
-  };
 }
 
 function FeedSkeleton() {
@@ -122,15 +143,10 @@ function FeedSkeleton() {
 
 function PackGridSkeleton() {
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-6">
       {Array.from({ length: 4 }).map((_, i) => (
-        <div key={i} className="bg-grey-800/50 rounded-card animate-pulse">
-          <div className="aspect-square rounded-t-card bg-grey-700" />
-          <div className="p-4 space-y-2">
-            <div className="h-5 bg-grey-700 rounded w-3/4" />
-            <div className="h-3 bg-grey-700 rounded w-full" />
-            <div className="h-3 bg-grey-700 rounded w-1/2" />
-          </div>
+        <div key={i} className="animate-pulse">
+          <div className="aspect-square rounded-2xl bg-grey-700" />
         </div>
       ))}
     </div>
@@ -144,14 +160,15 @@ export default async function FeedPage() {
     getUserState(),
   ]);
 
-  const { isLoggedIn, hasSubscription } = userState;
+  const { isLoggedIn, hasSubscription, hasPatreon } = userState;
+  const hasAccess = hasSubscription || hasPatreon;
 
   return (
     <div className="min-h-screen bg-charcoal">
       {/* Header */}
       <header className="border-b border-grey-700 bg-charcoal/90 backdrop-blur-xl sticky top-0 z-40">
         <div className="container-app h-16 flex items-center justify-between">
-          <Link href={isLoggedIn ? "/dashboard" : "/feed"} className="flex items-center gap-3 group">
+          <Link href="/feed" className="flex items-center gap-3 group">
             <div className="w-9 h-9 rounded-lg bg-white flex items-center justify-center shadow-button group-hover:shadow-glow-white-soft transition-shadow duration-300">
               <span className="text-charcoal font-bold text-base">S</span>
             </div>
@@ -160,12 +177,24 @@ export default async function FeedPage() {
 
           <div className="flex items-center gap-3">
             {isLoggedIn ? (
-              <Link href="/dashboard">
-                <Button variant="secondary" size="sm">
-                  Go to Dashboard
-                  <ArrowRight className="w-4 h-4 ml-1" />
-                </Button>
-              </Link>
+              <>
+                <Link href="/chat">
+                  <Button variant="ghost" size="sm">
+                    <MessageCircle className="w-4 h-4 mr-1" />
+                    Chat
+                  </Button>
+                </Link>
+                <Link href="/library">
+                  <Button variant="ghost" size="sm">
+                    Library
+                  </Button>
+                </Link>
+                <Link href="/account">
+                  <Button variant="secondary" size="sm">
+                    Account
+                  </Button>
+                </Link>
+              </>
             ) : (
               <>
                 <Link href="/login">
@@ -194,20 +223,21 @@ export default async function FeedPage() {
               Explore the Catalog
             </h1>
             <p className="text-body-lg text-text-muted max-w-2xl mx-auto">
-              Browse the latest releases, trending sounds, and curated staff picks.
-              {!isLoggedIn && " Sign up to preview all tracks and subscribe to download."}
+              Browse all releases. Preview any track.
+              {!isLoggedIn && " Sign up free to save favorites."}
+              {isLoggedIn && !hasAccess && " Subscribe or link Patreon to download."}
             </p>
           </div>
 
           {/* New Releases Section */}
           {newPacks.length > 0 && (
-            <section className="mb-12">
+            <section className="mb-16">
               <div className="flex items-center gap-2 mb-6">
                 <Sparkles className="w-5 h-5 text-success" />
                 <h2 className="text-h2 text-white">New Releases</h2>
               </div>
               <Suspense fallback={<PackGridSkeleton />}>
-                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                   {newPacks.map((pack) => {
                     const sampleCount = Array.isArray(pack.samples)
                       ? pack.samples.length
@@ -217,7 +247,7 @@ export default async function FeedPage() {
                         key={pack.id}
                         pack={pack}
                         sampleCount={sampleCount}
-                        hasSubscription={hasSubscription}
+                        hasSubscription={hasAccess}
                       />
                     );
                   })}
@@ -225,6 +255,31 @@ export default async function FeedPage() {
               </Suspense>
             </section>
           )}
+
+          {/* All Releases Section */}
+          <section className="mb-16">
+            <div className="flex items-center gap-2 mb-6">
+              <TrendingUp className="w-5 h-5 text-white" />
+              <h2 className="text-h2 text-white">All Releases</h2>
+            </div>
+            <Suspense fallback={<PackGridSkeleton />}>
+              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {allPacks.map((pack) => {
+                  const sampleCount = Array.isArray(pack.samples)
+                    ? pack.samples.length
+                    : 0;
+                  return (
+                    <PackCard
+                      key={pack.id}
+                      pack={pack}
+                      sampleCount={sampleCount}
+                      hasSubscription={hasAccess}
+                    />
+                  );
+                })}
+              </div>
+            </Suspense>
+          </section>
 
           {/* Activity Feed Section */}
           <section>
@@ -236,7 +291,7 @@ export default async function FeedPage() {
             <Suspense fallback={<FeedSkeleton />}>
               <ActivityFeed
                 packs={allPacks}
-                hasSubscription={hasSubscription}
+                hasSubscription={hasAccess}
                 limit={20}
               />
             </Suspense>
@@ -252,7 +307,7 @@ export default async function FeedPage() {
                 </h2>
                 <p className="text-body-lg text-text-muted mb-6 max-w-lg mx-auto">
                   Sign up for free and preview every track in the catalog.
-                  Subscribe to download unlimited releases from the last 3 months.
+                  Subscribe or link your Patreon to download.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
                   <Link href="/signup">

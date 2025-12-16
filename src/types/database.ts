@@ -14,6 +14,7 @@ export interface Database {
           id: string;
           email: string;
           full_name: string | null;
+          username: string | null;
           avatar_url: string | null;
           is_admin: boolean;
           created_at: string;
@@ -23,6 +24,7 @@ export interface Database {
           id: string;
           email: string;
           full_name?: string | null;
+          username?: string | null;
           avatar_url?: string | null;
           is_admin?: boolean;
           created_at?: string;
@@ -32,6 +34,7 @@ export interface Database {
           id?: string;
           email?: string;
           full_name?: string | null;
+          username?: string | null;
           avatar_url?: string | null;
           is_admin?: boolean;
           created_at?: string;
@@ -76,6 +79,67 @@ export interface Database {
           updated_at?: string;
         };
       };
+      patreon_links: {
+        Row: {
+          id: string;
+          user_id: string;
+          patreon_user_id: string;
+          patreon_email: string;
+          access_token: string;
+          refresh_token: string;
+          is_active: boolean;
+          tier_id: string | null;
+          tier_title: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          patreon_user_id: string;
+          patreon_email: string;
+          access_token: string;
+          refresh_token: string;
+          is_active?: boolean;
+          tier_id?: string | null;
+          tier_title?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          patreon_user_id?: string;
+          patreon_email?: string;
+          access_token?: string;
+          refresh_token?: string;
+          is_active?: boolean;
+          tier_id?: string | null;
+          tier_title?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      chat_messages: {
+        Row: {
+          id: string;
+          user_id: string;
+          content: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          content: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          content?: string;
+          created_at?: string;
+        };
+      };
       packs: {
         Row: {
           id: string;
@@ -118,7 +182,7 @@ export interface Database {
           name: string;
           file_path: string;
           preview_path: string | null;
-          stems_path: string | null; // ZIP file path for stems
+          stems_path: string | null;
           file_size: number;
           duration: number;
           bpm: number | null;
@@ -222,6 +286,8 @@ export interface Database {
 // Convenience types
 export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 export type Subscription = Database["public"]["Tables"]["subscriptions"]["Row"];
+export type PatreonLink = Database["public"]["Tables"]["patreon_links"]["Row"];
+export type ChatMessage = Database["public"]["Tables"]["chat_messages"]["Row"];
 export type Pack = Database["public"]["Tables"]["packs"]["Row"];
 export type Sample = Database["public"]["Tables"]["samples"]["Row"];
 export type Download = Database["public"]["Tables"]["downloads"]["Row"];
@@ -244,4 +310,9 @@ export type ProfileWithSubscription = Profile & {
 export type SampleWithLike = Sample & {
   is_liked?: boolean;
   pack?: Pack;
+};
+
+// Chat message with user profile
+export type ChatMessageWithUser = ChatMessage & {
+  profile: Pick<Profile, "id" | "username" | "avatar_url">;
 };

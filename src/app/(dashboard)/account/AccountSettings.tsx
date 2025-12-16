@@ -8,19 +8,21 @@ import {
   CheckCircle,
   AlertCircle,
   ExternalLink,
-  Loader2,
+  Link2,
+  Unlink,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button, Input, Card, CardHeader, CardTitle, CardContent, Badge } from "@/components/ui";
 import { formatDate } from "@/lib/utils";
-import type { Profile, Subscription } from "@/types/database";
+import type { Profile, Subscription, PatreonLink } from "@/types/database";
 
 interface AccountSettingsProps {
   profile: Profile;
   subscription: Subscription | null;
+  patreonLink?: PatreonLink | null;
 }
 
-export function AccountSettings({ profile, subscription }: AccountSettingsProps) {
+export function AccountSettings({ profile, subscription, patreonLink }: AccountSettingsProps) {
   const [activeTab, setActiveTab] = useState<"profile" | "billing" | "password">("profile");
 
   return (
@@ -52,7 +54,7 @@ export function AccountSettings({ profile, subscription }: AccountSettingsProps)
 
       {/* Tab Content */}
       {activeTab === "profile" && <ProfileTab profile={profile} />}
-      {activeTab === "billing" && <BillingTab subscription={subscription} />}
+      {activeTab === "billing" && <BillingTab subscription={subscription} patreonLink={patreonLink} />}
       {activeTab === "password" && <PasswordTab />}
     </div>
   );
@@ -91,6 +93,7 @@ function TabButton({
 function ProfileTab({ profile }: { profile: Profile }) {
   const supabase = createClient();
   const [fullName, setFullName] = useState(profile.full_name || "");
+  const [username, setUsername] = useState(profile.username || "");
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -104,7 +107,7 @@ function ProfileTab({ profile }: { profile: Profile }) {
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error } = await (supabase.from("profiles") as any)
-        .update({ full_name: fullName })
+        .update({ full_name: fullName, username: username || null })
         .eq("id", profile.id);
 
       if (error) throw error;
@@ -147,6 +150,14 @@ function ProfileTab({ profile }: { profile: Profile }) {
           />
 
           <Input
+            label="Username"
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            placeholder="Choose a username for chat"
+          />
+
+          <Input
             label="Full Name"
             type="text"
             value={fullName}
@@ -163,8 +174,9 @@ function ProfileTab({ profile }: { profile: Profile }) {
   );
 }
 
-function BillingTab({ subscription }: { subscription: Subscription | null }) {
+function BillingTab({ subscription, patreonLink }: { subscription: Subscription | null; patreonLink?: PatreonLink | null }) {
   const [isLoading, setIsLoading] = useState(false);
+  const [isPatreonLoading, setIsPatreonLoading] = useState(false);
 
   const handleManageBilling = async () => {
     setIsLoading(true);
@@ -200,94 +212,166 @@ function BillingTab({ subscription }: { subscription: Subscription | null }) {
     }
   };
 
+  const handleConnectPatreon = () => {
+    window.location.href = "/api/patreon/connect";
+  };
+
+  const handleDisconnectPatreon = async () => {
+    setIsPatreonLoading(true);
+    try {
+      await fetch("/api/patreon/disconnect", { method: "POST" });
+      window.location.reload();
+    } catch (error) {
+      console.error("Error disconnecting Patreon:", error);
+    } finally {
+      setIsPatreonLoading(false);
+    }
+  };
+
   const isActive = subscription?.status === "active" || subscription?.status === "trialing";
+  const hasPatreonAccess = patreonLink?.is_active;
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Subscription</CardTitle>
-      </CardHeader>
-      <CardContent>
-        {subscription ? (
-          <div className="space-y-24">
-            {/* Status */}
-            <div className="flex items-center justify-between p-16 bg-midnight rounded-card">
-              <div>
-                <p className="text-label text-snow/50 mb-4">Status</p>
-                <div className="flex items-center gap-12">
-                  <Badge
-                    variant={
-                      subscription.status === "active"
-                        ? "success"
-                        : subscription.status === "trialing"
-                        ? "primary"
-                        : "warning"
-                    }
-                  >
-                    {subscription.status === "trialing" ? "Trial" : subscription.status}
-                  </Badge>
-                  {subscription.cancel_at_period_end && (
-                    <span className="text-caption text-warning">
-                      Cancels at period end
-                    </span>
-                  )}
+    <div className="space-y-6">
+      {/* Subscription Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Subscription</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {subscription ? (
+            <div className="space-y-24">
+              {/* Status */}
+              <div className="flex items-center justify-between p-16 bg-midnight rounded-card">
+                <div>
+                  <p className="text-label text-snow/50 mb-4">Status</p>
+                  <div className="flex items-center gap-12">
+                    <Badge
+                      variant={
+                        subscription.status === "active"
+                          ? "success"
+                          : subscription.status === "trialing"
+                          ? "primary"
+                          : "warning"
+                      }
+                    >
+                      {subscription.status === "trialing" ? "Trial" : subscription.status}
+                    </Badge>
+                    {subscription.cancel_at_period_end && (
+                      <span className="text-caption text-warning">
+                        Cancels at period end
+                      </span>
+                    )}
+                  </div>
                 </div>
+                {isActive && (
+                  <div className="text-right">
+                    <p className="text-label text-snow/50 mb-4">
+                      {subscription.status === "trialing" ? "Trial ends" : "Next billing date"}
+                    </p>
+                    <p className="text-body text-snow">
+                      {formatDate(subscription.current_period_end)}
+                    </p>
+                  </div>
+                )}
               </div>
-              {isActive && (
-                <div className="text-right">
-                  <p className="text-label text-snow/50 mb-4">
-                    {subscription.status === "trialing" ? "Trial ends" : "Next billing date"}
+
+              {/* Billing Period */}
+              <div className="grid grid-cols-2 gap-16">
+                <div className="p-16 bg-midnight rounded-card">
+                  <p className="text-label text-snow/50 mb-4">Current Period Start</p>
+                  <p className="text-body text-snow">
+                    {formatDate(subscription.current_period_start)}
                   </p>
+                </div>
+                <div className="p-16 bg-midnight rounded-card">
+                  <p className="text-label text-snow/50 mb-4">Current Period End</p>
                   <p className="text-body text-snow">
                     {formatDate(subscription.current_period_end)}
                   </p>
                 </div>
+              </div>
+
+              {/* Manage Button */}
+              <Button
+                onClick={handleManageBilling}
+                isLoading={isLoading}
+                rightIcon={<ExternalLink className="w-4 h-4" />}
+              >
+                Manage Billing
+              </Button>
+            </div>
+          ) : (
+            <div className="text-center py-24">
+              <p className="text-body text-snow/60 mb-24">
+                You don&apos;t have an active subscription.
+              </p>
+              <Button onClick={handleSubscribe} isLoading={isLoading}>
+                Start Free Trial
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Patreon Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M15.386.524c-4.764 0-8.64 3.876-8.64 8.64 0 4.75 3.876 8.613 8.64 8.613 4.75 0 8.614-3.864 8.614-8.613C24 4.4 20.136.524 15.386.524M.003 23.537h4.22V.524H.003"/>
+            </svg>
+            Patreon Access
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {patreonLink ? (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-4 bg-midnight rounded-card">
+                <div>
+                  <p className="text-label text-snow/50 mb-1">Connected Account</p>
+                  <p className="text-body text-snow">{patreonLink.patreon_email}</p>
+                </div>
+                <Badge variant={hasPatreonAccess ? "success" : "warning"}>
+                  {hasPatreonAccess ? "Active Patron" : "Not Active"}
+                </Badge>
+              </div>
+              {!hasPatreonAccess && (
+                <p className="text-body-sm text-text-muted">
+                  Your Patreon account is connected but you don&apos;t have an active pledge.
+                  Subscribe on Patreon to get access.
+                </p>
               )}
+              <Button
+                variant="secondary"
+                onClick={handleDisconnectPatreon}
+                isLoading={isPatreonLoading}
+                leftIcon={<Unlink className="w-4 h-4" />}
+              >
+                Disconnect Patreon
+              </Button>
             </div>
-
-            {/* Billing Period */}
-            <div className="grid grid-cols-2 gap-16">
-              <div className="p-16 bg-midnight rounded-card">
-                <p className="text-label text-snow/50 mb-4">Current Period Start</p>
-                <p className="text-body text-snow">
-                  {formatDate(subscription.current_period_start)}
-                </p>
-              </div>
-              <div className="p-16 bg-midnight rounded-card">
-                <p className="text-label text-snow/50 mb-4">Current Period End</p>
-                <p className="text-body text-snow">
-                  {formatDate(subscription.current_period_end)}
-                </p>
-              </div>
+          ) : (
+            <div className="text-center py-6">
+              <p className="text-body text-snow/60 mb-4">
+                Link your Patreon account to get access as an active patron.
+              </p>
+              <Button
+                onClick={handleConnectPatreon}
+                leftIcon={<Link2 className="w-4 h-4" />}
+              >
+                Connect Patreon
+              </Button>
             </div>
-
-            {/* Manage Button */}
-            <Button
-              onClick={handleManageBilling}
-              isLoading={isLoading}
-              rightIcon={<ExternalLink className="w-4 h-4" />}
-            >
-              Manage Billing
-            </Button>
-          </div>
-        ) : (
-          <div className="text-center py-24">
-            <p className="text-body text-snow/60 mb-24">
-              You don&apos;t have an active subscription.
-            </p>
-            <Button onClick={handleSubscribe} isLoading={isLoading}>
-              Start Free Trial
-            </Button>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 
 function PasswordTab() {
   const supabase = createClient();
-  const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -319,7 +403,6 @@ function PasswordTab() {
       if (error) throw error;
 
       setSuccess(true);
-      setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
       setTimeout(() => setSuccess(false), 3000);

@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { AccountSettings } from "./AccountSettings";
-import type { Profile, Subscription } from "@/types/database";
+import type { Profile, Subscription, PatreonLink } from "@/types/database";
 
 export const metadata = {
   title: "Account | Soul Sample Club",
@@ -9,6 +9,7 @@ export const metadata = {
 interface UserData {
   profile: Profile;
   subscription: Subscription | null;
+  patreonLink: PatreonLink | null;
 }
 
 async function getUserData(): Promise<UserData | null> {
@@ -19,7 +20,7 @@ async function getUserData(): Promise<UserData | null> {
 
   if (!user) return null;
 
-  const [profileResult, subscriptionResult] = await Promise.all([
+  const [profileResult, subscriptionResult, patreonResult] = await Promise.all([
     supabase.from("profiles").select("*").eq("id", user.id).single(),
     supabase
       .from("subscriptions")
@@ -28,16 +29,23 @@ async function getUserData(): Promise<UserData | null> {
       .order("created_at", { ascending: false })
       .limit(1)
       .single(),
+    supabase
+      .from("patreon_links")
+      .select("*")
+      .eq("user_id", user.id)
+      .single(),
   ]);
 
   const profile = profileResult.data as Profile | null;
   const subscription = subscriptionResult.data as Subscription | null;
+  const patreonLink = patreonResult.data as PatreonLink | null;
 
   if (!profile) return null;
 
   return {
     profile,
     subscription,
+    patreonLink,
   };
 }
 
@@ -55,6 +63,7 @@ export default async function AccountPage() {
         <AccountSettings
           profile={data.profile}
           subscription={data.subscription}
+          patreonLink={data.patreonLink}
         />
       </div>
     </div>
