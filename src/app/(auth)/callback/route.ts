@@ -5,7 +5,7 @@ export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
   const type = searchParams.get("type");
-  const next = searchParams.get("next") ?? "/dashboard";
+  const next = searchParams.get("next") ?? "/feed";
 
   if (code) {
     const supabase = await createClient();
@@ -32,9 +32,9 @@ export async function GET(request: Request) {
 
         const subscription = subscriptionResult.data as { status: string } | null;
 
-        // If no subscription, redirect to checkout
+        // If no subscription, redirect to feed with subscribe prompt
         if (!subscription) {
-          return NextResponse.redirect(`${origin}/dashboard?subscribe=true`);
+          return NextResponse.redirect(`${origin}/feed?subscribe=true`);
         }
       }
 

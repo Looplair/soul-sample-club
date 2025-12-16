@@ -25,11 +25,11 @@ export function AdminSidebar() {
     <aside className="w-64 bg-graphite border-r border-steel min-h-[calc(100vh-72px)] p-24">
       <div className="mb-32">
         <Link
-          href="/dashboard"
+          href="/feed"
           className="flex items-center gap-8 text-label text-snow/50 hover:text-snow transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back to Dashboard
+          Back to Catalog
         </Link>
       </div>
 

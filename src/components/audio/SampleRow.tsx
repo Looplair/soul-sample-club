@@ -177,20 +177,23 @@ export function SampleRow({
             </button>
           )}
 
-          {/* Stems Button */}
-          {sample.stems_path && canDownload && (
+          {/* Stems Button - Show for all tracks with stems */}
+          {sample.stems_path && (
             <Button
               variant="ghost"
               size="sm"
               onClick={handleDownloadStems}
-              disabled={isDownloadingStems}
+              disabled={isDownloadingStems || !canDownload}
               leftIcon={
                 isDownloadingStems ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
+                ) : !canDownload ? (
+                  <Lock className="w-4 h-4" />
                 ) : (
                   <Archive className="w-4 h-4" />
                 )
               }
+              title={!canDownload ? "Subscribe to download stems" : "Download stems"}
             >
               Stems
             </Button>

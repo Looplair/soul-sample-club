@@ -2,10 +2,9 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 // Type for sample with pack relation
-interface SamplePreview {
+interface SampleData {
   id: string;
   file_path: string;
-  preview_path: string | null;
   pack: {
     is_published: boolean;
   } | null;
@@ -22,23 +21,23 @@ export async function GET(
     // Public preview - no authentication required
     // Anyone can preview samples from published packs
 
-    // Get sample with preview path and file path using admin client
+    // Get sample with file path using admin client
     const sampleResult = await adminSupabase
       .from("samples")
       .select(
         `
         id,
         file_path,
-        preview_path,
         pack:packs(is_published)
       `
       )
       .eq("id", sampleId)
       .single();
 
-    const sample = sampleResult.data as SamplePreview | null;
+    const sample = sampleResult.data as SampleData | null;
 
     if (sampleResult.error || !sample) {
+      console.error("Sample not found:", sampleId, sampleResult.error);
       return NextResponse.json({ error: "Sample not found" }, { status: 404 });
     }
 
@@ -47,25 +46,26 @@ export async function GET(
       return NextResponse.json({ error: "Pack not available" }, { status: 404 });
     }
 
-    // Use preview_path if available, otherwise fall back to file_path
-    const audioPath = sample.preview_path || sample.file_path;
+    // Use the main WAV file_path directly (no separate preview logic)
+    const audioPath = sample.file_path;
 
     if (!audioPath) {
+      console.error("No file_path for sample:", sampleId);
       return NextResponse.json(
-        { error: "Preview not available" },
+        { error: "Audio file not available" },
         { status: 404 }
       );
     }
 
-    // Generate signed URL for preview from the samples bucket (valid for 5 minutes)
+    // Generate signed URL for the WAV from the samples bucket (valid for 30 minutes)
     const { data: signedUrl, error: urlError } = await adminSupabase.storage
       .from("samples")
-      .createSignedUrl(audioPath, 300);
+      .createSignedUrl(audioPath, 1800);
 
     if (urlError || !signedUrl) {
-      console.error("Error generating preview URL:", urlError);
+      console.error("Error generating preview URL:", urlError, "path:", audioPath);
       return NextResponse.json(
-        { error: "Failed to generate preview URL" },
+        { error: "Failed to generate audio URL" },
         { status: 500 }
       );
     }

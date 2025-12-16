@@ -30,6 +30,7 @@ export default function ChatPage() {
   const [newMessage, setNewMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentProfile, setCurrentProfile] = useState<UserProfile | null>(null);
   const [showUsernameSetup, setShowUsernameSetup] = useState(false);
@@ -178,6 +179,8 @@ export default function ChatPage() {
     }
 
     setIsSending(true);
+    setSendError(null);
+
     try {
       const response = await fetch("/api/chat", {
         method: "POST",
@@ -190,9 +193,11 @@ export default function ChatPage() {
       } else {
         const data = await response.json();
         console.error("Send error:", data.error);
+        setSendError(data.error || "Failed to send message. Please try again.");
       }
     } catch (error) {
       console.error("Failed to send message:", error);
+      setSendError("Failed to send message. Check your connection.");
     } finally {
       setIsSending(false);
     }
@@ -360,6 +365,12 @@ export default function ChatPage() {
       {/* Message Input */}
       <div className="border-t border-grey-700 bg-charcoal/90 backdrop-blur-xl">
         <form onSubmit={handleSend} className="container-app py-4">
+          {sendError && (
+            <div className="flex items-center gap-2 text-error text-body-sm bg-error/10 border border-error/30 rounded-lg p-3 mb-3">
+              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              {sendError}
+            </div>
+          )}
           {!currentProfile?.username && (
             <p className="text-body-sm text-text-muted mb-2">
               <button
@@ -375,7 +386,10 @@ export default function ChatPage() {
           <div className="flex gap-3">
             <Input
               value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
+              onChange={(e) => {
+                setNewMessage(e.target.value);
+                if (sendError) setSendError(null);
+              }}
               placeholder={currentProfile?.username ? "Type a message..." : "Set username first..."}
               maxLength={500}
               className="flex-1"

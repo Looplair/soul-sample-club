@@ -65,8 +65,8 @@ export async function POST(request: Request) {
           supabase_user_id: user.id,
         },
       },
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?success=true`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?canceled=true`,
+      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/feed?success=true`,
+      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/feed?canceled=true`,
       metadata: {
         supabase_user_id: user.id,
       },

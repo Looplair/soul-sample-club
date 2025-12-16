@@ -75,7 +75,7 @@ export async function updateSession(request: NextRequest) {
   // Redirect authenticated users away from auth pages only (not public routes)
   if (user && isAuthRoute) {
     const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
+    url.pathname = "/feed";
     return NextResponse.redirect(url);
   }
 
@@ -98,7 +98,7 @@ export async function updateSession(request: NextRequest) {
 
     if (!profile?.is_admin) {
       const url = request.nextUrl.clone();
-      url.pathname = "/dashboard";
+      url.pathname = "/feed";
       return NextResponse.redirect(url);
     }
   }
