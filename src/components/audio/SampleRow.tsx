@@ -41,7 +41,14 @@ export function SampleRow({
         const response = await fetch(`/api/preview/${sample.id}`);
         if (response.ok) {
           const data = await response.json();
-          setPreviewUrl(data.url);
+          if (data.url) {
+            setPreviewUrl(data.url);
+          } else {
+            console.error("No preview URL returned for sample:", sample.id);
+          }
+        } else {
+          const errorData = await response.json().catch(() => ({}));
+          console.error("Preview fetch failed:", response.status, errorData);
         }
       } catch (error) {
         console.error("Error fetching preview:", error);

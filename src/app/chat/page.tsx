@@ -4,7 +4,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Button, Input } from "@/components/ui";
-import { Send, ArrowLeft, MessageCircle, User } from "lucide-react";
+import { Send, ArrowLeft, MessageCircle, User, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface ChatMessage {
@@ -19,12 +19,23 @@ interface ChatMessage {
   } | null;
 }
 
+interface UserProfile {
+  id: string;
+  username: string | null;
+  avatar_url: string | null;
+}
+
 export default function ChatPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [currentProfile, setCurrentProfile] = useState<UserProfile | null>(null);
+  const [showUsernameSetup, setShowUsernameSetup] = useState(false);
+  const [newUsername, setNewUsername] = useState("");
+  const [isSettingUsername, setIsSettingUsername] = useState(false);
+  const [usernameError, setUsernameError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const supabase = createClient();
 
@@ -47,15 +58,32 @@ export default function ChatPage() {
     }
   }, []);
 
-  // Get current user
+  // Get current user and profile
   useEffect(() => {
-    async function getUser() {
+    async function getUserAndProfile() {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         setCurrentUserId(user.id);
+
+        // Fetch profile
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: profile } = await (supabase as any)
+          .from("profiles")
+          .select("id, username, avatar_url")
+          .eq("id", user.id)
+          .single();
+
+        if (profile) {
+          const userProfile = profile as UserProfile;
+          setCurrentProfile(userProfile);
+          // Show username setup if no username
+          if (!userProfile.username) {
+            setShowUsernameSetup(true);
+          }
+        }
       }
     }
-    getUser();
+    getUserAndProfile();
   }, [supabase]);
 
   // Fetch messages and subscribe to realtime
@@ -74,7 +102,8 @@ export default function ChatPage() {
         },
         async (payload) => {
           // Fetch the full message with profile
-          const { data } = await supabase
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const { data } = await (supabase as any)
             .from("chat_messages")
             .select(`
               *,
@@ -100,9 +129,53 @@ export default function ChatPage() {
     scrollToBottom();
   }, [messages]);
 
+  const handleSetUsername = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newUsername.trim() || isSettingUsername) return;
+
+    const username = newUsername.trim().toLowerCase().replace(/[^a-z0-9_]/g, "");
+    if (username.length < 3) {
+      setUsernameError("Username must be at least 3 characters");
+      return;
+    }
+
+    setIsSettingUsername(true);
+    setUsernameError(null);
+
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase as any)
+        .from("profiles")
+        .update({ username })
+        .eq("id", currentUserId);
+
+      if (error) {
+        if (error.code === "23505") {
+          setUsernameError("Username already taken");
+        } else {
+          setUsernameError(error.message);
+        }
+      } else {
+        setCurrentProfile((prev) => prev ? { ...prev, username } : null);
+        setShowUsernameSetup(false);
+      }
+    } catch (error) {
+      console.error("Failed to set username:", error);
+      setUsernameError("Failed to set username");
+    } finally {
+      setIsSettingUsername(false);
+    }
+  };
+
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMessage.trim() || isSending) return;
+
+    // Check if user has a username
+    if (!currentProfile?.username) {
+      setShowUsernameSetup(true);
+      return;
+    }
 
     setIsSending(true);
     try {
@@ -114,6 +187,9 @@ export default function ChatPage() {
 
       if (response.ok) {
         setNewMessage("");
+      } else {
+        const data = await response.json();
+        console.error("Send error:", data.error);
       }
     } catch (error) {
       console.error("Failed to send message:", error);
@@ -145,8 +221,70 @@ export default function ChatPage() {
               <h1 className="text-h4 text-white">Member Chat</h1>
             </div>
           </div>
+          {currentProfile?.username && (
+            <span className="text-body-sm text-text-muted">
+              Chatting as <span className="text-white">@{currentProfile.username}</span>
+            </span>
+          )}
         </div>
       </header>
+
+      {/* Username Setup Modal */}
+      {showUsernameSetup && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-charcoal-elevated border border-grey-700 rounded-2xl p-6 max-w-md w-full">
+            <div className="text-center mb-6">
+              <div className="w-12 h-12 rounded-full bg-grey-700 flex items-center justify-center mx-auto mb-3">
+                <User className="w-6 h-6 text-white" />
+              </div>
+              <h2 className="text-h3 text-white mb-2">Choose a Username</h2>
+              <p className="text-body-sm text-text-muted">
+                Pick a username to use in the chat. This will be visible to other members.
+              </p>
+            </div>
+
+            <form onSubmit={handleSetUsername} className="space-y-4">
+              {usernameError && (
+                <div className="flex items-center gap-2 text-error text-body-sm bg-error/10 border border-error/30 rounded-lg p-3">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  {usernameError}
+                </div>
+              )}
+
+              <Input
+                value={newUsername}
+                onChange={(e) => setNewUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))}
+                placeholder="username"
+                maxLength={20}
+                disabled={isSettingUsername}
+              />
+              <p className="text-caption text-text-subtle">
+                Only lowercase letters, numbers, and underscores. 3-20 characters.
+              </p>
+
+              <div className="flex gap-3">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => setShowUsernameSetup(false)}
+                  className="flex-1"
+                  disabled={isSettingUsername}
+                >
+                  Later
+                </Button>
+                <Button
+                  type="submit"
+                  className="flex-1"
+                  disabled={!newUsername.trim() || newUsername.length < 3 || isSettingUsername}
+                  isLoading={isSettingUsername}
+                >
+                  Set Username
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Messages */}
       <main className="flex-1 overflow-y-auto">
@@ -189,12 +327,12 @@ export default function ChatPage() {
 
                   {/* Message */}
                   <div className={cn("max-w-[75%]", isOwnMessage && "text-right")}>
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className={cn("flex items-center gap-2 mb-1", isOwnMessage && "justify-end")}>
                       <span className={cn(
                         "text-caption font-medium",
                         isOwnMessage ? "text-white" : "text-text-secondary"
                       )}>
-                        {username}
+                        @{username}
                       </span>
                       <span className="text-[10px] text-text-subtle">
                         {formatTime(message.created_at)}
@@ -222,18 +360,30 @@ export default function ChatPage() {
       {/* Message Input */}
       <div className="border-t border-grey-700 bg-charcoal/90 backdrop-blur-xl">
         <form onSubmit={handleSend} className="container-app py-4">
+          {!currentProfile?.username && (
+            <p className="text-body-sm text-text-muted mb-2">
+              <button
+                type="button"
+                onClick={() => setShowUsernameSetup(true)}
+                className="text-white underline hover:no-underline"
+              >
+                Set a username
+              </button>
+              {" "}to start chatting
+            </p>
+          )}
           <div className="flex gap-3">
             <Input
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
-              placeholder="Type a message..."
+              placeholder={currentProfile?.username ? "Type a message..." : "Set username first..."}
               maxLength={500}
               className="flex-1"
-              disabled={isSending}
+              disabled={isSending || !currentProfile?.username}
             />
             <Button
               type="submit"
-              disabled={!newMessage.trim() || isSending}
+              disabled={!newMessage.trim() || isSending || !currentProfile?.username}
               leftIcon={<Send className="w-4 h-4" />}
             >
               Send
