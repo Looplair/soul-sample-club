@@ -64,6 +64,7 @@ const config: Config = {
           "system-ui",
           "sans-serif",
         ],
+        wordmark: ["var(--font-wordmark)", "sans-serif"],
       },
       fontSize: {
         // Display & Headings

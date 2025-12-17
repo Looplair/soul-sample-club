@@ -64,7 +64,8 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (typeof window !== "undefined" && !audioRef.current) {
       audioRef.current = new Audio();
-      audioRef.current.preload = "metadata";
+      audioRef.current.preload = "auto";
+      audioRef.current.crossOrigin = "anonymous";
 
       const audio = audioRef.current;
 

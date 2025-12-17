@@ -117,10 +117,6 @@ export default async function FeedPage() {
   const { isLoggedIn, hasSubscription, hasPatreon } = userState;
   const hasAccess = hasSubscription || hasPatreon;
 
-  // Separate recent and archived packs
-  const recentPacks = allPacks.filter(pack => !isArchived(pack.release_date));
-  const archivedPacks = allPacks.filter(pack => isArchived(pack.release_date));
-
   return (
     <div className="min-h-screen bg-charcoal">
       {/* Header */}
@@ -130,7 +126,9 @@ export default async function FeedPage() {
             <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-white flex items-center justify-center shadow-button group-hover:shadow-glow-white-soft transition-shadow duration-300">
               <span className="text-charcoal font-bold text-sm sm:text-base">S</span>
             </div>
-            <span className="text-body sm:text-h4 font-semibold text-white hidden sm:block">Soul Sample Club</span>
+            <span className="font-wordmark text-lg sm:text-xl tracking-wider text-white uppercase hidden sm:block">
+              Soul Sample Club
+            </span>
           </Link>
 
           <div className="flex items-center gap-2 sm:gap-3">
@@ -199,53 +197,26 @@ export default async function FeedPage() {
             </div>
 
             <Suspense fallback={<PackGridSkeleton />}>
-              {/* Recent Packs */}
-              {recentPacks.length > 0 && (
-                <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 mb-8 sm:mb-12">
-                  {recentPacks.map((pack) => {
-                    const sampleCount = Array.isArray(pack.samples)
-                      ? pack.samples.length
-                      : 0;
-                    return (
+              <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+                {allPacks.map((pack) => {
+                  const sampleCount = Array.isArray(pack.samples)
+                    ? pack.samples.length
+                    : 0;
+                  const archived = isArchived(pack.release_date);
+                  return (
+                    <div
+                      key={pack.id}
+                      className={archived ? "opacity-50 hover:opacity-100 transition-opacity duration-200" : ""}
+                    >
                       <PackCard
-                        key={pack.id}
                         pack={pack}
                         sampleCount={sampleCount}
                         hasSubscription={hasAccess}
                       />
-                    );
-                  })}
-                </div>
-              )}
-
-              {/* Archived Packs */}
-              {archivedPacks.length > 0 && (
-                <>
-                  <div className="flex items-center gap-2 mb-4 sm:mb-6 mt-8 sm:mt-12">
-                    <Archive className="w-4 h-4 text-text-muted" />
-                    <h3 className="text-body sm:text-h4 text-text-muted">Archive</h3>
-                    <span className="text-caption text-text-subtle">
-                      Older than 3 months
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-                    {archivedPacks.map((pack) => {
-                      const sampleCount = Array.isArray(pack.samples)
-                        ? pack.samples.length
-                        : 0;
-                      return (
-                        <div key={pack.id} className="opacity-60 hover:opacity-100 transition-opacity">
-                          <PackCard
-                            pack={pack}
-                            sampleCount={sampleCount}
-                            hasSubscription={hasAccess}
-                          />
-                        </div>
-                      );
-                    })}
-                  </div>
-                </>
-              )}
+                    </div>
+                  );
+                })}
+              </div>
             </Suspense>
           </section>
 
