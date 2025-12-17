@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Download, Loader2, Lock, Archive, Heart, Play, Pause, Volume2, VolumeX } from "lucide-react";
+import { Download, Loader2, Lock, Archive, Heart, Play, Pause } from "lucide-react";
+import WaveSurfer from "wavesurfer.js";
 import { Button } from "@/components/ui";
 import { formatFileSize, formatDuration, cn } from "@/lib/utils";
 import { useAudio } from "@/contexts/AudioContext";
@@ -14,44 +15,6 @@ interface SampleRowProps {
   isLiked?: boolean;
   onToggleLike?: () => void;
   packName?: string;
-}
-
-// Simple waveform visualization component
-function WaveformVisual({
-  progress,
-  isPlaying,
-  onClick,
-}: {
-  progress: number;
-  isPlaying: boolean;
-  onClick: (e: React.MouseEvent<HTMLDivElement>) => void;
-}) {
-  // Generate pseudo-random bars for visual representation
-  const bars = 40;
-  const heights = useRef(
-    Array.from({ length: bars }, () => 0.3 + Math.random() * 0.7)
-  ).current;
-
-  return (
-    <div
-      className="flex-1 h-12 flex items-center gap-[2px] cursor-pointer group"
-      onClick={onClick}
-    >
-      {heights.map((height, i) => {
-        const isPlayed = (i / bars) * 100 < progress;
-        return (
-          <div
-            key={i}
-            className={cn(
-              "flex-1 rounded-full transition-colors duration-150",
-              isPlayed ? "bg-white" : "bg-grey-600 group-hover:bg-grey-500"
-            )}
-            style={{ height: `${height * 100}%` }}
-          />
-        );
-      })}
-    </div>
-  );
 }
 
 export function SampleRow({
@@ -69,23 +32,24 @@ export function SampleRow({
   const [previewError, setPreviewError] = useState<string | null>(null);
   const [liked, setLiked] = useState(isLiked);
 
+  // WaveSurfer state
+  const containerRef = useRef<HTMLDivElement>(null);
+  const wavesurferRef = useRef<WaveSurfer | null>(null);
+  const [waveformReady, setWaveformReady] = useState(false);
+  const [waveformLoading, setWaveformLoading] = useState(false);
+  const [localCurrentTime, setLocalCurrentTime] = useState(0);
+  const [localIsPlaying, setLocalIsPlaying] = useState(false);
+
   const {
     currentTrack,
-    isPlaying,
-    isLoading: audioLoading,
-    currentTime,
-    duration: audioDuration,
+    isPlaying: globalIsPlaying,
     playTrack,
-    pause,
-    resume,
-    seek,
+    pause: globalPause,
   } = useAudio();
 
   const isCurrentTrack = currentTrack?.id === sample.id;
-  const isThisPlaying = isCurrentTrack && isPlaying;
-  const progress = isCurrentTrack && audioDuration > 0 ? (currentTime / audioDuration) * 100 : 0;
 
-  // Fetch preview URL with better error handling
+  // Fetch preview URL
   useEffect(() => {
     let isMounted = true;
 
@@ -101,7 +65,6 @@ export function SampleRow({
         if (response.ok) {
           const data = await response.json();
           if (data.url) {
-            // Validate URL format
             try {
               new URL(data.url);
               setPreviewUrl(data.url);
@@ -134,39 +97,96 @@ export function SampleRow({
     };
   }, [sample.id]);
 
-  const handlePlayPause = useCallback(() => {
-    if (!previewUrl) return;
+  // Initialize WaveSurfer when URL is available
+  useEffect(() => {
+    if (!containerRef.current || !previewUrl) return;
 
-    if (isCurrentTrack) {
-      if (isPlaying) {
-        pause();
-      } else {
-        resume();
+    setWaveformLoading(true);
+
+    const wavesurfer = WaveSurfer.create({
+      container: containerRef.current,
+      waveColor: "#3A3A3A",
+      progressColor: "#FFFFFF",
+      cursorColor: "#FFFFFF",
+      cursorWidth: 2,
+      barWidth: 2,
+      barGap: 2,
+      barRadius: 2,
+      height: 48,
+      normalize: true,
+      backend: "WebAudio",
+    });
+
+    wavesurferRef.current = wavesurfer;
+
+    wavesurfer.on("ready", () => {
+      setWaveformReady(true);
+      setWaveformLoading(false);
+    });
+
+    wavesurfer.on("play", () => {
+      setLocalIsPlaying(true);
+    });
+
+    wavesurfer.on("pause", () => {
+      setLocalIsPlaying(false);
+    });
+
+    wavesurfer.on("finish", () => {
+      setLocalIsPlaying(false);
+      setLocalCurrentTime(0);
+    });
+
+    wavesurfer.on("timeupdate", (time) => {
+      setLocalCurrentTime(time);
+    });
+
+    wavesurfer.on("error", (error) => {
+      console.error("WaveSurfer error:", error);
+      setWaveformLoading(false);
+      setPreviewError("Failed to load waveform");
+    });
+
+    wavesurfer.load(previewUrl);
+
+    return () => {
+      wavesurfer.destroy();
+      wavesurferRef.current = null;
+      setWaveformReady(false);
+    };
+  }, [previewUrl]);
+
+  // Pause this wavesurfer when another track starts playing globally
+  useEffect(() => {
+    if (globalIsPlaying && currentTrack && currentTrack.id !== sample.id) {
+      if (wavesurferRef.current && localIsPlaying) {
+        wavesurferRef.current.pause();
       }
+    }
+  }, [globalIsPlaying, currentTrack, sample.id, localIsPlaying]);
+
+  const handlePlayPause = useCallback(() => {
+    if (!wavesurferRef.current || !waveformReady) return;
+
+    if (localIsPlaying) {
+      wavesurferRef.current.pause();
     } else {
+      // Notify global context that we're playing this track
+      // This will pause any other currently playing audio
       playTrack({
         id: sample.id,
         name: sample.name,
         packName,
-        url: previewUrl,
+        url: previewUrl || "",
         duration: sample.duration,
         bpm: sample.bpm,
         musicalKey: sample.key,
       });
+      // But we use WaveSurfer for actual playback
+      globalPause(); // Stop the global audio element
+      wavesurferRef.current.play();
     }
-  }, [previewUrl, isCurrentTrack, isPlaying, pause, resume, playTrack, sample, packName]);
-
-  const handleWaveformClick = useCallback(
-    (e: React.MouseEvent<HTMLDivElement>) => {
-      if (!isCurrentTrack || !audioDuration) return;
-
-      const rect = e.currentTarget.getBoundingClientRect();
-      const percent = (e.clientX - rect.left) / rect.width;
-      const newTime = percent * audioDuration;
-      seek(newTime);
-    },
-    [isCurrentTrack, audioDuration, seek]
-  );
+  }, [localIsPlaying, waveformReady, playTrack, globalPause, sample, packName, previewUrl]);
 
   const handleDownload = async () => {
     if (!canDownload) return;
@@ -240,13 +260,13 @@ export function SampleRow({
   };
 
   const canPlay = previewUrl && !isLoadingPreview && !previewError;
-  const showLoading = isLoadingPreview || (isCurrentTrack && audioLoading);
+  const showLoading = isLoadingPreview || waveformLoading;
 
   return (
     <div
       className={cn(
         "bg-grey-800/50 border rounded-card p-3 sm:p-4 transition-all duration-200",
-        isThisPlaying ? "border-white/30 bg-grey-800/70" : "border-grey-700 hover:border-grey-600"
+        localIsPlaying ? "border-white/30 bg-grey-800/70" : "border-grey-700 hover:border-grey-600"
       )}
     >
       {/* Top row: Info and actions */}
@@ -254,11 +274,11 @@ export function SampleRow({
         {/* Play Button */}
         <button
           onClick={handlePlayPause}
-          disabled={!canPlay}
+          disabled={!canPlay || !waveformReady}
           className={cn(
             "w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-200",
-            canPlay
-              ? isThisPlaying
+            canPlay && waveformReady
+              ? localIsPlaying
                 ? "bg-white text-charcoal shadow-glow-white-soft"
                 : "bg-white text-charcoal hover:shadow-glow-white-soft hover:scale-105"
               : "bg-grey-700 text-text-muted cursor-not-allowed"
@@ -266,7 +286,7 @@ export function SampleRow({
         >
           {showLoading ? (
             <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
-          ) : isThisPlaying ? (
+          ) : localIsPlaying ? (
             <Pause className="w-4 h-4 sm:w-5 sm:h-5" />
           ) : (
             <Play className="w-4 h-4 sm:w-5 sm:h-5 ml-0.5" />
@@ -356,16 +376,18 @@ export function SampleRow({
         </div>
       </div>
 
-      {/* Waveform row */}
+      {/* Waveform row - WaveSurfer */}
       {canPlay ? (
         <div className="flex items-center gap-3">
-          <WaveformVisual
-            progress={progress}
-            isPlaying={isThisPlaying}
-            onClick={handleWaveformClick}
+          <div
+            ref={containerRef}
+            className={cn(
+              "flex-1 transition-opacity duration-300",
+              !waveformReady && "opacity-40"
+            )}
           />
           <div className="text-caption text-text-muted tabular-nums flex-shrink-0 w-20 text-right">
-            <span className="text-white">{formatDuration(isCurrentTrack ? currentTime : 0)}</span>
+            <span className="text-white">{formatDuration(localCurrentTime)}</span>
             <span className="text-text-subtle"> / {formatDuration(sample.duration)}</span>
           </div>
         </div>
