@@ -45,6 +45,12 @@ export async function updateSession(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
 
+  // Allow /auth/confirm to pass through without any redirect (magic link verification)
+  // This is critical for Patreon login flow
+  if (pathname.startsWith("/auth/confirm")) {
+    return supabaseResponse;
+  }
+
   // Auth pages - redirect logged-in users away from these
   const authRoutes = ["/login", "/signup", "/reset-password", "/callback"];
   const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route));

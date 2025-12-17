@@ -6,7 +6,6 @@ import React, {
   useState,
   useCallback,
   useRef,
-  useEffect,
 } from "react";
 
 export interface AudioTrack {
@@ -35,6 +34,20 @@ interface AudioContextActions {
   stop: () => void;
   seek: (time: number) => void;
   setVolume: (volume: number) => void;
+  // New methods for WaveSurfer sync
+  setCurrentTrack: (track: AudioTrack | null) => void;
+  setIsPlaying: (playing: boolean) => void;
+  setCurrentTime: (time: number) => void;
+  setDuration: (duration: number) => void;
+  registerWaveSurfer: (id: string, controls: WaveSurferControls) => void;
+  unregisterWaveSurfer: (id: string) => void;
+}
+
+export interface WaveSurferControls {
+  play: () => void;
+  pause: () => void;
+  seek: (time: number) => void;
+  setVolume: (volume: number) => void;
 }
 
 type AudioContextType = AudioContextState & AudioContextActions;
@@ -57,165 +70,73 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const timeUpdateRef = useRef<number | null>(null);
+  // Registry of WaveSurfer instances for coordination
+  const waveSurferRegistry = useRef<Map<string, WaveSurferControls>>(new Map());
 
-  // Initialize audio element
-  useEffect(() => {
-    if (typeof window !== "undefined" && !audioRef.current) {
-      audioRef.current = new Audio();
-      audioRef.current.preload = "auto";
-      audioRef.current.crossOrigin = "anonymous";
-
-      const audio = audioRef.current;
-
-      audio.addEventListener("loadedmetadata", () => {
-        setDuration(audio.duration);
-        setIsLoading(false);
-      });
-
-      audio.addEventListener("canplay", () => {
-        setIsLoading(false);
-        setError(null);
-      });
-
-      audio.addEventListener("playing", () => {
-        setIsPlaying(true);
-        setIsLoading(false);
-      });
-
-      audio.addEventListener("pause", () => {
-        setIsPlaying(false);
-      });
-
-      audio.addEventListener("ended", () => {
-        setIsPlaying(false);
-        setCurrentTime(0);
-      });
-
-      audio.addEventListener("error", (e) => {
-        console.error("Audio error:", e);
-        setError("Failed to load audio. Please try again.");
-        setIsLoading(false);
-        setIsPlaying(false);
-      });
-
-      audio.addEventListener("waiting", () => {
-        setIsLoading(true);
-      });
-
-      // Time update loop using requestAnimationFrame for smooth updates
-      const updateTime = () => {
-        if (audio && !audio.paused) {
-          setCurrentTime(audio.currentTime);
-        }
-        timeUpdateRef.current = requestAnimationFrame(updateTime);
-      };
-
-      audio.addEventListener("play", () => {
-        if (timeUpdateRef.current) {
-          cancelAnimationFrame(timeUpdateRef.current);
-        }
-        updateTime();
-      });
-
-      audio.addEventListener("pause", () => {
-        if (timeUpdateRef.current) {
-          cancelAnimationFrame(timeUpdateRef.current);
-        }
-      });
-    }
-
-    return () => {
-      if (timeUpdateRef.current) {
-        cancelAnimationFrame(timeUpdateRef.current);
-      }
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.src = "";
-      }
-    };
+  const registerWaveSurfer = useCallback((id: string, controls: WaveSurferControls) => {
+    waveSurferRegistry.current.set(id, controls);
   }, []);
 
-  const playTrack = useCallback(async (track: AudioTrack) => {
-    const audio = audioRef.current;
-    if (!audio) return;
+  const unregisterWaveSurfer = useCallback((id: string) => {
+    waveSurferRegistry.current.delete(id);
+  }, []);
 
-    // If same track, just resume
-    if (currentTrack?.id === track.id && audio.src) {
-      try {
-        await audio.play();
-        return;
-      } catch (err) {
-        console.error("Resume failed:", err);
+  const playTrack = useCallback((track: AudioTrack) => {
+    // Pause all other WaveSurfer instances except the one being played
+    waveSurferRegistry.current.forEach((controls, id) => {
+      if (id !== track.id) {
+        controls.pause();
       }
-    }
+    });
 
-    // Stop current playback
-    audio.pause();
-    setIsLoading(true);
-    setError(null);
-    setCurrentTime(0);
-    setDuration(track.duration);
-
-    // Validate URL before loading
-    if (!track.url || !track.url.startsWith("http")) {
-      setError("Invalid audio URL");
-      setIsLoading(false);
-      return;
-    }
-
-    // Set new track
     setCurrentTrack(track);
-    audio.src = track.url;
-
-    try {
-      await audio.load();
-      await audio.play();
-    } catch (err) {
-      console.error("Playback failed:", err);
-      setError("Failed to play audio. Please try again.");
-      setIsLoading(false);
-    }
-  }, [currentTrack]);
+    setDuration(track.duration);
+    setError(null);
+    setIsPlaying(true);
+  }, []);
 
   const pause = useCallback(() => {
-    audioRef.current?.pause();
-  }, []);
-
-  const resume = useCallback(async () => {
-    try {
-      await audioRef.current?.play();
-    } catch (err) {
-      console.error("Resume failed:", err);
-      setError("Failed to resume playback");
+    if (currentTrack) {
+      const controls = waveSurferRegistry.current.get(currentTrack.id);
+      controls?.pause();
     }
-  }, []);
+    setIsPlaying(false);
+  }, [currentTrack]);
+
+  const resume = useCallback(() => {
+    if (currentTrack) {
+      const controls = waveSurferRegistry.current.get(currentTrack.id);
+      controls?.play();
+    }
+    setIsPlaying(true);
+  }, [currentTrack]);
 
   const stop = useCallback(() => {
-    const audio = audioRef.current;
-    if (audio) {
-      audio.pause();
-      audio.currentTime = 0;
+    if (currentTrack) {
+      const controls = waveSurferRegistry.current.get(currentTrack.id);
+      controls?.pause();
+      controls?.seek(0);
     }
     setCurrentTrack(null);
     setCurrentTime(0);
     setIsPlaying(false);
-  }, []);
+  }, [currentTrack]);
 
   const seek = useCallback((time: number) => {
-    const audio = audioRef.current;
-    if (audio) {
-      audio.currentTime = Math.max(0, Math.min(time, audio.duration || 0));
-      setCurrentTime(audio.currentTime);
+    if (currentTrack) {
+      const controls = waveSurferRegistry.current.get(currentTrack.id);
+      controls?.seek(time);
     }
-  }, []);
+    setCurrentTime(time);
+  }, [currentTrack]);
 
   const setVolume = useCallback((volume: number) => {
-    if (audioRef.current) {
-      audioRef.current.volume = Math.max(0, Math.min(1, volume));
+    // Apply volume to current track's WaveSurfer
+    if (currentTrack) {
+      const controls = waveSurferRegistry.current.get(currentTrack.id);
+      controls?.setVolume(Math.max(0, Math.min(1, volume)));
     }
-  }, []);
+  }, [currentTrack]);
 
   const value: AudioContextType = {
     currentTrack,
@@ -230,6 +151,12 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
     stop,
     seek,
     setVolume,
+    setCurrentTrack,
+    setIsPlaying,
+    setCurrentTime,
+    setDuration,
+    registerWaveSurfer,
+    unregisterWaveSurfer,
   };
 
   return (

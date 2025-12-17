@@ -42,12 +42,16 @@ export function SampleRow({
 
   const {
     currentTrack,
-    isPlaying: globalIsPlaying,
     playTrack,
-    pause: globalPause,
+    setIsPlaying,
+    setCurrentTime,
+    setDuration,
+    registerWaveSurfer,
+    unregisterWaveSurfer,
   } = useAudio();
 
   const isCurrentTrack = currentTrack?.id === sample.id;
+  const isThisPlaying = isCurrentTrack && localIsPlaying;
 
   // Fetch preview URL
   useEffect(() => {
@@ -122,23 +126,48 @@ export function SampleRow({
     wavesurfer.on("ready", () => {
       setWaveformReady(true);
       setWaveformLoading(false);
+
+      // Register this WaveSurfer with the global context
+      registerWaveSurfer(sample.id, {
+        play: () => wavesurfer.play(),
+        pause: () => wavesurfer.pause(),
+        seek: (time: number) => {
+          const duration = wavesurfer.getDuration();
+          if (duration > 0) {
+            wavesurfer.seekTo(time / duration);
+          }
+        },
+        setVolume: (vol: number) => wavesurfer.setVolume(vol),
+      });
     });
 
     wavesurfer.on("play", () => {
       setLocalIsPlaying(true);
+      // Update global state
+      setIsPlaying(true);
     });
 
     wavesurfer.on("pause", () => {
       setLocalIsPlaying(false);
+      // Update global state if this is the current track
+      if (currentTrack?.id === sample.id) {
+        setIsPlaying(false);
+      }
     });
 
     wavesurfer.on("finish", () => {
       setLocalIsPlaying(false);
       setLocalCurrentTime(0);
+      setIsPlaying(false);
+      setCurrentTime(0);
     });
 
     wavesurfer.on("timeupdate", (time) => {
       setLocalCurrentTime(time);
+      // Update global time if this is the current track
+      if (currentTrack?.id === sample.id) {
+        setCurrentTime(time);
+      }
     });
 
     wavesurfer.on("error", (error) => {
@@ -150,20 +179,20 @@ export function SampleRow({
     wavesurfer.load(previewUrl);
 
     return () => {
+      unregisterWaveSurfer(sample.id);
       wavesurfer.destroy();
       wavesurferRef.current = null;
       setWaveformReady(false);
     };
-  }, [previewUrl]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [previewUrl, sample.id]);
 
-  // Pause this wavesurfer when another track starts playing globally
+  // Pause this wavesurfer when another track becomes current
   useEffect(() => {
-    if (globalIsPlaying && currentTrack && currentTrack.id !== sample.id) {
-      if (wavesurferRef.current && localIsPlaying) {
-        wavesurferRef.current.pause();
-      }
+    if (currentTrack && currentTrack.id !== sample.id && wavesurferRef.current && localIsPlaying) {
+      wavesurferRef.current.pause();
     }
-  }, [globalIsPlaying, currentTrack, sample.id, localIsPlaying]);
+  }, [currentTrack, sample.id, localIsPlaying]);
 
   const handlePlayPause = useCallback(() => {
     if (!wavesurferRef.current || !waveformReady) return;
@@ -171,8 +200,7 @@ export function SampleRow({
     if (localIsPlaying) {
       wavesurferRef.current.pause();
     } else {
-      // Notify global context that we're playing this track
-      // This will pause any other currently playing audio
+      // Set this as the current track (this will pause others via playTrack)
       playTrack({
         id: sample.id,
         name: sample.name,
@@ -182,11 +210,17 @@ export function SampleRow({
         bpm: sample.bpm,
         musicalKey: sample.key,
       });
-      // But we use WaveSurfer for actual playback
-      globalPause(); // Stop the global audio element
+
+      // Update duration in global context
+      const actualDuration = wavesurferRef.current.getDuration();
+      if (actualDuration > 0) {
+        setDuration(actualDuration);
+      }
+
+      // Then play our WaveSurfer
       wavesurferRef.current.play();
     }
-  }, [localIsPlaying, waveformReady, playTrack, globalPause, sample, packName, previewUrl]);
+  }, [localIsPlaying, waveformReady, playTrack, setDuration, sample, packName, previewUrl]);
 
   const handleDownload = async () => {
     if (!canDownload) return;
@@ -266,7 +300,7 @@ export function SampleRow({
     <div
       className={cn(
         "bg-grey-800/50 border rounded-card p-3 sm:p-4 transition-all duration-200",
-        localIsPlaying ? "border-white/30 bg-grey-800/70" : "border-grey-700 hover:border-grey-600"
+        isThisPlaying ? "border-white/30 bg-grey-800/70" : "border-grey-700 hover:border-grey-600"
       )}
     >
       {/* Top row: Info and actions */}
@@ -278,7 +312,7 @@ export function SampleRow({
           className={cn(
             "w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-200",
             canPlay && waveformReady
-              ? localIsPlaying
+              ? isThisPlaying
                 ? "bg-white text-charcoal shadow-glow-white-soft"
                 : "bg-white text-charcoal hover:shadow-glow-white-soft hover:scale-105"
               : "bg-grey-700 text-text-muted cursor-not-allowed"
@@ -286,7 +320,7 @@ export function SampleRow({
         >
           {showLoading ? (
             <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
-          ) : localIsPlaying ? (
+          ) : isThisPlaying ? (
             <Pause className="w-4 h-4 sm:w-5 sm:h-5" />
           ) : (
             <Play className="w-4 h-4 sm:w-5 sm:h-5 ml-0.5" />

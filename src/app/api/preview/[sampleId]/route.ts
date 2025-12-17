@@ -47,7 +47,7 @@ export async function GET(
     }
 
     // Use the main WAV file_path directly (no separate preview logic)
-    const audioPath = sample.file_path;
+    let audioPath = sample.file_path;
 
     if (!audioPath) {
       console.error("No file_path for sample:", sampleId);
@@ -57,6 +57,9 @@ export async function GET(
       );
     }
 
+    // Normalize the path - remove leading slash if present
+    audioPath = audioPath.replace(/^\/+/, "");
+
     // Generate signed URL for the WAV from the samples bucket (valid for 30 minutes)
     const { data: signedUrl, error: urlError } = await adminSupabase.storage
       .from("samples")
@@ -64,6 +67,17 @@ export async function GET(
 
     if (urlError || !signedUrl) {
       console.error("Error generating preview URL:", urlError, "path:", audioPath);
+
+      // Try to check if file exists
+      const { data: files, error: listError } = await adminSupabase.storage
+        .from("samples")
+        .list(audioPath.split("/")[0] || "", {
+          limit: 10,
+          search: audioPath.split("/").pop() || "",
+        });
+
+      console.error("File list check:", { files, listError, searchPath: audioPath });
+
       return NextResponse.json(
         { error: "Failed to generate audio URL" },
         { status: 500 }

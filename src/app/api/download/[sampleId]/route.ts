@@ -40,9 +40,20 @@ export async function GET(
 
     const subscription = subscriptionResult.data as { status: string; current_period_end: string } | null;
 
-    if (!subscription) {
+    // Check Patreon link status
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const patreonResult = await (supabase as any)
+      .from("patreon_links")
+      .select("is_active")
+      .eq("user_id", user.id)
+      .eq("is_active", true)
+      .single();
+
+    const hasPatreon = !!patreonResult.data;
+
+    if (!subscription && !hasPatreon) {
       return NextResponse.json(
-        { error: "Active subscription required" },
+        { error: "Active subscription or Patreon membership required" },
         { status: 403 }
       );
     }
