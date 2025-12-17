@@ -6,7 +6,9 @@ import React, {
   useState,
   useCallback,
   useRef,
+  useEffect,
 } from "react";
+import { usePathname } from "next/navigation";
 
 export interface AudioTrack {
   id: string;
@@ -32,6 +34,7 @@ interface AudioContextActions {
   pause: () => void;
   resume: () => void;
   stop: () => void;
+  stopAll: () => void;
   seek: (time: number) => void;
   setVolume: (volume: number) => void;
   // New methods for WaveSurfer sync
@@ -122,6 +125,14 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
     setIsPlaying(false);
   }, [currentTrack]);
 
+  // Stop ALL registered WaveSurfer instances (used on route change)
+  const stopAll = useCallback(() => {
+    waveSurferRegistry.current.forEach((controls) => {
+      controls.pause();
+    });
+    setIsPlaying(false);
+  }, []);
+
   const seek = useCallback((time: number) => {
     if (currentTrack) {
       const controls = waveSurferRegistry.current.get(currentTrack.id);
@@ -138,6 +149,19 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
     }
   }, [currentTrack]);
 
+  // Track pathname for route change detection
+  const pathname = usePathname();
+  const previousPathRef = useRef(pathname);
+
+  // Stop all audio when route changes
+  useEffect(() => {
+    if (previousPathRef.current !== pathname) {
+      // Route changed - stop all audio
+      stopAll();
+      previousPathRef.current = pathname;
+    }
+  }, [pathname, stopAll]);
+
   const value: AudioContextType = {
     currentTrack,
     isPlaying,
@@ -149,6 +173,7 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
     pause,
     resume,
     stop,
+    stopAll,
     seek,
     setVolume,
     setCurrentTrack,
