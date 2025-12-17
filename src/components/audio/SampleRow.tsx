@@ -40,6 +40,10 @@ export function SampleRow({
   const [localCurrentTime, setLocalCurrentTime] = useState(0);
   const [localIsPlaying, setLocalIsPlaying] = useState(false);
 
+  // Track ID ref for stable comparisons in callbacks
+  const sampleIdRef = useRef(sample.id);
+  sampleIdRef.current = sample.id;
+
   const {
     currentTrack,
     playTrack,
@@ -105,7 +109,14 @@ export function SampleRow({
   useEffect(() => {
     if (!containerRef.current || !previewUrl) return;
 
+    // Clean up any existing instance
+    if (wavesurferRef.current) {
+      wavesurferRef.current.destroy();
+      wavesurferRef.current = null;
+    }
+
     setWaveformLoading(true);
+    setWaveformReady(false);
 
     const wavesurfer = WaveSurfer.create({
       container: containerRef.current,
@@ -123,74 +134,79 @@ export function SampleRow({
 
     wavesurferRef.current = wavesurfer;
 
-    wavesurfer.on("ready", () => {
+    const handleReady = () => {
       setWaveformReady(true);
       setWaveformLoading(false);
 
       // Register this WaveSurfer with the global context
-      registerWaveSurfer(sample.id, {
+      registerWaveSurfer(sampleIdRef.current, {
         play: () => wavesurfer.play(),
         pause: () => wavesurfer.pause(),
         seek: (time: number) => {
-          const duration = wavesurfer.getDuration();
-          if (duration > 0) {
-            wavesurfer.seekTo(time / duration);
+          const dur = wavesurfer.getDuration();
+          if (dur > 0) {
+            wavesurfer.seekTo(time / dur);
           }
         },
         setVolume: (vol: number) => wavesurfer.setVolume(vol),
       });
-    });
+    };
 
-    wavesurfer.on("play", () => {
+    const handlePlay = () => {
       setLocalIsPlaying(true);
-      // Update global state
       setIsPlaying(true);
-    });
+    };
 
-    wavesurfer.on("pause", () => {
+    const handlePause = () => {
       setLocalIsPlaying(false);
-      // Update global state if this is the current track
-      if (currentTrack?.id === sample.id) {
-        setIsPlaying(false);
-      }
-    });
+      setIsPlaying(false);
+    };
 
-    wavesurfer.on("finish", () => {
+    const handleFinish = () => {
       setLocalIsPlaying(false);
       setLocalCurrentTime(0);
       setIsPlaying(false);
       setCurrentTime(0);
-    });
+    };
 
-    wavesurfer.on("timeupdate", (time) => {
+    const handleTimeUpdate = (time: number) => {
       setLocalCurrentTime(time);
-      // Update global time if this is the current track
-      if (currentTrack?.id === sample.id) {
-        setCurrentTime(time);
-      }
-    });
+      setCurrentTime(time);
+    };
 
-    wavesurfer.on("error", (error) => {
-      console.error("WaveSurfer error:", error);
+    const handleError = (error: Error) => {
+      console.error("WaveSurfer error for sample:", sampleIdRef.current, error);
       setWaveformLoading(false);
       setPreviewError("Failed to load waveform");
-    });
+    };
+
+    wavesurfer.on("ready", handleReady);
+    wavesurfer.on("play", handlePlay);
+    wavesurfer.on("pause", handlePause);
+    wavesurfer.on("finish", handleFinish);
+    wavesurfer.on("timeupdate", handleTimeUpdate);
+    wavesurfer.on("error", handleError);
 
     wavesurfer.load(previewUrl);
 
     return () => {
-      unregisterWaveSurfer(sample.id);
+      unregisterWaveSurfer(sampleIdRef.current);
+      wavesurfer.un("ready", handleReady);
+      wavesurfer.un("play", handlePlay);
+      wavesurfer.un("pause", handlePause);
+      wavesurfer.un("finish", handleFinish);
+      wavesurfer.un("timeupdate", handleTimeUpdate);
+      wavesurfer.un("error", handleError);
       wavesurfer.destroy();
       wavesurferRef.current = null;
-      setWaveformReady(false);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [previewUrl, sample.id]);
+  }, [previewUrl, registerWaveSurfer, unregisterWaveSurfer, setIsPlaying, setCurrentTime]);
 
   // Pause this wavesurfer when another track becomes current
   useEffect(() => {
     if (currentTrack && currentTrack.id !== sample.id && wavesurferRef.current && localIsPlaying) {
       wavesurferRef.current.pause();
+      setLocalIsPlaying(false);
     }
   }, [currentTrack, sample.id, localIsPlaying]);
 
@@ -416,7 +432,7 @@ export function SampleRow({
           <div
             ref={containerRef}
             className={cn(
-              "flex-1 transition-opacity duration-300",
+              "flex-1 transition-opacity duration-300 min-h-[48px]",
               !waveformReady && "opacity-40"
             )}
           />

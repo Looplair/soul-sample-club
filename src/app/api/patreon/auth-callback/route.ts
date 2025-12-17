@@ -53,13 +53,14 @@ export async function GET(request: NextRequest) {
     const accessToken = tokens.access_token;
     const refreshToken = tokens.refresh_token;
 
-      // Fetch user identity with email + memberships
+      // Fetch user identity with email + memberships + campaign (for creators)
       const identityResponse = await fetch(
         "https://www.patreon.com/api/oauth2/v2/identity" +
-          "?include=memberships,memberships.currently_entitled_tiers" +
+          "?include=memberships,memberships.currently_entitled_tiers,campaign" +
           "&fields[user]=email,full_name,image_url" +
-          "&fields[member]=patron_status" +
-          "&fields[tier]=title",
+          "&fields[member]=patron_status,campaign_lifetime_support_cents,currently_entitled_amount_cents" +
+          "&fields[tier]=title" +
+          "&fields[campaign]=vanity,creation_name",
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -84,15 +85,21 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(`${appUrl}/login?error=no_email`);
     }
 
-    // Check if user is an active patron
+    // Check if user is an active patron or creator
     let isActivePatron = false;
     let tierId: string | null = null;
     let tierTitle: string | null = null;
+
+    // Log the full response for debugging
+    console.log("Patreon identity data:", JSON.stringify(identityData, null, 2));
 
     if (identityData.included) {
       for (const item of identityData.included) {
         if (item.type === "member") {
           const patronStatus = item.attributes?.patron_status;
+          console.log("Found member with patron_status:", patronStatus);
+
+          // Accept active_patron, or if they have any entitled tiers
           if (patronStatus === "active_patron") {
             isActivePatron = true;
             const tiers = item.relationships?.currently_entitled_tiers?.data;
@@ -103,6 +110,25 @@ export async function GET(request: NextRequest) {
         }
       }
     }
+
+    // If user is the creator (has campaigns), treat them as active
+    // Creators don't have patron_status but should have full access
+    if (!isActivePatron && identityData.data?.relationships?.campaign?.data) {
+      console.log("User is a campaign creator, granting access");
+      isActivePatron = true;
+      tierTitle = "Creator";
+    }
+
+    // TEMPORARY: For testing, also check if this is a specific whitelisted email
+    // You can remove this later or make it configurable
+    const whitelistedEmails = process.env.PATREON_WHITELIST_EMAILS?.split(",") || [];
+    if (!isActivePatron && whitelistedEmails.includes(patreonEmail.toLowerCase())) {
+      console.log("User email is whitelisted, granting access");
+      isActivePatron = true;
+      tierTitle = "Whitelisted";
+    }
+
+    console.log("Final isActivePatron:", isActivePatron);
 
     const adminSupabase = createAdminClient();
 

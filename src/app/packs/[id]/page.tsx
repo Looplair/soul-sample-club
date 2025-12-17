@@ -84,25 +84,39 @@ async function getPack(id: string): Promise<PackWithSamples | null> {
 }
 
 // -----------------------------------------
-// FETCH SUBSCRIPTION (if logged in)
+// FETCH ACCESS (subscription OR patreon)
 // -----------------------------------------
-async function getUserSubscription(): Promise<{ subscription: Subscription | null; isLoggedIn: boolean }> {
+async function getUserAccess(): Promise<{ hasAccess: boolean; isLoggedIn: boolean }> {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) return { subscription: null, isLoggedIn: false };
+  if (!user) return { hasAccess: false, isLoggedIn: false };
 
-  const result = await supabase
+  // Check subscription
+  const subResult = await supabase
     .from("subscriptions")
     .select("*")
     .eq("user_id", user.id)
     .in("status", ["active", "trialing"])
     .single();
 
+  const hasSubscription = !!subResult.data;
+
+  // Check Patreon
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const patreonResult = await (supabase as any)
+    .from("patreon_links")
+    .select("is_active")
+    .eq("user_id", user.id)
+    .eq("is_active", true)
+    .single();
+
+  const hasPatreon = !!patreonResult.data;
+
   return {
-    subscription: result.data as Subscription | null,
+    hasAccess: hasSubscription || hasPatreon,
     isLoggedIn: true
   };
 }
@@ -119,15 +133,14 @@ export default async function PackDetailPage({
 
   const [pack, userState] = await Promise.all([
     getPack(id),
-    getUserSubscription(),
+    getUserAccess(),
   ]);
 
   if (!pack) {
     notFound();
   }
 
-  const { subscription, isLoggedIn } = userState;
-  const hasActiveSubscription = !!subscription;
+  const { hasAccess, isLoggedIn } = userState;
 
   // Pack status checks
   const isNew = isPackNew(pack.release_date);
@@ -135,8 +148,8 @@ export default async function PackDetailPage({
   const isStaffPick = pack.is_staff_pick ?? false;
 
   // Expired packs: everyone can preview, no one can download
-  // Active packs: subscribers can download, others can preview
-  const canDownload = hasActiveSubscription && !isExpired;
+  // Active packs: subscribers/patrons can download, others can preview
+  const canDownload = hasAccess && !isExpired;
 
   // Calculate total file size
   const totalSize = pack.samples.reduce(
