@@ -31,16 +31,15 @@ export function DeletePackButton({ packId, packName }: DeletePackButtonProps) {
 
       if (samples && samples.length > 0) {
         // Delete sample files from storage
+        // All files (main + preview) are stored in the "samples" bucket
         const filePaths = samples.map((s) => s.file_path);
         const previewPaths = samples
-          .filter((s) => s.preview_path)
+          .filter((s) => s.preview_path && s.preview_path !== s.file_path)
           .map((s) => s.preview_path!);
 
-        if (filePaths.length > 0) {
-          await supabase.storage.from("samples").remove(filePaths);
-        }
-        if (previewPaths.length > 0) {
-          await supabase.storage.from("previews").remove(previewPaths);
+        const allPaths = [...filePaths, ...previewPaths];
+        if (allPaths.length > 0) {
+          await supabase.storage.from("samples").remove(allPaths);
         }
       }
 
