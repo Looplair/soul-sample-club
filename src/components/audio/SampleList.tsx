@@ -23,12 +23,7 @@ export function SampleList({
   likedSampleIds = new Set(),
   showPackName = false,
 }: SampleListProps) {
-  const [activePlayerId, setActivePlayerId] = useState<string | null>(null);
   const [likedIds, setLikedIds] = useState<Set<string>>(likedSampleIds);
-
-  const handlePlay = (sampleId: string) => {
-    setActivePlayerId(sampleId);
-  };
 
   const handleToggleLike = useCallback((sampleId: string) => {
     setLikedIds((prev) => {
@@ -51,15 +46,13 @@ export function SampleList({
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2 sm:space-y-3">
       {samples.map((sample, index) => (
         <SampleRow
           key={sample.id}
           sample={sample}
           index={index + 1}
           canDownload={canDownload}
-          isActive={activePlayerId === sample.id}
-          onPlay={() => handlePlay(sample.id)}
           isLiked={likedIds.has(sample.id)}
           onToggleLike={() => handleToggleLike(sample.id)}
           packName={showPackName ? sample.pack?.name : undefined}

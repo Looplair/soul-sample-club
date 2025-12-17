@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { AudioProvider } from "@/contexts/AudioContext";
+import { NowPlayingBar } from "@/components/audio/NowPlayingBar";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -22,7 +24,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={inter.variable}>
-      <body className="font-sans min-h-screen flex flex-col">{children}</body>
+      <body className="font-sans min-h-screen flex flex-col">
+        <AudioProvider>
+          <div className="flex-1 pb-20">{children}</div>
+          <NowPlayingBar />
+        </AudioProvider>
+      </body>
     </html>
   );
 }

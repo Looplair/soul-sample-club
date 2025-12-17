@@ -26,15 +26,17 @@ export default async function AdminLayout({
   const profile = result.data as Profile | null;
 
   if (!profile?.is_admin) {
-    redirect("/dashboard");
+    redirect("/feed");
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen bg-charcoal">
       <Navbar user={profile} />
-      <div className="flex flex-1">
+      <div className="flex">
         <AdminSidebar />
-        <main className="flex-1 p-32 bg-midnight">{children}</main>
+        <main className="flex-1 min-h-[calc(100vh-4rem)] p-4 sm:p-6 lg:p-8 lg:ml-0 overflow-x-hidden">
+          {children}
+        </main>
       </div>
     </div>
   );

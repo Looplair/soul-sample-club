@@ -2,10 +2,9 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { ActivityFeed } from "@/components/feed";
 import { PackCard } from "@/components/packs/PackCard";
 import { Button } from "@/components/ui";
-import { TrendingUp, Sparkles, LogIn, Music, MessageCircle } from "lucide-react";
+import { Music, LogIn, MessageCircle, Archive } from "lucide-react";
 import type { Sample, Subscription } from "@/types/database";
 
 export const metadata = {
@@ -13,7 +12,6 @@ export const metadata = {
   description: "Discover the latest releases, trending sounds, and staff picks",
 };
 
-// Type for pack with samples
 interface PackWithSamples {
   id: string;
   name: string;
@@ -27,51 +25,18 @@ interface PackWithSamples {
   samples: Sample[];
 }
 
-// Get ALL published packs for the feed - uses admin client for public access
+// Get ALL published packs for the feed
 async function getAllPacks(): Promise<PackWithSamples[]> {
   const adminSupabase = createAdminClient();
 
   const result = await adminSupabase
     .from("packs")
-    .select(
-      `
-      *,
-      samples(*)
-    `
-    )
+    .select(`*, samples(*)`)
     .eq("is_published", true)
     .order("release_date", { ascending: false });
 
   if (result.error) {
     console.error("Error fetching packs:", result.error);
-    return [];
-  }
-
-  return (result.data as PackWithSamples[]) || [];
-}
-
-// Get new packs (last 7 days) - uses admin client for public access
-async function getNewPacks(): Promise<PackWithSamples[]> {
-  const adminSupabase = createAdminClient();
-
-  const sevenDaysAgo = new Date();
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-
-  const result = await adminSupabase
-    .from("packs")
-    .select(
-      `
-      *,
-      samples:samples(count)
-    `
-    )
-    .eq("is_published", true)
-    .gte("release_date", sevenDaysAgo.toISOString().split("T")[0])
-    .order("release_date", { ascending: false })
-    .limit(4);
-
-  if (result.error) {
-    console.error("Error fetching new packs:", result.error);
     return [];
   }
 
@@ -90,7 +55,6 @@ async function getUserState(): Promise<{ isLoggedIn: boolean; hasSubscription: b
       return { isLoggedIn: false, hasSubscription: false, hasPatreon: false };
     }
 
-    // Check subscription
     const subResult = await supabase
       .from("subscriptions")
       .select("*")
@@ -98,7 +62,6 @@ async function getUserState(): Promise<{ isLoggedIn: boolean; hasSubscription: b
       .in("status", ["active", "trialing"])
       .single();
 
-    // Check Patreon (if table exists)
     let hasPatreon = false;
     try {
       const patreonResult = await supabase
@@ -122,18 +85,15 @@ async function getUserState(): Promise<{ isLoggedIn: boolean; hasSubscription: b
   }
 }
 
-function FeedSkeleton() {
+function PackGridSkeleton() {
   return (
-    <div className="space-y-3">
+    <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
       {Array.from({ length: 8 }).map((_, i) => (
-        <div key={i} className="bg-grey-800/50 rounded-card p-4 animate-pulse">
-          <div className="flex gap-4">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg bg-grey-700" />
-            <div className="flex-1 space-y-2">
-              <div className="h-4 bg-grey-700 rounded w-24" />
-              <div className="h-5 bg-grey-700 rounded w-48" />
-              <div className="h-3 bg-grey-700 rounded w-32" />
-            </div>
+        <div key={i} className="animate-pulse">
+          <div className="aspect-square rounded-2xl bg-grey-700" />
+          <div className="mt-3 space-y-2">
+            <div className="h-4 bg-grey-700 rounded w-3/4" />
+            <div className="h-3 bg-grey-700 rounded w-1/2" />
           </div>
         </div>
       ))}
@@ -141,50 +101,48 @@ function FeedSkeleton() {
   );
 }
 
-function PackGridSkeleton() {
-  return (
-    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-      {Array.from({ length: 4 }).map((_, i) => (
-        <div key={i} className="animate-pulse">
-          <div className="aspect-square rounded-2xl bg-grey-700" />
-        </div>
-      ))}
-    </div>
-  );
+// Helper to check if pack is archived (older than 3 months)
+function isArchived(releaseDate: string): boolean {
+  const threeMonthsAgo = new Date();
+  threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+  return new Date(releaseDate) < threeMonthsAgo;
 }
 
 export default async function FeedPage() {
-  const [allPacks, newPacks, userState] = await Promise.all([
+  const [allPacks, userState] = await Promise.all([
     getAllPacks(),
-    getNewPacks(),
     getUserState(),
   ]);
 
   const { isLoggedIn, hasSubscription, hasPatreon } = userState;
   const hasAccess = hasSubscription || hasPatreon;
 
+  // Separate recent and archived packs
+  const recentPacks = allPacks.filter(pack => !isArchived(pack.release_date));
+  const archivedPacks = allPacks.filter(pack => isArchived(pack.release_date));
+
   return (
     <div className="min-h-screen bg-charcoal">
       {/* Header */}
       <header className="border-b border-grey-700 bg-charcoal/90 backdrop-blur-xl sticky top-0 z-40">
-        <div className="container-app h-16 flex items-center justify-between">
-          <Link href="/feed" className="flex items-center gap-3 group">
-            <div className="w-9 h-9 rounded-lg bg-white flex items-center justify-center shadow-button group-hover:shadow-glow-white-soft transition-shadow duration-300">
-              <span className="text-charcoal font-bold text-base">S</span>
+        <div className="container-app h-14 sm:h-16 flex items-center justify-between">
+          <Link href="/feed" className="flex items-center gap-2 sm:gap-3 group">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-white flex items-center justify-center shadow-button group-hover:shadow-glow-white-soft transition-shadow duration-300">
+              <span className="text-charcoal font-bold text-sm sm:text-base">S</span>
             </div>
-            <span className="text-h4 text-white hidden sm:block">Soul Sample Club</span>
+            <span className="text-body sm:text-h4 font-semibold text-white hidden sm:block">Soul Sample Club</span>
           </Link>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             {isLoggedIn ? (
               <>
-                <Link href="/chat">
+                <Link href="/chat" className="hidden sm:block">
                   <Button variant="ghost" size="sm">
                     <MessageCircle className="w-4 h-4 mr-1" />
                     Chat
                   </Button>
                 </Link>
-                <Link href="/library">
+                <Link href="/library" className="hidden sm:block">
                   <Button variant="ghost" size="sm">
                     Library
                   </Button>
@@ -199,13 +157,14 @@ export default async function FeedPage() {
               <>
                 <Link href="/login">
                   <Button variant="ghost" size="sm">
-                    <LogIn className="w-4 h-4 mr-1" />
-                    Log in
+                    <LogIn className="w-4 h-4 sm:mr-1" />
+                    <span className="hidden sm:inline">Log in</span>
                   </Button>
                 </Link>
                 <Link href="/signup">
                   <Button size="sm">
-                    Sign up free
+                    <span className="hidden sm:inline">Sign up free</span>
+                    <span className="sm:hidden">Sign up</span>
                   </Button>
                 </Link>
               </>
@@ -218,30 +177,35 @@ export default async function FeedPage() {
       <main className="section">
         <div className="container-app">
           {/* Hero Section */}
-          <div className="text-center mb-12">
-            <h1 className="text-display text-white mb-4">
+          <div className="text-center mb-8 sm:mb-12">
+            <h1 className="text-h1 sm:text-display text-white mb-3 sm:mb-4">
               Explore the Catalog
             </h1>
-            <p className="text-body-lg text-text-muted max-w-2xl mx-auto">
+            <p className="text-body sm:text-body-lg text-text-muted max-w-2xl mx-auto">
               Browse all releases. Preview any track.
               {!isLoggedIn && " Sign up free to save favorites."}
               {isLoggedIn && !hasAccess && " Subscribe or link Patreon to download."}
             </p>
           </div>
 
-          {/* New Releases Section */}
-          {newPacks.length > 0 && (
-            <section className="mb-16">
-              <div className="flex items-center gap-2 mb-6">
-                <Sparkles className="w-5 h-5 text-success" />
-                <h2 className="text-h2 text-white">New Releases</h2>
-              </div>
-              <Suspense fallback={<PackGridSkeleton />}>
-                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                  {newPacks.map((pack) => {
+          {/* Releases Section */}
+          <section className="mb-12 sm:mb-16">
+            <div className="flex items-center gap-2 mb-4 sm:mb-6">
+              <Music className="w-5 h-5 text-white" />
+              <h2 className="text-h3 sm:text-h2 text-white">Releases</h2>
+              <span className="text-caption text-text-muted ml-2">
+                {allPacks.length} packs
+              </span>
+            </div>
+
+            <Suspense fallback={<PackGridSkeleton />}>
+              {/* Recent Packs */}
+              {recentPacks.length > 0 && (
+                <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 mb-8 sm:mb-12">
+                  {recentPacks.map((pack) => {
                     const sampleCount = Array.isArray(pack.samples)
                       ? pack.samples.length
-                      : (pack.samples as { count: number }[])?.[0]?.count || 0;
+                      : 0;
                     return (
                       <PackCard
                         key={pack.id}
@@ -252,71 +216,59 @@ export default async function FeedPage() {
                     );
                   })}
                 </div>
-              </Suspense>
-            </section>
-          )}
+              )}
 
-          {/* All Releases Section */}
-          <section className="mb-16">
-            <div className="flex items-center gap-2 mb-6">
-              <TrendingUp className="w-5 h-5 text-white" />
-              <h2 className="text-h2 text-white">All Releases</h2>
-            </div>
-            <Suspense fallback={<PackGridSkeleton />}>
-              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {allPacks.map((pack) => {
-                  const sampleCount = Array.isArray(pack.samples)
-                    ? pack.samples.length
-                    : 0;
-                  return (
-                    <PackCard
-                      key={pack.id}
-                      pack={pack}
-                      sampleCount={sampleCount}
-                      hasSubscription={hasAccess}
-                    />
-                  );
-                })}
-              </div>
-            </Suspense>
-          </section>
-
-          {/* Activity Feed Section */}
-          <section>
-            <div className="flex items-center gap-2 mb-6">
-              <TrendingUp className="w-5 h-5 text-white" />
-              <h2 className="text-h2 text-white">Activity Feed</h2>
-            </div>
-
-            <Suspense fallback={<FeedSkeleton />}>
-              <ActivityFeed
-                packs={allPacks}
-                hasSubscription={hasAccess}
-                limit={20}
-              />
+              {/* Archived Packs */}
+              {archivedPacks.length > 0 && (
+                <>
+                  <div className="flex items-center gap-2 mb-4 sm:mb-6 mt-8 sm:mt-12">
+                    <Archive className="w-4 h-4 text-text-muted" />
+                    <h3 className="text-body sm:text-h4 text-text-muted">Archive</h3>
+                    <span className="text-caption text-text-subtle">
+                      Older than 3 months
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+                    {archivedPacks.map((pack) => {
+                      const sampleCount = Array.isArray(pack.samples)
+                        ? pack.samples.length
+                        : 0;
+                      return (
+                        <div key={pack.id} className="opacity-60 hover:opacity-100 transition-opacity">
+                          <PackCard
+                            pack={pack}
+                            sampleCount={sampleCount}
+                            hasSubscription={hasAccess}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
             </Suspense>
           </section>
 
           {/* CTA Section for non-logged-in users */}
           {!isLoggedIn && (
-            <section className="mt-16 text-center">
-              <div className="bg-gradient-to-r from-white/5 to-transparent border border-white/10 rounded-2xl p-8 sm:p-12">
-                <Music className="w-12 h-12 text-white mx-auto mb-4" />
-                <h2 className="text-h2 text-white mb-3">
+            <section className="text-center">
+              <div className="bg-gradient-to-r from-white/5 to-transparent border border-white/10 rounded-2xl p-6 sm:p-8 lg:p-12">
+                <Music className="w-10 h-10 sm:w-12 sm:h-12 text-white mx-auto mb-3 sm:mb-4" />
+                <h2 className="text-h3 sm:text-h2 text-white mb-2 sm:mb-3">
                   Ready to start creating?
                 </h2>
-                <p className="text-body-lg text-text-muted mb-6 max-w-lg mx-auto">
+                <p className="text-body sm:text-body-lg text-text-muted mb-4 sm:mb-6 max-w-lg mx-auto">
                   Sign up for free and preview every track in the catalog.
                   Subscribe or link your Patreon to download.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
                   <Link href="/signup">
-                    <Button size="lg">
+                    <Button size="lg" className="w-full sm:w-auto">
                       Create free account
                     </Button>
                   </Link>
                   <Link href="/login">
-                    <Button variant="secondary" size="lg">
+                    <Button variant="secondary" size="lg" className="w-full sm:w-auto">
                       Log in
                     </Button>
                   </Link>
@@ -324,13 +276,33 @@ export default async function FeedPage() {
               </div>
             </section>
           )}
+
+          {/* Mobile-only bottom nav for logged in users */}
+          {isLoggedIn && (
+            <nav className="sm:hidden fixed bottom-20 left-0 right-0 bg-charcoal-elevated/95 backdrop-blur-xl border-t border-grey-700 z-30">
+              <div className="flex items-center justify-around h-14">
+                <Link href="/feed" className="flex flex-col items-center gap-1 text-white">
+                  <Music className="w-5 h-5" />
+                  <span className="text-[10px]">Catalog</span>
+                </Link>
+                <Link href="/library" className="flex flex-col items-center gap-1 text-text-muted">
+                  <Archive className="w-5 h-5" />
+                  <span className="text-[10px]">Library</span>
+                </Link>
+                <Link href="/chat" className="flex flex-col items-center gap-1 text-text-muted">
+                  <MessageCircle className="w-5 h-5" />
+                  <span className="text-[10px]">Chat</span>
+                </Link>
+              </div>
+            </nav>
+          )}
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-grey-700 py-8 mt-16">
+      {/* Footer - hidden on mobile when bottom nav is showing */}
+      <footer className={`border-t border-grey-700 py-6 sm:py-8 ${isLoggedIn ? 'hidden sm:block' : ''}`}>
         <div className="container-app text-center">
-          <p className="text-body-sm text-text-subtle">
+          <p className="text-caption sm:text-body-sm text-text-subtle">
             Soul Sample Club - Premium sounds for music producers
           </p>
         </div>
