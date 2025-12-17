@@ -61,9 +61,10 @@ export async function GET(
     audioPath = audioPath.replace(/^\/+/, "");
 
     // Use public URL since the bucket has public SELECT policy
-    // Public URLs support byte-range requests which WaveSurfer needs
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const publicUrl = `${supabaseUrl}/storage/v1/object/public/samples/${audioPath}`;
+
+    console.log("Preview URL generated:", publicUrl, "for sample:", sampleId);
 
     return NextResponse.json({ url: publicUrl });
   } catch (error) {

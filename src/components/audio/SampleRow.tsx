@@ -107,10 +107,16 @@ export function SampleRow({
 
   // Initialize WaveSurfer when URL is available
   useEffect(() => {
-    if (!containerRef.current || !previewUrl) return;
+    if (!containerRef.current || !previewUrl) {
+      console.log("WaveSurfer skip - container:", !!containerRef.current, "url:", !!previewUrl);
+      return;
+    }
+
+    console.log("WaveSurfer initializing for sample:", sample.id, "URL:", previewUrl);
 
     // Clean up any existing instance
     if (wavesurferRef.current) {
+      console.log("Destroying existing WaveSurfer instance");
       wavesurferRef.current.destroy();
       wavesurferRef.current = null;
     }
@@ -129,11 +135,10 @@ export function SampleRow({
       barRadius: 2,
       height: 48,
       normalize: true,
-      // Use MediaElement backend for better compatibility with remote URLs
-      // This supports byte-range requests and CORS better than WebAudio
-      backend: "MediaElement",
-      // Create audio element with crossOrigin for CORS
-      mediaControls: false,
+      backend: "WebAudio",
+      fetchParams: {
+        mode: "cors" as RequestMode,
+      },
     });
 
     wavesurferRef.current = wavesurfer;
@@ -179,7 +184,7 @@ export function SampleRow({
     };
 
     const handleError = (error: Error) => {
-      console.error("WaveSurfer error for sample:", sampleIdRef.current, error);
+      console.error("WaveSurfer error for sample:", sampleIdRef.current, "Error:", error, "URL was:", previewUrl);
       setWaveformLoading(false);
       setPreviewError("Failed to load waveform");
     };
