@@ -60,13 +60,36 @@ export async function GET(
     // Normalize the path - remove leading slash if present
     audioPath = audioPath.replace(/^\/+/, "");
 
-    // Use public URL since the bucket has public SELECT policy
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const publicUrl = `${supabaseUrl}/storage/v1/object/public/samples/${audioPath}`;
+    console.log("Attempting to get URL for path:", audioPath);
 
-    console.log("Preview URL generated:", publicUrl, "for sample:", sampleId);
+    // Try signed URL first (more reliable)
+    const { data: signedUrlData, error: signedError } = await adminSupabase.storage
+      .from("samples")
+      .createSignedUrl(audioPath, 3600); // 1 hour
 
-    return NextResponse.json({ url: publicUrl });
+    if (signedError) {
+      console.error("Signed URL error:", signedError.message, "path:", audioPath);
+
+      // Check if file exists
+      const pathParts = audioPath.split("/");
+      const folder = pathParts.slice(0, -1).join("/");
+      const filename = pathParts[pathParts.length - 1];
+
+      const { data: listData, error: listError } = await adminSupabase.storage
+        .from("samples")
+        .list(folder, { limit: 100 });
+
+      console.log("Files in folder", folder, ":", listData?.map(f => f.name));
+      console.log("Looking for:", filename);
+
+      return NextResponse.json(
+        { error: "Failed to generate audio URL", details: signedError.message },
+        { status: 500 }
+      );
+    }
+
+    console.log("Preview signed URL generated for sample:", sampleId);
+    return NextResponse.json({ url: signedUrlData.signedUrl });
   } catch (error) {
     console.error("Preview error:", error);
     return NextResponse.json(

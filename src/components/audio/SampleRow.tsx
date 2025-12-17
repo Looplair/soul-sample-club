@@ -124,6 +124,10 @@ export function SampleRow({
     setWaveformLoading(true);
     setWaveformReady(false);
 
+    // Create an audio element with crossOrigin set BEFORE WaveSurfer uses it
+    const audio = new Audio();
+    audio.crossOrigin = "anonymous";
+
     const wavesurfer = WaveSurfer.create({
       container: containerRef.current,
       waveColor: "#3A3A3A",
@@ -135,10 +139,8 @@ export function SampleRow({
       barRadius: 2,
       height: 48,
       normalize: true,
-      backend: "WebAudio",
-      fetchParams: {
-        mode: "cors" as RequestMode,
-      },
+      backend: "MediaElement",
+      media: audio,
     });
 
     wavesurferRef.current = wavesurfer;
