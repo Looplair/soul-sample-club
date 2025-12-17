@@ -53,15 +53,20 @@ export async function GET(request: NextRequest) {
     const accessToken = tokens.access_token;
     const refreshToken = tokens.refresh_token;
 
-    // Fetch user identity with email
-    const identityResponse = await fetch(
-      "https://www.patreon.com/api/oauth2/v2/identity?include=memberships.campaign&fields[user]=email,full_name,image_url&fields[member]=patron_status,currently_entitled_tiers",
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      }
-    );
+      // Fetch user identity with email + memberships
+      const identityResponse = await fetch(
+        "https://www.patreon.com/api/oauth2/v2/identity" +
+          "?include=memberships,memberships.currently_entitled_tiers" +
+          "&fields[user]=email,full_name,image_url" +
+          "&fields[member]=patron_status" +
+          "&fields[tier]=title",
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+
 
     if (!identityResponse.ok) {
       console.error("Patreon identity fetch failed");
