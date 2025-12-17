@@ -60,31 +60,12 @@ export async function GET(
     // Normalize the path - remove leading slash if present
     audioPath = audioPath.replace(/^\/+/, "");
 
-    // Generate signed URL for the WAV from the samples bucket (valid for 30 minutes)
-    const { data: signedUrl, error: urlError } = await adminSupabase.storage
-      .from("samples")
-      .createSignedUrl(audioPath, 1800);
+    // Use public URL since the bucket has public SELECT policy
+    // Public URLs support byte-range requests which WaveSurfer needs
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const publicUrl = `${supabaseUrl}/storage/v1/object/public/samples/${audioPath}`;
 
-    if (urlError || !signedUrl) {
-      console.error("Error generating preview URL:", urlError, "path:", audioPath);
-
-      // Try to check if file exists
-      const { data: files, error: listError } = await adminSupabase.storage
-        .from("samples")
-        .list(audioPath.split("/")[0] || "", {
-          limit: 10,
-          search: audioPath.split("/").pop() || "",
-        });
-
-      console.error("File list check:", { files, listError, searchPath: audioPath });
-
-      return NextResponse.json(
-        { error: "Failed to generate audio URL" },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json({ url: signedUrl.signedUrl });
+    return NextResponse.json({ url: publicUrl });
   } catch (error) {
     console.error("Preview error:", error);
     return NextResponse.json(

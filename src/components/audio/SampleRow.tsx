@@ -129,7 +129,11 @@ export function SampleRow({
       barRadius: 2,
       height: 48,
       normalize: true,
-      backend: "WebAudio",
+      // Use MediaElement backend for better compatibility with remote URLs
+      // This supports byte-range requests and CORS better than WebAudio
+      backend: "MediaElement",
+      // Create audio element with crossOrigin for CORS
+      mediaControls: false,
     });
 
     wavesurferRef.current = wavesurfer;
