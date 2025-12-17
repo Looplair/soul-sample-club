@@ -35,6 +35,7 @@ export function SampleRow({
   // WaveSurfer state
   const containerRef = useRef<HTMLDivElement>(null);
   const wavesurferRef = useRef<WaveSurfer | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const [waveformReady, setWaveformReady] = useState(false);
   const [waveformLoading, setWaveformLoading] = useState(false);
   const [localCurrentTime, setLocalCurrentTime] = useState(0);
@@ -124,9 +125,17 @@ export function SampleRow({
     setWaveformLoading(true);
     setWaveformReady(false);
 
+    // Clean up previous audio element if it exists
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.src = "";
+      audioRef.current = null;
+    }
+
     // Create an audio element with crossOrigin set BEFORE WaveSurfer uses it
     const audio = new Audio();
     audio.crossOrigin = "anonymous";
+    audioRef.current = audio;
 
     const wavesurfer = WaveSurfer.create({
       container: containerRef.current,
@@ -208,8 +217,16 @@ export function SampleRow({
       wavesurfer.un("finish", handleFinish);
       wavesurfer.un("timeupdate", handleTimeUpdate);
       wavesurfer.un("error", handleError);
+
+      // Stop and clean up the audio element BEFORE destroying WaveSurfer
+      if (audio) {
+        audio.pause();
+        audio.src = "";
+      }
+
       wavesurfer.destroy();
       wavesurferRef.current = null;
+      audioRef.current = null;
     };
   }, [previewUrl, registerWaveSurfer, unregisterWaveSurfer, setIsPlaying, setCurrentTime]);
 
