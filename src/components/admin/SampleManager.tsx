@@ -19,6 +19,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { Button, Input, Card, CardContent } from "@/components/ui";
 import { formatFileSize, formatDuration } from "@/lib/utils";
+import { uploadStems } from "@/app/actions/stems";
 import type { Sample } from "@/types/database";
 
 interface SampleManagerProps {
@@ -224,28 +225,23 @@ export function SampleManager({ packId, initialSamples }: SampleManagerProps) {
         return;
       }
 
-      // Use the admin API endpoint to bypass RLS
+      // Use server action to bypass RLS and handle large files
       const formData = new FormData();
       formData.append("file", file);
       formData.append("sampleId", sampleId);
       formData.append("packId", packId);
 
-      const response = await fetch("/api/admin/stems", {
-        method: "POST",
-        body: formData,
-      });
+      const result = await uploadStems(formData);
 
-      const result = await response.json();
-
-      if (!response.ok) {
+      if (result.error) {
         console.error("Stems upload failed:", result);
-        throw new Error(result.error || "Failed to upload stems");
+        throw new Error(result.error);
       }
 
       console.log("Stems upload successful:", result);
 
       setSamples((prev) =>
-        prev.map((s) => (s.id === sampleId ? { ...s, stems_path: result.stems_path } : s))
+        prev.map((s) => (s.id === sampleId ? { ...s, stems_path: result.stems_path || null } : s))
       );
       router.refresh();
       console.log("Stems upload complete for sample:", sampleId);

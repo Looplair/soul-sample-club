@@ -1,11 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+"use server";
+
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-// Set maximum duration for this route (for large uploads on Vercel)
-export const maxDuration = 60;
-
-export async function POST(request: NextRequest) {
+export async function uploadStems(formData: FormData) {
   try {
     const supabase = await createClient();
     const adminSupabase = createAdminClient();
@@ -14,7 +12,7 @@ export async function POST(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return { error: "Unauthorized" };
     }
 
     // Check if user is admin
@@ -26,23 +24,19 @@ export async function POST(request: NextRequest) {
 
     const profileData = profile as { role: string } | null;
     if (profileData?.role !== "admin") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      return { error: "Forbidden" };
     }
 
     // Get the form data
-    const formData = await request.formData();
     const file = formData.get("file") as File;
     const sampleId = formData.get("sampleId") as string;
     const packId = formData.get("packId") as string;
 
     if (!file || !sampleId || !packId) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 }
-      );
+      return { error: "Missing required fields" };
     }
 
-    console.log("Admin stems upload:", { sampleId, packId, fileName: file.name, size: file.size });
+    console.log("Server action stems upload:", { sampleId, packId, fileName: file.name, size: file.size });
 
     // Generate the file path
     const stemsFileName = `${packId}/${Date.now()}-stems.zip`;
@@ -61,10 +55,7 @@ export async function POST(request: NextRequest) {
 
     if (uploadError) {
       console.error("Stems storage upload error:", uploadError);
-      return NextResponse.json(
-        { error: "Failed to upload stems file", details: uploadError.message },
-        { status: 500 }
-      );
+      return { error: "Failed to upload stems file", details: uploadError.message };
     }
 
     console.log("Stems file uploaded:", uploadData);
@@ -81,24 +72,18 @@ export async function POST(request: NextRequest) {
       console.error("Stems database update error:", dbError);
       // Try to clean up the uploaded file
       await adminSupabase.storage.from("samples").remove([stemsFileName]);
-      return NextResponse.json(
-        { error: "Failed to update database", details: dbError.message },
-        { status: 500 }
-      );
+      return { error: "Failed to update database", details: dbError.message };
     }
 
     console.log("Database updated:", updateData);
 
-    return NextResponse.json({
+    return {
       success: true,
       stems_path: stemsFileName,
       sample: updateData?.[0],
-    });
+    };
   } catch (error) {
-    console.error("Admin stems upload error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    console.error("Server action stems upload error:", error);
+    return { error: "Internal server error" };
   }
 }
