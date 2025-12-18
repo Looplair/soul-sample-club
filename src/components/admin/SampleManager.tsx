@@ -224,37 +224,43 @@ export function SampleManager({ packId, initialSamples }: SampleManagerProps) {
         return;
       }
 
-      // Use XMLHttpRequest for progress tracking
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("sampleId", sampleId);
-      formData.append("packId", packId);
+      // Step 1: Get a presigned upload URL
+      onProgress?.(0);
+      const presignResponse = await fetch("/api/admin/stems/presign", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sampleId,
+          packId,
+          fileName: file.name,
+        }),
+      });
 
-      const result = await new Promise<{ success?: boolean; error?: string; stems_path?: string }>((resolve, reject) => {
+      if (!presignResponse.ok) {
+        const error = await presignResponse.json();
+        throw new Error(error.error || "Failed to get upload URL");
+      }
+
+      const { uploadUrl, path: stemsPath } = await presignResponse.json();
+      console.log("Got presigned URL, uploading directly to storage...");
+
+      // Step 2: Upload directly to Supabase Storage with progress tracking
+      await new Promise<void>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
 
         xhr.upload.addEventListener("progress", (event) => {
           if (event.lengthComputable && onProgress) {
-            const percent = (event.loaded / event.total) * 100;
+            // Reserve last 5% for finalization
+            const percent = (event.loaded / event.total) * 95;
             onProgress(percent);
           }
         });
 
         xhr.addEventListener("load", () => {
           if (xhr.status >= 200 && xhr.status < 300) {
-            try {
-              const response = JSON.parse(xhr.responseText);
-              resolve(response);
-            } catch {
-              reject(new Error("Invalid response from server"));
-            }
+            resolve();
           } else {
-            try {
-              const errorResponse = JSON.parse(xhr.responseText);
-              reject(new Error(errorResponse.error || `Upload failed with status ${xhr.status}`));
-            } catch {
-              reject(new Error(`Upload failed with status ${xhr.status}`));
-            }
+            reject(new Error(`Storage upload failed with status ${xhr.status}`));
           }
         });
 
@@ -266,16 +272,32 @@ export function SampleManager({ packId, initialSamples }: SampleManagerProps) {
           reject(new Error("Upload was cancelled"));
         });
 
-        xhr.open("POST", "/api/admin/stems");
-        xhr.send(formData);
+        xhr.open("PUT", uploadUrl);
+        xhr.setRequestHeader("Content-Type", "application/zip");
+        xhr.send(file);
       });
 
-      if (result.error) {
-        console.error("Stems upload failed:", result);
-        throw new Error(result.error);
+      console.log("File uploaded to storage, finalizing...");
+      onProgress?.(97);
+
+      // Step 3: Finalize - update the database
+      const finalizeResponse = await fetch("/api/admin/stems/finalize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sampleId,
+          stemsPath,
+        }),
+      });
+
+      if (!finalizeResponse.ok) {
+        const error = await finalizeResponse.json();
+        throw new Error(error.error || "Failed to finalize upload");
       }
 
+      const result = await finalizeResponse.json();
       console.log("Stems upload successful:", result);
+      onProgress?.(100);
 
       setSamples((prev) =>
         prev.map((s) => (s.id === sampleId ? { ...s, stems_path: result.stems_path || null } : s))
