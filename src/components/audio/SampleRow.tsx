@@ -58,52 +58,12 @@ export function SampleRow({
   const isCurrentTrack = currentTrack?.id === sample.id;
   const isThisPlaying = isCurrentTrack && localIsPlaying;
 
-  // Fetch preview URL
+  // Set preview URL to streaming endpoint (bypasses CORS issues)
   useEffect(() => {
-    let isMounted = true;
-
-    async function fetchPreview() {
-      setIsLoadingPreview(true);
-      setPreviewError(null);
-
-      try {
-        const response = await fetch(`/api/preview/${sample.id}`);
-
-        if (!isMounted) return;
-
-        if (response.ok) {
-          const data = await response.json();
-          if (data.url) {
-            try {
-              new URL(data.url);
-              setPreviewUrl(data.url);
-            } catch {
-              setPreviewError("Invalid audio URL");
-            }
-          } else {
-            setPreviewError("No preview available");
-          }
-        } else {
-          const errorData = await response.json().catch(() => ({}));
-          console.error("Preview fetch failed:", response.status, errorData);
-          setPreviewError(errorData.error || "Failed to load preview");
-        }
-      } catch (error) {
-        if (!isMounted) return;
-        console.error("Error fetching preview:", error);
-        setPreviewError("Network error");
-      } finally {
-        if (isMounted) {
-          setIsLoadingPreview(false);
-        }
-      }
-    }
-
-    fetchPreview();
-
-    return () => {
-      isMounted = false;
-    };
+    // Use the streaming endpoint directly - no need to fetch a signed URL
+    // This serves the audio through our own API, avoiding CORS issues
+    setPreviewUrl(`/api/preview/${sample.id}?stream=true`);
+    setIsLoadingPreview(false);
   }, [sample.id]);
 
   // Initialize WaveSurfer when URL is available
@@ -132,9 +92,9 @@ export function SampleRow({
       audioRef.current = null;
     }
 
-    // Create an audio element with crossOrigin set BEFORE WaveSurfer uses it
+    // Create an audio element for WaveSurfer
+    // No crossOrigin needed since we're streaming through our own API
     const audio = new Audio();
-    audio.crossOrigin = "anonymous";
     audioRef.current = audio;
 
     const wavesurfer = WaveSurfer.create({

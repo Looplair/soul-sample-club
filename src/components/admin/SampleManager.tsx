@@ -216,30 +216,49 @@ export function SampleManager({ packId, initialSamples }: SampleManagerProps) {
 
   const handleUploadStems = async (sampleId: string, file: File) => {
     try {
+      console.log("Starting stems upload for sample:", sampleId, "file:", file.name, "size:", file.size);
+
       const sample = samples.find(s => s.id === sampleId);
-      if (!sample) return;
+      if (!sample) {
+        console.error("Sample not found:", sampleId);
+        return;
+      }
 
       const stemsFileName = `${packId}/${Date.now()}-stems.zip`;
+      console.log("Uploading stems to path:", stemsFileName);
 
-      const { error: uploadError } = await supabase.storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
         .from("samples")
         .upload(stemsFileName, file);
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error("Stems storage upload error:", uploadError);
+        throw uploadError;
+      }
+
+      console.log("Stems file uploaded successfully:", uploadData);
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error: dbError } = await (supabase.from("samples") as any)
+      const { data: updateData, error: dbError } = await (supabase.from("samples") as any)
         .update({ stems_path: stemsFileName })
-        .eq("id", sampleId);
+        .eq("id", sampleId)
+        .select();
 
-      if (dbError) throw dbError;
+      if (dbError) {
+        console.error("Stems database update error:", dbError);
+        throw dbError;
+      }
+
+      console.log("Database updated with stems_path:", updateData);
 
       setSamples((prev) =>
         prev.map((s) => (s.id === sampleId ? { ...s, stems_path: stemsFileName } : s))
       );
       router.refresh();
+      console.log("Stems upload complete for sample:", sampleId);
     } catch (error) {
       console.error("Error uploading stems:", error);
+      alert("Failed to upload stems. Check console for details.");
     }
   };
 

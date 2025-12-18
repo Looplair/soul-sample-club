@@ -18,8 +18,9 @@ export async function GET(
     const { sampleId } = await params;
     const adminSupabase = createAdminClient();
 
-    // Public preview - no authentication required
-    // Anyone can preview samples from published packs
+    // Check if client wants streaming audio or just the URL
+    const url = new URL(request.url);
+    const stream = url.searchParams.get("stream") === "true";
 
     // Get sample with file path using admin client
     const sampleResult = await adminSupabase
@@ -46,7 +47,7 @@ export async function GET(
       return NextResponse.json({ error: "Pack not available" }, { status: 404 });
     }
 
-    // Use the main WAV file_path directly (no separate preview logic)
+    // Use the main WAV file_path directly
     let audioPath = sample.file_path;
 
     if (!audioPath) {
@@ -60,36 +61,47 @@ export async function GET(
     // Normalize the path - remove leading slash if present
     audioPath = audioPath.replace(/^\/+/, "");
 
-    console.log("Attempting to get URL for path:", audioPath);
-
-    // Try signed URL first (more reliable)
-    const { data: signedUrlData, error: signedError } = await adminSupabase.storage
-      .from("samples")
-      .createSignedUrl(audioPath, 3600); // 1 hour
-
-    if (signedError) {
-      console.error("Signed URL error:", signedError.message, "path:", audioPath);
-
-      // Check if file exists
-      const pathParts = audioPath.split("/");
-      const folder = pathParts.slice(0, -1).join("/");
-      const filename = pathParts[pathParts.length - 1];
-
-      const { data: listData, error: listError } = await adminSupabase.storage
+    if (stream) {
+      // Stream the audio directly through our API (bypasses CORS)
+      const { data: fileData, error: downloadError } = await adminSupabase.storage
         .from("samples")
-        .list(folder, { limit: 100 });
+        .download(audioPath);
 
-      console.log("Files in folder", folder, ":", listData?.map(f => f.name));
-      console.log("Looking for:", filename);
+      if (downloadError || !fileData) {
+        console.error("Download error:", downloadError?.message, "path:", audioPath);
+        return NextResponse.json(
+          { error: "Failed to download audio" },
+          { status: 500 }
+        );
+      }
 
-      return NextResponse.json(
-        { error: "Failed to generate audio URL", details: signedError.message },
-        { status: 500 }
-      );
+      // Return the audio file with proper headers
+      const headers = new Headers();
+      headers.set("Content-Type", "audio/wav");
+      headers.set("Content-Length", fileData.size.toString());
+      headers.set("Accept-Ranges", "bytes");
+      headers.set("Cache-Control", "public, max-age=3600");
+
+      return new NextResponse(fileData, {
+        status: 200,
+        headers,
+      });
+    } else {
+      // Return signed URL (for clients that can handle CORS)
+      const { data: signedUrlData, error: signedError } = await adminSupabase.storage
+        .from("samples")
+        .createSignedUrl(audioPath, 3600); // 1 hour
+
+      if (signedError) {
+        console.error("Signed URL error:", signedError.message, "path:", audioPath);
+        return NextResponse.json(
+          { error: "Failed to generate audio URL", details: signedError.message },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json({ url: signedUrlData.signedUrl });
     }
-
-    console.log("Preview signed URL generated for sample:", sampleId);
-    return NextResponse.json({ url: signedUrlData.signedUrl });
   } catch (error) {
     console.error("Preview error:", error);
     return NextResponse.json(
