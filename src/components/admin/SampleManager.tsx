@@ -19,7 +19,6 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { Button, Input, Card, CardContent } from "@/components/ui";
 import { formatFileSize, formatDuration } from "@/lib/utils";
-import { uploadStems } from "@/app/actions/stems";
 import type { Sample } from "@/types/database";
 
 interface SampleManagerProps {
@@ -215,7 +214,7 @@ export function SampleManager({ packId, initialSamples }: SampleManagerProps) {
     }
   };
 
-  const handleUploadStems = async (sampleId: string, file: File) => {
+  const handleUploadStems = async (sampleId: string, file: File, onProgress?: (progress: number) => void) => {
     try {
       console.log("Starting stems upload for sample:", sampleId, "file:", file.name, "size:", file.size);
 
@@ -225,13 +224,51 @@ export function SampleManager({ packId, initialSamples }: SampleManagerProps) {
         return;
       }
 
-      // Use server action to bypass RLS and handle large files
+      // Use XMLHttpRequest for progress tracking
       const formData = new FormData();
       formData.append("file", file);
       formData.append("sampleId", sampleId);
       formData.append("packId", packId);
 
-      const result = await uploadStems(formData);
+      const result = await new Promise<{ success?: boolean; error?: string; stems_path?: string }>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+
+        xhr.upload.addEventListener("progress", (event) => {
+          if (event.lengthComputable && onProgress) {
+            const percent = (event.loaded / event.total) * 100;
+            onProgress(percent);
+          }
+        });
+
+        xhr.addEventListener("load", () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              const response = JSON.parse(xhr.responseText);
+              resolve(response);
+            } catch {
+              reject(new Error("Invalid response from server"));
+            }
+          } else {
+            try {
+              const errorResponse = JSON.parse(xhr.responseText);
+              reject(new Error(errorResponse.error || `Upload failed with status ${xhr.status}`));
+            } catch {
+              reject(new Error(`Upload failed with status ${xhr.status}`));
+            }
+          }
+        });
+
+        xhr.addEventListener("error", () => {
+          reject(new Error("Network error during upload"));
+        });
+
+        xhr.addEventListener("abort", () => {
+          reject(new Error("Upload was cancelled"));
+        });
+
+        xhr.open("POST", "/api/admin/stems");
+        xhr.send(formData);
+      });
 
       if (result.error) {
         console.error("Stems upload failed:", result);
@@ -339,7 +376,7 @@ export function SampleManager({ packId, initialSamples }: SampleManagerProps) {
                 onCancel={() => setEditingSampleId(null)}
                 onDelete={() => handleDeleteSample(sample.id)}
                 onUploadPreview={(file) => handleUploadPreview(sample.id, file)}
-                onUploadStems={(file) => handleUploadStems(sample.id, file)}
+                onUploadStems={(file, onProgress) => handleUploadStems(sample.id, file, onProgress)}
               />
             ))}
           </CardContent>
@@ -367,7 +404,7 @@ interface SampleRowProps {
   onCancel: () => void;
   onDelete: () => void;
   onUploadPreview: (file: File) => Promise<void>;
-  onUploadStems: (file: File) => Promise<void>;
+  onUploadStems: (file: File, onProgress: (progress: number) => void) => Promise<void>;
 }
 
 function SampleRow({
@@ -386,6 +423,7 @@ function SampleRow({
   const [key, setKey] = useState(sample.key || "");
   const [isUploadingPreview, setIsUploadingPreview] = useState(false);
   const [isUploadingStems, setIsUploadingStems] = useState(false);
+  const [stemsProgress, setStemsProgress] = useState(0);
   const previewInputRef = useRef<HTMLInputElement>(null);
   const stemsInputRef = useRef<HTMLInputElement>(null);
 
@@ -413,10 +451,14 @@ function SampleRow({
     const file = e.target.files?.[0];
     if (file) {
       setIsUploadingStems(true);
+      setStemsProgress(0);
       try {
-        await onUploadStems(file);
+        await onUploadStems(file, (progress) => {
+          setStemsProgress(progress);
+        });
       } finally {
         setIsUploadingStems(false);
+        setStemsProgress(0);
       }
     }
   };
@@ -510,6 +552,21 @@ function SampleRow({
               </span>
             )}
           </div>
+          {/* Progress bar for stems upload */}
+          {isUploadingStems && (
+            <div className="mt-2">
+              <div className="flex items-center justify-between text-caption text-text-muted mb-1">
+                <span>Uploading stems...</span>
+                <span>{Math.round(stemsProgress)}%</span>
+              </div>
+              <div className="h-2 bg-grey-700 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-white transition-all duration-300 ease-out"
+                  style={{ width: `${stemsProgress}%` }}
+                />
+              </div>
+            </div>
+          )}
           <p className="text-caption text-text-subtle mt-1">
             Upload a ZIP containing individual stems for this sample
           </p>
