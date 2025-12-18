@@ -51,9 +51,13 @@ export function NowPlayingBar() {
 
   const handleProgressClick = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
-      const rect = e.currentTarget.getBoundingClientRect();
-      const percent = (e.clientX - rect.left) / rect.width;
+      // Ensure we're getting the correct element's bounds
+      const progressBar = e.currentTarget;
+      const rect = progressBar.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const percent = Math.max(0, Math.min(1, clickX / rect.width));
       const newTime = percent * duration;
+      console.log("Progress bar clicked:", { clickX, rectWidth: rect.width, percent, newTime, duration });
       seek(newTime);
     },
     [duration, seek]
@@ -70,6 +74,18 @@ export function NowPlayingBar() {
     [isDragging, duration, seek]
   );
 
+  // Touch handler for mobile
+  const handleTouchStart = useCallback(
+    (e: React.TouchEvent<HTMLDivElement>) => {
+      const touch = e.touches[0];
+      const rect = e.currentTarget.getBoundingClientRect();
+      const percent = Math.max(0, Math.min(1, (touch.clientX - rect.left) / rect.width));
+      const newTime = percent * duration;
+      seek(newTime);
+    },
+    [duration, seek]
+  );
+
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   if (!showBar) return null;
@@ -81,18 +97,27 @@ export function NowPlayingBar() {
         currentTrack ? "translate-y-0" : "translate-y-full"
       )}
     >
-      {/* Progress bar - full width at top of bar */}
+      {/* Progress bar - full width at top of bar with larger click area */}
       <div
-        className="h-1 bg-grey-700 cursor-pointer group"
+        className="relative h-1 bg-grey-700 cursor-pointer group"
         onClick={handleProgressClick}
         onMouseDown={() => setIsDragging(true)}
         onMouseUp={() => setIsDragging(false)}
         onMouseLeave={() => setIsDragging(false)}
         onMouseMove={handleProgressDrag}
+        onTouchStart={handleTouchStart}
       >
+        {/* Invisible expanded click area for easier interaction */}
+        <div className="absolute -top-2 -bottom-2 left-0 right-0" />
+        {/* Visible progress indicator */}
         <div
-          className="h-full bg-white transition-all duration-75 group-hover:bg-white/90"
+          className="h-full bg-white transition-all duration-75 group-hover:bg-white/90 relative z-10"
           style={{ width: `${progress}%` }}
+        />
+        {/* Hover indicator dot at current position */}
+        <div
+          className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-20 pointer-events-none"
+          style={{ left: `calc(${progress}% - 6px)` }}
         />
       </div>
 

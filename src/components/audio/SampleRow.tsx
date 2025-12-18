@@ -370,28 +370,34 @@ export function SampleRow({
             </button>
           )}
 
-          {/* Stems Button - hidden on mobile */}
-          {sample.stems_path && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleDownloadStems}
-              disabled={isDownloadingStems || !canDownload}
-              className="hidden sm:flex"
-              leftIcon={
-                isDownloadingStems ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : !canDownload ? (
-                  <Lock className="w-4 h-4" />
-                ) : (
-                  <Archive className="w-4 h-4" />
-                )
-              }
-              title={!canDownload ? "Subscribe to download stems" : "Download stems"}
-            >
-              Stems
-            </Button>
-          )}
+          {/* Stems Button - always visible on desktop, greyed out if no stems */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleDownloadStems}
+            disabled={isDownloadingStems || !canDownload || !sample.stems_path}
+            className="hidden sm:flex"
+            leftIcon={
+              isDownloadingStems ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : !sample.stems_path ? (
+                <Archive className="w-4 h-4 opacity-40" />
+              ) : !canDownload ? (
+                <Lock className="w-4 h-4" />
+              ) : (
+                <Archive className="w-4 h-4" />
+              )
+            }
+            title={
+              !sample.stems_path
+                ? "No stems available"
+                : !canDownload
+                ? "Subscribe to download stems"
+                : "Download stems"
+            }
+          >
+            Stems
+          </Button>
 
           {/* Download Button */}
           <Button

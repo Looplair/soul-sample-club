@@ -224,41 +224,34 @@ export function SampleManager({ packId, initialSamples }: SampleManagerProps) {
         return;
       }
 
-      const stemsFileName = `${packId}/${Date.now()}-stems.zip`;
-      console.log("Uploading stems to path:", stemsFileName);
+      // Use the admin API endpoint to bypass RLS
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("sampleId", sampleId);
+      formData.append("packId", packId);
 
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from("samples")
-        .upload(stemsFileName, file);
+      const response = await fetch("/api/admin/stems", {
+        method: "POST",
+        body: formData,
+      });
 
-      if (uploadError) {
-        console.error("Stems storage upload error:", uploadError);
-        throw uploadError;
+      const result = await response.json();
+
+      if (!response.ok) {
+        console.error("Stems upload failed:", result);
+        throw new Error(result.error || "Failed to upload stems");
       }
 
-      console.log("Stems file uploaded successfully:", uploadData);
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: updateData, error: dbError } = await (supabase.from("samples") as any)
-        .update({ stems_path: stemsFileName })
-        .eq("id", sampleId)
-        .select();
-
-      if (dbError) {
-        console.error("Stems database update error:", dbError);
-        throw dbError;
-      }
-
-      console.log("Database updated with stems_path:", updateData);
+      console.log("Stems upload successful:", result);
 
       setSamples((prev) =>
-        prev.map((s) => (s.id === sampleId ? { ...s, stems_path: stemsFileName } : s))
+        prev.map((s) => (s.id === sampleId ? { ...s, stems_path: result.stems_path } : s))
       );
       router.refresh();
       console.log("Stems upload complete for sample:", sampleId);
     } catch (error) {
       console.error("Error uploading stems:", error);
-      alert("Failed to upload stems. Check console for details.");
+      alert(`Failed to upload stems: ${error instanceof Error ? error.message : "Unknown error"}`);
     }
   };
 
