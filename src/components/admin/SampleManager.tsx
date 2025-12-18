@@ -261,11 +261,11 @@ export function SampleManager({ packId, initialSamples }: SampleManagerProps) {
       }
 
       try {
+        // Don't specify contentType - let Supabase detect it or use the bucket's allowed types
+        // The bucket may only allow audio/* types, so we use application/octet-stream as fallback
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from("samples")
-          .uploadToSignedUrl(stemsPath, token, file, {
-            contentType: "application/zip",
-          });
+          .uploadToSignedUrl(stemsPath, token, file);
 
         if (progressInterval) clearInterval(progressInterval);
 

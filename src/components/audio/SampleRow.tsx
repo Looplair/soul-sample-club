@@ -238,12 +238,20 @@ export function SampleRow({
 
       const data = await response.json();
 
+      // Fetch the file as a blob to ensure proper filename on download
+      const fileResponse = await fetch(data.url);
+      const blob = await fileResponse.blob();
+      const blobUrl = URL.createObjectURL(blob);
+
       const link = document.createElement("a");
-      link.href = data.url;
+      link.href = blobUrl;
       link.download = sample.name + ".wav";
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+
+      // Clean up the blob URL
+      URL.revokeObjectURL(blobUrl);
     } catch (error) {
       console.error("Download error:", error);
     } finally {
@@ -263,12 +271,20 @@ export function SampleRow({
 
       const data = await response.json();
 
+      // Fetch the file as a blob to ensure proper filename on download
+      const fileResponse = await fetch(data.url);
+      const blob = await fileResponse.blob();
+      const blobUrl = URL.createObjectURL(blob);
+
       const link = document.createElement("a");
-      link.href = data.url;
+      link.href = blobUrl;
       link.download = sample.name + "-stems.zip";
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+
+      // Clean up the blob URL
+      URL.revokeObjectURL(blobUrl);
     } catch (error) {
       console.error("Stems download error:", error);
     } finally {
