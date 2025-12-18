@@ -241,41 +241,44 @@ export function SampleManager({ packId, initialSamples }: SampleManagerProps) {
         throw new Error(error.error || "Failed to get upload URL");
       }
 
-      const { uploadUrl, path: stemsPath } = await presignResponse.json();
-      console.log("Got presigned URL, uploading directly to storage...");
+      const { token, path: stemsPath } = await presignResponse.json();
+      console.log("Got presigned URL token, uploading to storage...", { token, stemsPath });
 
-      // Step 2: Upload directly to Supabase Storage with progress tracking
-      await new Promise<void>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
+      // Step 2: Upload using Supabase client's uploadToSignedUrl method
+      // This is the proper way to use signed upload URLs
+      const supabase = createClient();
 
-        xhr.upload.addEventListener("progress", (event) => {
-          if (event.lengthComputable && onProgress) {
-            // Reserve last 5% for finalization
-            const percent = (event.loaded / event.total) * 95;
-            onProgress(percent);
-          }
-        });
+      // Track progress by polling file size (uploadToSignedUrl doesn't support progress)
+      // Start progress animation
+      let progressInterval: NodeJS.Timeout | null = null;
+      let fakeProgress = 0;
+      if (onProgress) {
+        progressInterval = setInterval(() => {
+          // Slowly increment progress to simulate upload (max 90%)
+          fakeProgress = Math.min(90, fakeProgress + (90 - fakeProgress) * 0.1);
+          onProgress(fakeProgress);
+        }, 500);
+      }
 
-        xhr.addEventListener("load", () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            resolve();
-          } else {
-            reject(new Error(`Storage upload failed with status ${xhr.status}`));
-          }
-        });
+      try {
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from("samples")
+          .uploadToSignedUrl(stemsPath, token, file, {
+            contentType: "application/zip",
+          });
 
-        xhr.addEventListener("error", () => {
-          reject(new Error("Network error during upload"));
-        });
+        if (progressInterval) clearInterval(progressInterval);
 
-        xhr.addEventListener("abort", () => {
-          reject(new Error("Upload was cancelled"));
-        });
+        if (uploadError) {
+          console.error("Upload error:", uploadError);
+          throw new Error(`Storage upload failed: ${uploadError.message}`);
+        }
 
-        xhr.open("PUT", uploadUrl);
-        xhr.setRequestHeader("Content-Type", "application/zip");
-        xhr.send(file);
-      });
+        console.log("Upload successful:", uploadData);
+      } catch (err) {
+        if (progressInterval) clearInterval(progressInterval);
+        throw err;
+      }
 
       console.log("File uploaded to storage, finalizing...");
       onProgress?.(97);
