@@ -41,10 +41,6 @@ export function SampleRow({
   const [localCurrentTime, setLocalCurrentTime] = useState(0);
   const [localIsPlaying, setLocalIsPlaying] = useState(false);
 
-  // Lazy loading - only load waveform when visible or user requests play
-  const [isVisible, setIsVisible] = useState(false);
-  const [shouldLoad, setShouldLoad] = useState(false);
-
   // Track ID ref for stable comparisons in callbacks
   const sampleIdRef = useRef(sample.id);
   sampleIdRef.current = sample.id;
@@ -68,39 +64,9 @@ export function SampleRow({
     setIsLoadingPreview(false);
   }, [sample.id]);
 
-  // Intersection Observer for lazy loading - trigger load when row becomes visible
+  // Initialize WaveSurfer
   useEffect(() => {
-    if (!containerRef.current) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setIsVisible(true);
-            // Small delay before loading to prioritize visible content
-            setTimeout(() => {
-              setShouldLoad(true);
-            }, 100 + index * 50); // Stagger loading based on index
-          }
-        });
-      },
-      {
-        root: null,
-        rootMargin: "100px", // Start loading slightly before visible
-        threshold: 0.1,
-      }
-    );
-
-    observer.observe(containerRef.current);
-
-    return () => {
-      observer.disconnect();
-    };
-  }, [index]);
-
-  // Initialize WaveSurfer only when shouldLoad is true (lazy loading)
-  useEffect(() => {
-    if (!containerRef.current || !previewUrl || !shouldLoad) {
+    if (!containerRef.current || !previewUrl) {
       return;
     }
 
@@ -215,7 +181,7 @@ export function SampleRow({
       wavesurferRef.current = null;
       audioRef.current = null;
     };
-  }, [previewUrl, shouldLoad, registerWaveSurfer, unregisterWaveSurfer, setIsPlaying, setCurrentTime]);
+  }, [previewUrl, registerWaveSurfer, unregisterWaveSurfer, setIsPlaying, setCurrentTime]);
 
   // Pause this wavesurfer when another track becomes current
   useEffect(() => {
@@ -226,12 +192,6 @@ export function SampleRow({
   }, [currentTrack, sample.id, localIsPlaying]);
 
   const handlePlayPause = useCallback(() => {
-    // If waveform isn't loaded yet, trigger load immediately
-    if (!shouldLoad) {
-      setShouldLoad(true);
-      return; // Wait for waveform to load, user can click again
-    }
-
     if (!wavesurferRef.current || !waveformReady) return;
 
     if (localIsPlaying) {
@@ -257,7 +217,7 @@ export function SampleRow({
       // Then play our WaveSurfer
       wavesurferRef.current.play();
     }
-  }, [localIsPlaying, waveformReady, shouldLoad, playTrack, setDuration, sample, packName, previewUrl]);
+  }, [localIsPlaying, waveformReady, playTrack, setDuration, sample, packName, previewUrl]);
 
   const handleDownload = async () => {
   if (!canDownload) return;
