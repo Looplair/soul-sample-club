@@ -57,9 +57,9 @@ export default async function AccountPage() {
   }
 
   return (
-    <div className="section">
-      <div className="container-app max-w-3xl">
-        <h1 className="text-h1 text-snow mb-48">Account Settings</h1>
+    <div className="py-6 sm:py-8 px-4 sm:px-6">
+      <div className="max-w-3xl mx-auto">
+        <h1 className="text-2xl sm:text-3xl font-bold text-white mb-6">Account Settings</h1>
         <AccountSettings
           profile={data.profile}
           subscription={data.subscription}

@@ -26,9 +26,9 @@ export function AccountSettings({ profile, subscription, patreonLink }: AccountS
   const [activeTab, setActiveTab] = useState<"profile" | "billing" | "password">("profile");
 
   return (
-    <div className="space-y-32">
+    <div className="space-y-6">
       {/* Tab Navigation */}
-      <div className="flex gap-8 border-b border-steel pb-2">
+      <div className="flex gap-1 sm:gap-2 border-b border-grey-700 overflow-x-auto">
         <TabButton
           active={activeTab === "profile"}
           onClick={() => setActiveTab("profile")}
@@ -53,9 +53,11 @@ export function AccountSettings({ profile, subscription, patreonLink }: AccountS
       </div>
 
       {/* Tab Content */}
-      {activeTab === "profile" && <ProfileTab profile={profile} />}
-      {activeTab === "billing" && <BillingTab subscription={subscription} patreonLink={patreonLink} />}
-      {activeTab === "password" && <PasswordTab />}
+      <div className="max-w-2xl">
+        {activeTab === "profile" && <ProfileTab profile={profile} />}
+        {activeTab === "billing" && <BillingTab subscription={subscription} patreonLink={patreonLink} />}
+        {activeTab === "password" && <PasswordTab />}
+      </div>
     </div>
   );
 }
@@ -75,12 +77,12 @@ function TabButton({
     <button
       onClick={onClick}
       className={`
-        flex items-center gap-8 px-16 py-12 text-body transition-all
+        flex items-center gap-2 px-3 sm:px-4 py-3 text-sm sm:text-base whitespace-nowrap transition-all
         border-b-2 -mb-[2px]
         ${
           active
-            ? "border-velvet text-velvet-light"
-            : "border-transparent text-snow/60 hover:text-snow"
+            ? "border-white text-white"
+            : "border-transparent text-text-muted hover:text-white"
         }
       `}
     >
@@ -126,17 +128,17 @@ function ProfileTab({ profile }: { profile: Profile }) {
         <CardTitle>Profile Information</CardTitle>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-24">
+        <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
-            <div className="bg-error/10 border border-error/50 rounded-button p-12 text-error text-body flex items-center gap-8">
-              <AlertCircle className="w-4 h-4" />
+            <div className="bg-error/10 border border-error/50 rounded-lg p-3 text-error text-sm flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 flex-shrink-0" />
               {error}
             </div>
           )}
 
           {success && (
-            <div className="bg-success/10 border border-success/50 rounded-button p-12 text-success text-body flex items-center gap-8">
-              <CheckCircle className="w-4 h-4" />
+            <div className="bg-success/10 border border-success/50 rounded-lg p-3 text-success text-sm flex items-center gap-2">
+              <CheckCircle className="w-4 h-4 flex-shrink-0" />
               Profile updated successfully
             </div>
           )}
@@ -240,12 +242,12 @@ function BillingTab({ subscription, patreonLink }: { subscription: Subscription 
         </CardHeader>
         <CardContent>
           {subscription ? (
-            <div className="space-y-24">
+            <div className="space-y-4">
               {/* Status */}
-              <div className="flex items-center justify-between p-16 bg-midnight rounded-card">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 bg-grey-800 rounded-lg">
                 <div>
-                  <p className="text-label text-snow/50 mb-4">Status</p>
-                  <div className="flex items-center gap-12">
+                  <p className="text-xs text-text-muted mb-1">Status</p>
+                  <div className="flex items-center gap-2">
                     <Badge
                       variant={
                         subscription.status === "active"
@@ -258,18 +260,18 @@ function BillingTab({ subscription, patreonLink }: { subscription: Subscription 
                       {subscription.status === "trialing" ? "Trial" : subscription.status}
                     </Badge>
                     {subscription.cancel_at_period_end && (
-                      <span className="text-caption text-warning">
+                      <span className="text-xs text-warning">
                         Cancels at period end
                       </span>
                     )}
                   </div>
                 </div>
                 {isActive && (
-                  <div className="text-right">
-                    <p className="text-label text-snow/50 mb-4">
+                  <div className="sm:text-right">
+                    <p className="text-xs text-text-muted mb-1">
                       {subscription.status === "trialing" ? "Trial ends" : "Next billing date"}
                     </p>
-                    <p className="text-body text-snow">
+                    <p className="text-sm text-white">
                       {formatDate(subscription.current_period_end)}
                     </p>
                   </div>
@@ -277,16 +279,16 @@ function BillingTab({ subscription, patreonLink }: { subscription: Subscription 
               </div>
 
               {/* Billing Period */}
-              <div className="grid grid-cols-2 gap-16">
-                <div className="p-16 bg-midnight rounded-card">
-                  <p className="text-label text-snow/50 mb-4">Current Period Start</p>
-                  <p className="text-body text-snow">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="p-4 bg-grey-800 rounded-lg">
+                  <p className="text-xs text-text-muted mb-1">Current Period Start</p>
+                  <p className="text-sm text-white">
                     {formatDate(subscription.current_period_start)}
                   </p>
                 </div>
-                <div className="p-16 bg-midnight rounded-card">
-                  <p className="text-label text-snow/50 mb-4">Current Period End</p>
-                  <p className="text-body text-snow">
+                <div className="p-4 bg-grey-800 rounded-lg">
+                  <p className="text-xs text-text-muted mb-1">Current Period End</p>
+                  <p className="text-sm text-white">
                     {formatDate(subscription.current_period_end)}
                   </p>
                 </div>
@@ -302,8 +304,8 @@ function BillingTab({ subscription, patreonLink }: { subscription: Subscription 
               </Button>
             </div>
           ) : (
-            <div className="text-center py-24">
-              <p className="text-body text-snow/60 mb-24">
+            <div className="text-center py-6">
+              <p className="text-sm text-text-muted mb-4">
                 You don&apos;t have an active subscription.
               </p>
               <Button onClick={handleSubscribe} isLoading={isLoading}>
@@ -327,17 +329,17 @@ function BillingTab({ subscription, patreonLink }: { subscription: Subscription 
         <CardContent>
           {patreonLink ? (
             <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 bg-midnight rounded-card">
-                <div>
-                  <p className="text-label text-snow/50 mb-1">Connected Account</p>
-                  <p className="text-body text-snow">{patreonLink.patreon_email}</p>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 bg-grey-800 rounded-lg">
+                <div className="min-w-0">
+                  <p className="text-xs text-text-muted mb-1">Connected Account</p>
+                  <p className="text-sm text-white truncate">{patreonLink.patreon_email}</p>
                 </div>
-                <Badge variant={hasPatreonAccess ? "success" : "warning"}>
+                <Badge variant={hasPatreonAccess ? "success" : "warning"} className="flex-shrink-0">
                   {hasPatreonAccess ? "Active Patron" : "Not Active"}
                 </Badge>
               </div>
               {!hasPatreonAccess && (
-                <p className="text-body-sm text-text-muted">
+                <p className="text-sm text-text-muted">
                   Your Patreon account is connected but you don&apos;t have an active pledge.
                   Subscribe on Patreon to get access.
                 </p>
@@ -353,7 +355,7 @@ function BillingTab({ subscription, patreonLink }: { subscription: Subscription 
             </div>
           ) : (
             <div className="text-center py-6">
-              <p className="text-body text-snow/60 mb-4">
+              <p className="text-sm text-text-muted mb-4">
                 Link your Patreon account to get access as an active patron.
               </p>
               <Button
@@ -419,17 +421,17 @@ function PasswordTab() {
         <CardTitle>Change Password</CardTitle>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-24">
+        <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
-            <div className="bg-error/10 border border-error/50 rounded-button p-12 text-error text-body flex items-center gap-8">
-              <AlertCircle className="w-4 h-4" />
+            <div className="bg-error/10 border border-error/50 rounded-lg p-3 text-error text-sm flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 flex-shrink-0" />
               {error}
             </div>
           )}
 
           {success && (
-            <div className="bg-success/10 border border-success/50 rounded-button p-12 text-success text-body flex items-center gap-8">
-              <CheckCircle className="w-4 h-4" />
+            <div className="bg-success/10 border border-success/50 rounded-lg p-3 text-success text-sm flex items-center gap-2">
+              <CheckCircle className="w-4 h-4 flex-shrink-0" />
               Password updated successfully
             </div>
           )}

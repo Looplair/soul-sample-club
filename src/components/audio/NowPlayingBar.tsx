@@ -109,9 +109,9 @@ export function NowPlayingBar() {
       >
         {/* Invisible expanded click area for easier interaction */}
         <div className="absolute -top-2 -bottom-2 left-0 right-0" />
-        {/* Visible progress indicator */}
+        {/* Visible progress indicator - no transition for instant sync with ball */}
         <div
-          className="h-full bg-white transition-all duration-75 group-hover:bg-white/90 relative z-10"
+          className="h-full bg-white group-hover:bg-white/90 relative z-10"
           style={{ width: `${progress}%` }}
         />
         {/* Hover indicator dot at current position */}

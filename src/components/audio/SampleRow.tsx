@@ -227,70 +227,89 @@ export function SampleRow({
   }, [localIsPlaying, waveformReady, playTrack, setDuration, sample, packName, previewUrl]);
 
   const handleDownload = async () => {
-    if (!canDownload) return;
+  if (!canDownload) return;
 
-    setIsDownloading(true);
-    try {
-      const response = await fetch(`/api/download/${sample.id}`);
-      if (!response.ok) {
-        throw new Error("Download failed");
-      }
-
-      const data = await response.json();
-
-      // Fetch the file as a blob to ensure proper filename on download
-      const fileResponse = await fetch(data.url);
-      const blob = await fileResponse.blob();
-      const blobUrl = URL.createObjectURL(blob);
-
-      const link = document.createElement("a");
-      link.href = blobUrl;
-      link.download = sample.name + ".wav";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      // Clean up the blob URL
-      URL.revokeObjectURL(blobUrl);
-    } catch (error) {
-      console.error("Download error:", error);
-    } finally {
-      setIsDownloading(false);
+  setIsDownloading(true);
+  try {
+    const response = await fetch(`/api/download/${sample.id}`);
+    if (!response.ok) {
+      throw new Error("Download failed");
     }
-  };
 
-  const handleDownloadStems = async () => {
-    if (!canDownload || !sample.stems_path) return;
+    const data = await response.json();
 
-    setIsDownloadingStems(true);
-    try {
-      const response = await fetch(`/api/download/${sample.id}/stems`);
-      if (!response.ok) {
-        throw new Error("Stems download failed");
-      }
-
-      const data = await response.json();
-
-      // Fetch the file as a blob to ensure proper filename on download
-      const fileResponse = await fetch(data.url);
-      const blob = await fileResponse.blob();
-      const blobUrl = URL.createObjectURL(blob);
-
-      const link = document.createElement("a");
-      link.href = blobUrl;
-      link.download = sample.name + "-stems.zip";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      // Clean up the blob URL
-      URL.revokeObjectURL(blobUrl);
-    } catch (error) {
-      console.error("Stems download error:", error);
-    } finally {
-      setIsDownloadingStems(false);
+    // ✅ DESKTOP APP PATH (Electron only)
+    if (typeof window !== "undefined" && (window as any).sscDesktop) {
+      await (window as any).sscDesktop.downloadFile({
+        url: data.url,
+        packName: packName || "Unknown Pack",
+        fileName: sample.name + ".wav",
+      });
+      return;
     }
-  };
+
+    // ✅ WEB BROWSER PATH (unchanged)
+    const fileResponse = await fetch(data.url);
+    const blob = await fileResponse.blob();
+    const blobUrl = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = blobUrl;
+    link.download = sample.name + ".wav";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    URL.revokeObjectURL(blobUrl);
+  } catch (error) {
+    console.error("Download error:", error);
+  } finally {
+    setIsDownloading(false);
+  }
+}
+
+const handleDownloadStems = async () => {
+  if (!canDownload || !sample.stems_path) return;
+
+  setIsDownloadingStems(true);
+  try {
+    const response = await fetch(`/api/download/${sample.id}/stems`);
+    if (!response.ok) {
+      throw new Error("Stems download failed");
+    }
+
+    const data = await response.json();
+
+    // ✅ DESKTOP APP PATH (Electron only)
+    if (typeof window !== "undefined" && (window as any).sscDesktop) {
+      await (window as any).sscDesktop.downloadFile({
+        url: data.url,
+        packName: packName || "Unknown Pack",
+        fileName: sample.name + "-stems.zip",
+      });
+      return;
+    }
+
+    // ✅ WEB BROWSER PATH (unchanged)
+    const fileResponse = await fetch(data.url);
+    const blob = await fileResponse.blob();
+    const blobUrl = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = blobUrl;
+    link.download = sample.name + "-stems.zip";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    URL.revokeObjectURL(blobUrl);
+  } catch (error) {
+    console.error("Stems download error:", error);
+  } finally {
+    setIsDownloadingStems(false);
+  }
+};
+
 
   const handleToggleLike = async () => {
     if (!onToggleLike) return;
@@ -386,13 +405,13 @@ export function SampleRow({
             </button>
           )}
 
-          {/* Stems Button - always visible on desktop, greyed out if no stems */}
+          {/* Stems Button - always visible, icon-only on mobile */}
           <Button
             variant="ghost"
             size="sm"
             onClick={handleDownloadStems}
             disabled={isDownloadingStems || !canDownload || !sample.stems_path}
-            className="hidden sm:flex"
+            className="flex"
             leftIcon={
               isDownloadingStems ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -412,7 +431,7 @@ export function SampleRow({
                 : "Download stems"
             }
           >
-            Stems
+            <span className="hidden sm:inline">Stems</span>
           </Button>
 
           {/* Download Button */}

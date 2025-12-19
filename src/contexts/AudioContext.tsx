@@ -153,11 +153,13 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const previousPathRef = useRef(pathname);
 
-  // Stop all audio when route changes
+  // Stop all audio and hide player when route changes
   useEffect(() => {
     if (previousPathRef.current !== pathname) {
-      // Route changed - stop all audio
+      // Route changed - stop all audio and clear current track
       stopAll();
+      setCurrentTrack(null);
+      setCurrentTime(0);
       previousPathRef.current = pathname;
     }
   }, [pathname, stopAll]);
