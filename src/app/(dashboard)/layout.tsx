@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { Navbar, Footer } from "@/components/layout";
+import { Navbar, Footer, MobileBottomNav } from "@/components/layout";
 import type { Profile } from "@/types/database";
 
 export default async function DashboardLayout({
@@ -28,8 +28,13 @@ export default async function DashboardLayout({
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar user={profile} />
-      <main className="flex-1">{children}</main>
-      <Footer />
+      {/* Add padding at bottom for mobile nav + now playing bar */}
+      <main className="flex-1 pb-32 sm:pb-0">{children}</main>
+      {/* Footer hidden on mobile to make room for bottom nav */}
+      <div className="hidden sm:block">
+        <Footer />
+      </div>
+      <MobileBottomNav />
     </div>
   );
 }

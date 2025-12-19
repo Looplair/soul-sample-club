@@ -19,6 +19,11 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
+  /* Safe area support for iPhone notch/home indicator */
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
   body {
     @apply bg-charcoal text-text-secondary antialiased;
     font-feature-settings: "ss01", "ss02", "cv01", "cv02";

@@ -41,6 +41,10 @@ export function SampleRow({
   const [localCurrentTime, setLocalCurrentTime] = useState(0);
   const [localIsPlaying, setLocalIsPlaying] = useState(false);
 
+  // Lazy loading - only load waveform when visible or user requests play
+  const [isVisible, setIsVisible] = useState(false);
+  const [shouldLoad, setShouldLoad] = useState(false);
+
   // Track ID ref for stable comparisons in callbacks
   const sampleIdRef = useRef(sample.id);
   sampleIdRef.current = sample.id;
@@ -60,24 +64,48 @@ export function SampleRow({
 
   // Set preview URL to streaming endpoint (bypasses CORS issues)
   useEffect(() => {
-    // Use the streaming endpoint directly - no need to fetch a signed URL
-    // This serves the audio through our own API, avoiding CORS issues
     setPreviewUrl(`/api/preview/${sample.id}?stream=true`);
     setIsLoadingPreview(false);
   }, [sample.id]);
 
-  // Initialize WaveSurfer when URL is available
+  // Intersection Observer for lazy loading - trigger load when row becomes visible
   useEffect(() => {
-    if (!containerRef.current || !previewUrl) {
-      console.log("WaveSurfer skip - container:", !!containerRef.current, "url:", !!previewUrl);
+    if (!containerRef.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setIsVisible(true);
+            // Small delay before loading to prioritize visible content
+            setTimeout(() => {
+              setShouldLoad(true);
+            }, 100 + index * 50); // Stagger loading based on index
+          }
+        });
+      },
+      {
+        root: null,
+        rootMargin: "100px", // Start loading slightly before visible
+        threshold: 0.1,
+      }
+    );
+
+    observer.observe(containerRef.current);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [index]);
+
+  // Initialize WaveSurfer only when shouldLoad is true (lazy loading)
+  useEffect(() => {
+    if (!containerRef.current || !previewUrl || !shouldLoad) {
       return;
     }
 
-    console.log("WaveSurfer initializing for sample:", sample.id, "URL:", previewUrl);
-
     // Clean up any existing instance
     if (wavesurferRef.current) {
-      console.log("Destroying existing WaveSurfer instance");
       wavesurferRef.current.destroy();
       wavesurferRef.current = null;
     }
@@ -93,7 +121,6 @@ export function SampleRow({
     }
 
     // Create an audio element for WaveSurfer
-    // No crossOrigin needed since we're streaming through our own API
     const audio = new Audio();
     audioRef.current = audio;
 
@@ -155,7 +182,7 @@ export function SampleRow({
     };
 
     const handleError = (error: Error) => {
-      console.error("WaveSurfer error for sample:", sampleIdRef.current, "Error:", error, "URL was:", previewUrl);
+      console.error("WaveSurfer error for sample:", sampleIdRef.current, "Error:", error);
       setWaveformLoading(false);
       setPreviewError("Failed to load waveform");
     };
@@ -188,7 +215,7 @@ export function SampleRow({
       wavesurferRef.current = null;
       audioRef.current = null;
     };
-  }, [previewUrl, registerWaveSurfer, unregisterWaveSurfer, setIsPlaying, setCurrentTime]);
+  }, [previewUrl, shouldLoad, registerWaveSurfer, unregisterWaveSurfer, setIsPlaying, setCurrentTime]);
 
   // Pause this wavesurfer when another track becomes current
   useEffect(() => {
@@ -199,6 +226,12 @@ export function SampleRow({
   }, [currentTrack, sample.id, localIsPlaying]);
 
   const handlePlayPause = useCallback(() => {
+    // If waveform isn't loaded yet, trigger load immediately
+    if (!shouldLoad) {
+      setShouldLoad(true);
+      return; // Wait for waveform to load, user can click again
+    }
+
     if (!wavesurferRef.current || !waveformReady) return;
 
     if (localIsPlaying) {
@@ -224,7 +257,7 @@ export function SampleRow({
       // Then play our WaveSurfer
       wavesurferRef.current.play();
     }
-  }, [localIsPlaying, waveformReady, playTrack, setDuration, sample, packName, previewUrl]);
+  }, [localIsPlaying, waveformReady, shouldLoad, playTrack, setDuration, sample, packName, previewUrl]);
 
   const handleDownload = async () => {
   if (!canDownload) return;

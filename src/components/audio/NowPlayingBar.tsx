@@ -122,7 +122,7 @@ export function NowPlayingBar() {
       </div>
 
       {/* Main bar content */}
-      <div className="bg-charcoal-elevated/95 backdrop-blur-xl border-t border-grey-700">
+      <div className="bg-charcoal-elevated/95 backdrop-blur-xl border-t border-grey-700 safe-area-bottom">
         <div className="container-app">
           <div className="h-16 sm:h-18 flex items-center gap-3 sm:gap-4">
             {/* Play/Pause Button */}

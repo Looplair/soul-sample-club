@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, Calendar, Music2, Download, Lock, Archive, Sparkles, Star, Play, LogIn } from "lucide-react";
+import { ArrowLeft, Calendar, Music2, Download, Lock, Archive, Sparkles, Star, Play, LogIn, User } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { formatDate, isPackNew, isPackExpired } from "@/lib/utils";
@@ -196,7 +196,7 @@ export default async function PackDetailPage({
         </div>
       </header>
 
-      <main className="section">
+      <main className={`section ${isLoggedIn ? 'pb-32 sm:pb-0' : ''}`}>
         <div className="container-app">
           {/* Back Link */}
           <Link
@@ -392,14 +392,34 @@ export default async function PackDetailPage({
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-grey-700 py-8 mt-16">
+      {/* Footer - hidden on mobile when bottom nav is showing */}
+      <footer className={`border-t border-grey-700 py-8 mt-16 ${isLoggedIn ? 'hidden sm:block' : ''}`}>
         <div className="container-app text-center">
           <p className="text-body-sm text-text-subtle">
             Soul Sample Club - Premium sounds for music producers
           </p>
         </div>
       </footer>
+
+      {/* Mobile Bottom Nav - for logged in users */}
+      {isLoggedIn && (
+        <nav className="sm:hidden fixed bottom-0 left-0 right-0 bg-charcoal-elevated/95 backdrop-blur-xl border-t border-grey-700 z-40 safe-area-bottom">
+          <div className="flex items-center justify-around h-14">
+            <Link href="/feed" className="flex flex-col items-center gap-1 py-2 px-4 text-white">
+              <Music2 className="w-5 h-5" />
+              <span className="text-[10px]">Catalog</span>
+            </Link>
+            <Link href="/library" className="flex flex-col items-center gap-1 py-2 px-4 text-text-muted">
+              <Archive className="w-5 h-5" />
+              <span className="text-[10px]">Library</span>
+            </Link>
+            <Link href="/account" className="flex flex-col items-center gap-1 py-2 px-4 text-text-muted">
+              <User className="w-5 h-5" />
+              <span className="text-[10px]">Account</span>
+            </Link>
+          </div>
+        </nav>
+      )}
     </div>
   );
 }

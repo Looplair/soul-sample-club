@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { PackCard } from "@/components/packs/PackCard";
 import { Button } from "@/components/ui";
-import { Music, LogIn, MessageCircle, Archive } from "lucide-react";
+import { Music, LogIn, Archive, User, Sparkles, Star } from "lucide-react";
 import type { Sample, Subscription } from "@/types/database";
 
 export const metadata = {
@@ -134,12 +134,6 @@ export default async function FeedPage() {
           <div className="flex items-center gap-2 sm:gap-3">
             {isLoggedIn ? (
               <>
-                <Link href="/chat" className="hidden sm:block">
-                  <Button variant="ghost" size="sm">
-                    <MessageCircle className="w-4 h-4 mr-1" />
-                    Chat
-                  </Button>
-                </Link>
                 <Link href="/library" className="hidden sm:block">
                   <Button variant="ghost" size="sm">
                     Library
@@ -161,8 +155,8 @@ export default async function FeedPage() {
                 </Link>
                 <Link href="/signup">
                   <Button size="sm">
-                    <span className="hidden sm:inline">Sign up free</span>
-                    <span className="sm:hidden">Sign up</span>
+                    <span className="hidden sm:inline">Start free trial</span>
+                    <span className="sm:hidden">Free trial</span>
                   </Button>
                 </Link>
               </>
@@ -171,8 +165,8 @@ export default async function FeedPage() {
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="section">
+      {/* Main Content - extra padding on mobile for bottom nav + now playing bar */}
+      <main className={`section ${isLoggedIn ? 'pb-32 sm:pb-0' : ''}`}>
         <div className="container-app">
           {/* Hero Section */}
           <div className="text-center mb-8 sm:mb-12">
@@ -184,41 +178,126 @@ export default async function FeedPage() {
               {!isLoggedIn && " Sign up free to save favorites."}
               {isLoggedIn && !hasAccess && " Subscribe or link Patreon to download."}
             </p>
+
+            {/* Free Trial Banner - for non-subscribed users */}
+            {isLoggedIn && !hasAccess && (
+              <div className="mt-6 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20">
+                <Sparkles className="w-4 h-4 text-white" />
+                <span className="text-sm text-white">Start your 7-day free trial to download</span>
+                <Link href="/account?tab=billing" className="text-sm text-white underline hover:no-underline ml-1">
+                  Subscribe →
+                </Link>
+              </div>
+            )}
           </div>
 
-          {/* Releases Section */}
-          <section className="mb-12 sm:mb-16">
-            <div className="flex items-center gap-2 mb-4 sm:mb-6">
-              <Music className="w-5 h-5 text-white" />
-              <h2 className="text-h3 sm:text-h2 text-white">Releases</h2>
-              <span className="text-caption text-text-muted ml-2">
-                {allPacks.length} packs
-              </span>
-            </div>
-
-            <Suspense fallback={<PackGridSkeleton />}>
-              <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-                {allPacks.map((pack) => {
-                  const sampleCount = Array.isArray(pack.samples)
-                    ? pack.samples.length
-                    : 0;
-                  const archived = isArchived(pack.release_date);
-                  return (
-                    <div
+          {/* Staff Picks Section - Show if there are any */}
+          {(() => {
+            const staffPicks = allPacks.filter(p => p.is_staff_pick && !isArchived(p.release_date));
+            if (staffPicks.length === 0) return null;
+            return (
+              <section className="mb-12 sm:mb-16">
+                <div className="flex items-center gap-2 mb-4 sm:mb-6">
+                  <Star className="w-5 h-5 text-yellow-400" />
+                  <h2 className="text-h3 sm:text-h2 text-white">Staff Picks</h2>
+                </div>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+                  {staffPicks.slice(0, 4).map((pack) => (
+                    <PackCard
                       key={pack.id}
-                      className={archived ? "opacity-50 hover:opacity-100 transition-opacity duration-200" : ""}
-                    >
-                      <PackCard
-                        pack={pack}
-                        sampleCount={sampleCount}
-                        hasSubscription={hasAccess}
-                      />
+                      pack={pack}
+                      sampleCount={Array.isArray(pack.samples) ? pack.samples.length : 0}
+                      hasSubscription={hasAccess}
+                    />
+                  ))}
+                </div>
+              </section>
+            );
+          })()}
+
+          {/* Recently Added Section */}
+          {(() => {
+            const recentPacks = allPacks.filter(p => !isArchived(p.release_date)).slice(0, 4);
+            const olderPacks = allPacks.filter(p => !isArchived(p.release_date)).slice(4);
+            const archivedPacks = allPacks.filter(p => isArchived(p.release_date));
+
+            return (
+              <>
+                {recentPacks.length > 0 && (
+                  <section className="mb-12 sm:mb-16">
+                    <div className="flex items-center gap-2 mb-4 sm:mb-6">
+                      <Sparkles className="w-5 h-5 text-white" />
+                      <h2 className="text-h3 sm:text-h2 text-white">Recently Added</h2>
+                      <span className="text-caption text-text-muted ml-2">
+                        New this month
+                      </span>
                     </div>
-                  );
-                })}
-              </div>
-            </Suspense>
-          </section>
+                    <Suspense fallback={<PackGridSkeleton />}>
+                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+                        {recentPacks.map((pack) => (
+                          <PackCard
+                            key={pack.id}
+                            pack={pack}
+                            sampleCount={Array.isArray(pack.samples) ? pack.samples.length : 0}
+                            hasSubscription={hasAccess}
+                          />
+                        ))}
+                      </div>
+                    </Suspense>
+                  </section>
+                )}
+
+                {olderPacks.length > 0 && (
+                  <section className="mb-12 sm:mb-16">
+                    <div className="flex items-center gap-2 mb-4 sm:mb-6">
+                      <Music className="w-5 h-5 text-white" />
+                      <h2 className="text-h3 sm:text-h2 text-white">Available Now</h2>
+                      <span className="text-caption text-text-muted ml-2">
+                        {olderPacks.length} packs
+                      </span>
+                    </div>
+                    <Suspense fallback={<PackGridSkeleton />}>
+                      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+                        {olderPacks.map((pack) => (
+                          <PackCard
+                            key={pack.id}
+                            pack={pack}
+                            sampleCount={Array.isArray(pack.samples) ? pack.samples.length : 0}
+                            hasSubscription={hasAccess}
+                          />
+                        ))}
+                      </div>
+                    </Suspense>
+                  </section>
+                )}
+
+                {archivedPacks.length > 0 && (
+                  <section className="mb-12 sm:mb-16">
+                    <div className="flex items-center gap-2 mb-4 sm:mb-6">
+                      <Archive className="w-5 h-5 text-text-muted" />
+                      <h2 className="text-h3 sm:text-h2 text-text-muted">Archive</h2>
+                      <span className="text-caption text-text-subtle ml-2">
+                        Past releases (preview only)
+                      </span>
+                    </div>
+                    <Suspense fallback={<PackGridSkeleton />}>
+                      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+                        {archivedPacks.map((pack) => (
+                          <div key={pack.id} className="opacity-60 hover:opacity-100 transition-opacity duration-200">
+                            <PackCard
+                              pack={pack}
+                              sampleCount={Array.isArray(pack.samples) ? pack.samples.length : 0}
+                              hasSubscription={hasAccess}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </Suspense>
+                  </section>
+                )}
+              </>
+            );
+          })()}
 
           {/* CTA Section for non-logged-in users */}
           {!isLoggedIn && (
@@ -250,19 +329,19 @@ export default async function FeedPage() {
 
           {/* Mobile-only bottom nav for logged in users */}
           {isLoggedIn && (
-            <nav className="sm:hidden fixed bottom-20 left-0 right-0 bg-charcoal-elevated/95 backdrop-blur-xl border-t border-grey-700 z-30">
+            <nav className="sm:hidden fixed bottom-0 left-0 right-0 bg-charcoal-elevated/95 backdrop-blur-xl border-t border-grey-700 z-40 safe-area-bottom">
               <div className="flex items-center justify-around h-14">
-                <Link href="/feed" className="flex flex-col items-center gap-1 text-white">
+                <Link href="/feed" className="flex flex-col items-center gap-1 py-2 px-4 text-white">
                   <Music className="w-5 h-5" />
                   <span className="text-[10px]">Catalog</span>
                 </Link>
-                <Link href="/library" className="flex flex-col items-center gap-1 text-text-muted">
+                <Link href="/library" className="flex flex-col items-center gap-1 py-2 px-4 text-text-muted">
                   <Archive className="w-5 h-5" />
                   <span className="text-[10px]">Library</span>
                 </Link>
-                <Link href="/chat" className="flex flex-col items-center gap-1 text-text-muted">
-                  <MessageCircle className="w-5 h-5" />
-                  <span className="text-[10px]">Chat</span>
+                <Link href="/account" className="flex flex-col items-center gap-1 py-2 px-4 text-text-muted">
+                  <User className="w-5 h-5" />
+                  <span className="text-[10px]">Account</span>
                 </Link>
               </div>
             </nav>

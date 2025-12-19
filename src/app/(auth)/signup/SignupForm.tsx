@@ -17,7 +17,7 @@ const PatreonIcon = () => (
 const benefits = [
   "Preview all tracks for free",
   "Save favorites to your library",
-  "Join the community chat",
+  "7-day free trial available",
   "Subscribe or link Patreon to download",
 ];
 
@@ -29,6 +29,7 @@ export function SignupForm() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [error, setError] = useState<string | null>(
     errorParam === "patreon_not_configured"
       ? "Patreon is not configured. Please use email signup."
@@ -43,6 +44,12 @@ export function SignupForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    if (!acceptedTerms) {
+      setError("Please accept the Terms of Use and Privacy Policy to continue.");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -71,6 +78,10 @@ export function SignupForm() {
   };
 
   const handlePatreonSignup = () => {
+    if (!acceptedTerms) {
+      setError("Please accept the Terms of Use and Privacy Policy to continue.");
+      return;
+    }
     setIsPatreonLoading(true);
     window.location.href = "/api/patreon/login";
   };
@@ -98,6 +109,29 @@ export function SignupForm() {
           {error}
         </div>
       )}
+
+      {/* Terms Acceptance - Required */}
+      <div className="bg-grey-800/50 border border-grey-700 rounded-xl p-4">
+        <label className="flex items-start gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={acceptedTerms}
+            onChange={(e) => setAcceptedTerms(e.target.checked)}
+            className="mt-1 w-4 h-4 rounded border-grey-600 bg-grey-700 text-white focus:ring-white focus:ring-offset-0"
+          />
+          <span className="text-body-sm text-text-secondary">
+            I agree to the{" "}
+            <Link href="/terms" className="text-white underline hover:text-grey-200" target="_blank">
+              Terms of Use
+            </Link>{" "}
+            and{" "}
+            <Link href="/privacy" className="text-white underline hover:text-grey-200" target="_blank">
+              Privacy Policy
+            </Link>
+            . I understand that samples are licensed, not sold, and may only be used in accordance with the license terms.
+          </span>
+        </label>
+      </div>
 
       {/* Benefits Box */}
       <div className="bg-grey-800/50 border border-grey-700 rounded-xl p-4">
@@ -189,17 +223,6 @@ export function SignupForm() {
           className="text-white hover:underline transition-colors"
         >
           Sign in
-        </Link>
-      </p>
-
-      <p className="text-center text-caption text-text-subtle">
-        By signing up, you agree to our{" "}
-        <Link href="/terms" className="underline hover:text-text-muted transition-colors">
-          Terms of Service
-        </Link>{" "}
-        and{" "}
-        <Link href="/privacy" className="underline hover:text-text-muted transition-colors">
-          Privacy Policy
         </Link>
       </p>
     </div>
