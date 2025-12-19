@@ -1,12 +1,30 @@
-import { redirect } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { PackCard } from "@/components/packs/PackCard";
 import { Button } from "@/components/ui";
-import { Music, Sparkles, Download, Headphones, Check, ArrowRight } from "lucide-react";
-import type { Sample } from "@/types/database";
+import {
+  Music,
+  Sparkles,
+  Download,
+  Headphones,
+  Check,
+  ArrowRight,
+  Play,
+  Zap,
+  Shield,
+  Clock,
+  Star,
+  ChevronRight,
+  Archive,
+  User,
+} from "lucide-react";
+import type { Sample, Profile } from "@/types/database";
 
+// ============================================
+// TYPES
+// ============================================
 interface PackWithSamples {
   id: string;
   name: string;
@@ -20,68 +38,156 @@ interface PackWithSamples {
   samples: Sample[];
 }
 
-async function getRecentPacks(): Promise<PackWithSamples[]> {
+// ============================================
+// DATA FETCHING
+// ============================================
+async function getAllPacks(): Promise<PackWithSamples[]> {
   const adminSupabase = createAdminClient();
   const result = await adminSupabase
     .from("packs")
     .select(`*, samples(*)`)
     .eq("is_published", true)
-    .order("release_date", { ascending: false })
-    .limit(4);
+    .order("release_date", { ascending: false });
 
   return (result.data as PackWithSamples[]) || [];
 }
 
-async function isLoggedIn(): Promise<boolean> {
+async function getUserState(): Promise<{
+  isLoggedIn: boolean;
+  hasSubscription: boolean;
+  profile: Profile | null;
+}> {
   try {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    return !!user;
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { isLoggedIn: false, hasSubscription: false, profile: null };
+    }
+
+    // Get profile
+    const profileResult = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", user.id)
+      .single();
+
+    // Check subscription
+    const subResult = await supabase
+      .from("subscriptions")
+      .select("*")
+      .eq("user_id", user.id)
+      .in("status", ["active", "trialing"])
+      .single();
+
+    // Check Patreon
+    let hasPatreon = false;
+    try {
+      const patreonResult = await supabase
+        .from("patreon_links")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("is_active", true)
+        .single();
+      hasPatreon = !!patreonResult.data;
+    } catch {
+      // Table might not exist
+    }
+
+    return {
+      isLoggedIn: true,
+      hasSubscription: !!subResult.data || hasPatreon,
+      profile: profileResult.data as Profile | null,
+    };
   } catch {
-    return false;
+    return { isLoggedIn: false, hasSubscription: false, profile: null };
   }
 }
 
+// Helper to check if pack is archived (older than 3 months)
+function isArchived(releaseDate: string): boolean {
+  const threeMonthsAgo = new Date();
+  threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+  return new Date(releaseDate) < threeMonthsAgo;
+}
+
+// ============================================
+// CONSTANTS
+// ============================================
 const features = [
   {
     icon: Music,
     title: "Premium Samples",
-    description: "Curated soul, funk, and jazz samples from professional producers",
+    description: "Curated soul, funk, and jazz samples ready for your productions",
   },
   {
     icon: Download,
-    title: "High Quality WAV",
-    description: "Download stems and full tracks in pristine audio quality",
+    title: "WAV + Stems",
+    description: "High-quality downloads with individual stems included",
   },
   {
     icon: Headphones,
     title: "Preview Everything",
-    description: "Listen to every sample before you subscribe",
+    description: "Listen to every track before you subscribe",
+  },
+];
+
+const howItWorks = [
+  {
+    step: "01",
+    title: "Browse the catalog",
+    description: "Explore our curated library of soul samples. Preview any track instantly.",
+  },
+  {
+    step: "02",
+    title: "Start your free trial",
+    description: "Get 7 days of full access. No credit card required to start.",
+  },
+  {
+    step: "03",
+    title: "Download & create",
+    description: "Download WAV files and stems. Use in your productions royalty-free.",
   },
 ];
 
 const benefits = [
-  "New sample packs released regularly",
-  "Access to 3 months of rolling releases",
-  "High-quality WAV files with stems",
-  "Commercial use license included",
-  "Cancel anytime, no commitment",
+  "New sample packs every month",
+  "3-month rolling access window",
+  "WAV files with stems",
+  "Commercial license included",
+  "Cancel anytime",
 ];
 
+const stats = [
+  { value: "500+", label: "Samples" },
+  { value: "50+", label: "Packs" },
+  { value: "7", label: "Day Trial" },
+];
+
+// ============================================
+// PAGE COMPONENT
+// ============================================
 export default async function HomePage() {
-  const loggedIn = await isLoggedIn();
+  const [allPacks, userState] = await Promise.all([getAllPacks(), getUserState()]);
 
-  // If logged in, redirect to feed
-  if (loggedIn) {
-    redirect("/feed");
-  }
+  const { isLoggedIn, hasSubscription, profile } = userState;
 
-  const recentPacks = await getRecentPacks();
+  // Organize packs
+  const staffPicks = allPacks.filter((p) => p.is_staff_pick && !isArchived(p.release_date));
+  const recentPacks = allPacks.filter((p) => !isArchived(p.release_date));
+  const archivedPacks = allPacks.filter((p) => isArchived(p.release_date));
+
+  // Featured pack for hero (most recent with cover image)
+  const featuredPack = recentPacks.find((p) => p.cover_image_url) || recentPacks[0];
 
   return (
     <div className="min-h-screen bg-charcoal">
-      {/* Header */}
-      <header className="border-b border-grey-700 bg-charcoal/90 backdrop-blur-xl sticky top-0 z-40">
+      {/* ============================================
+          HEADER
+          ============================================ */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-charcoal/80 backdrop-blur-xl border-b border-grey-700/50">
         <div className="container-app h-14 sm:h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 sm:gap-3 group">
             <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-white flex items-center justify-center shadow-button group-hover:shadow-glow-white-soft transition-shadow duration-300">
@@ -92,152 +198,463 @@ export default async function HomePage() {
             </span>
           </Link>
 
+          <nav className="hidden md:flex items-center gap-8">
+            <a href="#catalog" className="nav-link">
+              Catalog
+            </a>
+            <a href="#how-it-works" className="nav-link">
+              How It Works
+            </a>
+            <a href="#pricing" className="nav-link">
+              Pricing
+            </a>
+          </nav>
+
           <div className="flex items-center gap-2 sm:gap-3">
-            <Link href="/login">
-              <Button variant="ghost" size="sm">
-                Log in
-              </Button>
-            </Link>
-            <Link href="/signup">
-              <Button size="sm">
-                Start free trial
-              </Button>
-            </Link>
+            {isLoggedIn ? (
+              <>
+                <Link href="/library" className="hidden sm:block">
+                  <Button variant="ghost" size="sm">
+                    Library
+                  </Button>
+                </Link>
+                <Link href="/account">
+                  <Button variant="secondary" size="sm">
+                    {profile?.username || profile?.full_name || "Account"}
+                  </Button>
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link href="/login">
+                  <Button variant="ghost" size="sm">
+                    Log in
+                  </Button>
+                </Link>
+                <Link href="/signup">
+                  <Button size="sm">
+                    <span className="hidden sm:inline">Start free trial</span>
+                    <span className="sm:hidden">Try free</span>
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </header>
 
-      <main>
-        {/* Hero Section */}
-        <section className="relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />
-          <div className="container-app py-16 sm:py-24 text-center relative z-10">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 mb-6">
-              <Sparkles className="w-4 h-4 text-white" />
-              <span className="text-sm text-white">7-day free trial</span>
-            </div>
-
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6 max-w-3xl mx-auto leading-tight">
-              Premium samples for music producers
-            </h1>
-
-            <p className="text-lg sm:text-xl text-text-muted max-w-2xl mx-auto mb-8">
-              Soul Sample Club delivers curated sample packs straight to your library.
-              Preview everything for free. Subscribe to download.
-            </p>
-
-            <div className="flex flex-col sm:flex-row gap-3 justify-center mb-8">
-              <Link href="/signup">
-                <Button size="lg" className="w-full sm:w-auto" rightIcon={<ArrowRight className="w-4 h-4" />}>
-                  Start free trial
-                </Button>
-              </Link>
-              <Link href="/feed">
-                <Button variant="secondary" size="lg" className="w-full sm:w-auto">
-                  Browse catalog
-                </Button>
-              </Link>
-            </div>
-
-            <p className="text-sm text-text-muted">
-              No credit card required. Cancel anytime.
-            </p>
+      <main className="pt-14 sm:pt-16">
+        {/* ============================================
+            HERO SECTION - Tracklib inspired
+            ============================================ */}
+        <section className="relative min-h-[80vh] sm:min-h-[90vh] flex items-center overflow-hidden">
+          {/* Background with featured pack artwork */}
+          <div className="absolute inset-0">
+            {featuredPack?.cover_image_url && (
+              <Image
+                src={featuredPack.cover_image_url}
+                alt=""
+                fill
+                className="object-cover opacity-20 blur-2xl scale-110"
+                priority
+              />
+            )}
+            <div className="absolute inset-0 bg-gradient-to-b from-charcoal via-charcoal/95 to-charcoal" />
+            <div className="absolute inset-0 bg-gradient-to-r from-charcoal via-transparent to-charcoal/50" />
           </div>
-        </section>
 
-        {/* Latest Releases - Feed Preview */}
-        <section className="py-12 sm:py-16 border-t border-grey-800">
-          <div className="container-app">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-2">
-                <Music className="w-5 h-5 text-white" />
-                <h2 className="text-h3 sm:text-h2 text-white">Latest Releases</h2>
+          <div className="container-app relative z-10 py-12 sm:py-20">
+            <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
+              {/* Left: Text content */}
+              <div className="text-center lg:text-left">
+                {/* Badge */}
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 mb-6 sm:mb-8">
+                  <Sparkles className="w-4 h-4 text-white" />
+                  <span className="text-sm text-white font-medium">7-day free trial</span>
+                  <span className="text-sm text-white/60">• No card required</span>
+                </div>
+
+                {/* Headline */}
+                <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-white mb-6 leading-[1.1] tracking-tight">
+                  Soul samples.
+                  <br />
+                  <span className="text-gradient">Made for producers.</span>
+                </h1>
+
+                {/* Subheadline */}
+                <p className="text-lg sm:text-xl text-text-muted max-w-xl mx-auto lg:mx-0 mb-8">
+                  Curated sample packs delivered monthly. Preview everything free.
+                  Subscribe to download stems and WAVs.
+                </p>
+
+                {/* CTAs */}
+                <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start mb-8">
+                  {isLoggedIn ? (
+                    <>
+                      <a href="#catalog">
+                        <Button size="lg" className="w-full sm:w-auto" rightIcon={<ArrowRight className="w-4 h-4" />}>
+                          Browse catalog
+                        </Button>
+                      </a>
+                      {!hasSubscription && (
+                        <Link href="/account?tab=billing">
+                          <Button variant="secondary" size="lg" className="w-full sm:w-auto">
+                            Subscribe now
+                          </Button>
+                        </Link>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <Link href="/signup">
+                        <Button size="lg" className="w-full sm:w-auto" rightIcon={<ArrowRight className="w-4 h-4" />}>
+                          Start free trial
+                        </Button>
+                      </Link>
+                      <a href="#catalog">
+                        <Button variant="secondary" size="lg" className="w-full sm:w-auto">
+                          <Play className="w-4 h-4 mr-2" />
+                          Preview catalog
+                        </Button>
+                      </a>
+                    </>
+                  )}
+                </div>
+
+                {/* Stats */}
+                <div className="flex items-center justify-center lg:justify-start gap-8 pt-4">
+                  {stats.map((stat) => (
+                    <div key={stat.label} className="text-center">
+                      <div className="text-2xl sm:text-3xl font-bold text-white">{stat.value}</div>
+                      <div className="text-sm text-text-muted">{stat.label}</div>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <Link href="/feed" className="text-sm text-text-muted hover:text-white transition-colors">
-                View all →
-              </Link>
-            </div>
 
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-              {recentPacks.map((pack) => (
-                <PackCard
-                  key={pack.id}
-                  pack={pack}
-                  sampleCount={Array.isArray(pack.samples) ? pack.samples.length : 0}
-                  hasSubscription={false}
-                />
-              ))}
+              {/* Right: Featured pack showcase */}
+              <div className="relative hidden lg:block">
+                {featuredPack && (
+                  <Link href={`/packs/${featuredPack.id}`} className="block group">
+                    <div className="relative">
+                      {/* Main featured pack */}
+                      <div className="relative aspect-square rounded-2xl overflow-hidden shadow-2xl transform group-hover:scale-[1.02] transition-transform duration-500">
+                        {featuredPack.cover_image_url ? (
+                          <Image
+                            src={featuredPack.cover_image_url}
+                            alt={featuredPack.name}
+                            fill
+                            className="object-cover"
+                            sizes="(max-width: 1024px) 100vw, 50vw"
+                            priority
+                          />
+                        ) : (
+                          <div className="absolute inset-0 bg-gradient-to-br from-grey-700 to-grey-800 flex items-center justify-center">
+                            <Music className="w-24 h-24 text-grey-600" />
+                          </div>
+                        )}
+
+                        {/* Overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-60 group-hover:opacity-40 transition-opacity" />
+
+                        {/* Play button */}
+                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          <div className="w-20 h-20 rounded-full bg-white flex items-center justify-center shadow-2xl transform scale-90 group-hover:scale-100 transition-transform">
+                            <Play className="w-8 h-8 text-charcoal ml-1" fill="currentColor" />
+                          </div>
+                        </div>
+
+                        {/* Info */}
+                        <div className="absolute bottom-0 left-0 right-0 p-6">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="px-2 py-1 rounded-full bg-white text-charcoal text-xs font-bold uppercase">
+                              Featured
+                            </span>
+                          </div>
+                          <h3 className="text-xl font-bold text-white">{featuredPack.name}</h3>
+                          <p className="text-white/70 mt-1">{featuredPack.samples?.length || 0} tracks</p>
+                        </div>
+                      </div>
+
+                      {/* Decorative smaller packs */}
+                      {recentPacks[1] && (
+                        <div className="absolute -bottom-8 -left-8 w-32 h-32 rounded-xl overflow-hidden shadow-xl transform -rotate-6 opacity-80">
+                          {recentPacks[1].cover_image_url && (
+                            <Image
+                              src={recentPacks[1].cover_image_url}
+                              alt=""
+                              fill
+                              className="object-cover"
+                            />
+                          )}
+                        </div>
+                      )}
+                      {recentPacks[2] && (
+                        <div className="absolute -top-4 -right-4 w-28 h-28 rounded-xl overflow-hidden shadow-xl transform rotate-6 opacity-80">
+                          {recentPacks[2].cover_image_url && (
+                            <Image
+                              src={recentPacks[2].cover_image_url}
+                              alt=""
+                              fill
+                              className="object-cover"
+                            />
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </Link>
+                )}
+              </div>
             </div>
+          </div>
+
+          {/* Scroll indicator */}
+          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
+            <ChevronRight className="w-6 h-6 text-white/40 rotate-90" />
           </div>
         </section>
 
-        {/* Features */}
-        <section className="py-12 sm:py-16 border-t border-grey-800">
-          <div className="container-app">
-            <div className="grid md:grid-cols-3 gap-6 sm:gap-8">
+        {/* ============================================
+            FEATURES STRIP
+            ============================================ */}
+        <section className="border-y border-grey-800 bg-grey-900/30">
+          <div className="container-app py-8 sm:py-12">
+            <div className="grid sm:grid-cols-3 gap-6 sm:gap-8">
               {features.map((feature) => (
-                <div key={feature.title} className="text-center sm:text-left">
-                  <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center mx-auto sm:mx-0 mb-4">
-                    <feature.icon className="w-6 h-6 text-white" />
+                <div key={feature.title} className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center flex-shrink-0">
+                    <feature.icon className="w-5 h-5 text-white" />
                   </div>
-                  <h3 className="text-lg font-semibold text-white mb-2">{feature.title}</h3>
-                  <p className="text-text-muted">{feature.description}</p>
+                  <div>
+                    <h3 className="text-base font-semibold text-white mb-1">{feature.title}</h3>
+                    <p className="text-sm text-text-muted">{feature.description}</p>
+                  </div>
                 </div>
               ))}
             </div>
           </div>
         </section>
 
-        {/* Subscription Options */}
-        <section className="py-12 sm:py-16 border-t border-grey-800 bg-grey-900/50">
+        {/* ============================================
+            CATALOG FEED - Main browsing area
+            ============================================ */}
+        <section id="catalog" className="section scroll-mt-20">
           <div className="container-app">
-            <div className="text-center mb-10">
-              <h2 className="text-h2 text-white mb-3">Choose how you subscribe</h2>
+            {/* Section header */}
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">Explore the Catalog</h2>
+                <p className="text-text-muted">
+                  {isLoggedIn
+                    ? hasSubscription
+                      ? "Download any track below"
+                      : "Preview everything • Subscribe to download"
+                    : "Preview any track • Sign up to save favorites"}
+                </p>
+              </div>
+              <Link
+                href="/feed"
+                className="hidden sm:flex items-center gap-2 text-sm text-text-muted hover:text-white transition-colors"
+              >
+                View all
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+
+            {/* Staff Picks */}
+            {staffPicks.length > 0 && (
+              <div className="mb-12">
+                <div className="flex items-center gap-2 mb-4">
+                  <Star className="w-5 h-5 text-yellow-400" />
+                  <h3 className="text-lg font-semibold text-white">Staff Picks</h3>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+                  {staffPicks.slice(0, 4).map((pack) => (
+                    <PackCard
+                      key={pack.id}
+                      pack={pack}
+                      sampleCount={Array.isArray(pack.samples) ? pack.samples.length : 0}
+                      hasSubscription={hasSubscription}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Latest Releases */}
+            <div className="mb-12">
+              <div className="flex items-center gap-2 mb-4">
+                <Sparkles className="w-5 h-5 text-white" />
+                <h3 className="text-lg font-semibold text-white">Latest Releases</h3>
+                <span className="text-sm text-text-muted ml-2">New this month</span>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+                {recentPacks.slice(0, 8).map((pack) => (
+                  <PackCard
+                    key={pack.id}
+                    pack={pack}
+                    sampleCount={Array.isArray(pack.samples) ? pack.samples.length : 0}
+                    hasSubscription={hasSubscription}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* All Packs */}
+            {recentPacks.length > 8 && (
+              <div className="mb-12">
+                <div className="flex items-center gap-2 mb-4">
+                  <Music className="w-5 h-5 text-white" />
+                  <h3 className="text-lg font-semibold text-white">More to Explore</h3>
+                  <span className="text-sm text-text-muted ml-2">{recentPacks.length - 8} more packs</span>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
+                  {recentPacks.slice(8, 16).map((pack) => (
+                    <PackCard
+                      key={pack.id}
+                      pack={pack}
+                      sampleCount={Array.isArray(pack.samples) ? pack.samples.length : 0}
+                      hasSubscription={hasSubscription}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Archive preview */}
+            {archivedPacks.length > 0 && (
+              <div className="mb-8">
+                <div className="flex items-center gap-2 mb-4">
+                  <Archive className="w-5 h-5 text-text-muted" />
+                  <h3 className="text-lg font-semibold text-text-muted">Archive</h3>
+                  <span className="text-sm text-text-subtle ml-2">Preview only</span>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                  {archivedPacks.slice(0, 6).map((pack) => (
+                    <div key={pack.id} className="opacity-60 hover:opacity-100 transition-opacity">
+                      <PackCard
+                        pack={pack}
+                        sampleCount={Array.isArray(pack.samples) ? pack.samples.length : 0}
+                        hasSubscription={hasSubscription}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* View all link - mobile */}
+            <div className="text-center sm:hidden">
+              <Link href="/feed">
+                <Button variant="secondary" className="w-full">
+                  View full catalog
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        {/* ============================================
+            HOW IT WORKS
+            ============================================ */}
+        <section id="how-it-works" className="section bg-grey-900/50 scroll-mt-20">
+          <div className="container-app">
+            <div className="text-center mb-12">
+              <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3">How It Works</h2>
               <p className="text-text-muted max-w-xl mx-auto">
-                Two ways to get access. Same benefits either way. Pick what works for you.
+                Get started in minutes. No complicated setup or contracts.
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+              {howItWorks.map((item, index) => (
+                <div key={item.step} className="relative">
+                  {/* Connector line */}
+                  {index < howItWorks.length - 1 && (
+                    <div className="hidden md:block absolute top-8 left-[60%] w-full h-px bg-gradient-to-r from-grey-600 to-transparent" />
+                  )}
+
+                  <div className="text-center">
+                    <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mx-auto mb-4">
+                      <span className="text-2xl font-bold text-white">{item.step}</span>
+                    </div>
+                    <h3 className="text-lg font-semibold text-white mb-2">{item.title}</h3>
+                    <p className="text-sm text-text-muted">{item.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ============================================
+            PRICING
+            ============================================ */}
+        <section id="pricing" className="section scroll-mt-20">
+          <div className="container-app">
+            <div className="text-center mb-12">
+              <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3">Simple Pricing</h2>
+              <p className="text-text-muted max-w-xl mx-auto">
+                Two ways to subscribe. Same benefits. Pick what works for you.
               </p>
             </div>
 
             <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
               {/* Direct Subscription */}
-              <div className="bg-charcoal border border-grey-700 rounded-2xl p-6 sm:p-8">
-                <div className="text-center mb-6">
-                  <h3 className="text-xl font-semibold text-white mb-2">Direct Subscription</h3>
-                  <div className="text-3xl font-bold text-white mb-1">
-                    $9.99<span className="text-lg text-text-muted font-normal">/month</span>
-                  </div>
-                  <p className="text-sm text-text-muted">Billed monthly via Stripe</p>
+              <div className="relative bg-charcoal border-2 border-white/20 rounded-2xl p-6 sm:p-8">
+                <div className="absolute -top-3 left-6">
+                  <span className="px-3 py-1 bg-white text-charcoal text-xs font-bold rounded-full uppercase">
+                    Recommended
+                  </span>
                 </div>
+
+                <div className="mb-6">
+                  <h3 className="text-xl font-semibold text-white mb-2">Direct Subscription</h3>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-4xl font-bold text-white">$9.99</span>
+                    <span className="text-text-muted">/month</span>
+                  </div>
+                  <p className="text-sm text-text-muted mt-1">Billed monthly via Stripe</p>
+                </div>
+
                 <ul className="space-y-3 mb-6">
                   {benefits.map((benefit) => (
-                    <li key={benefit} className="flex items-start gap-2 text-sm text-text-secondary">
+                    <li key={benefit} className="flex items-start gap-3 text-sm text-text-secondary">
                       <Check className="w-4 h-4 text-success flex-shrink-0 mt-0.5" />
                       {benefit}
                     </li>
                   ))}
                 </ul>
+
                 <Link href="/signup">
-                  <Button className="w-full">Start 7-day free trial</Button>
+                  <Button className="w-full">
+                    Start 7-day free trial
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
                 </Link>
               </div>
 
               {/* Patreon */}
-              <div className="bg-charcoal border border-grey-700 rounded-2xl p-6 sm:p-8">
-                <div className="text-center mb-6">
+              <div className="bg-grey-800/50 border border-grey-700 rounded-2xl p-6 sm:p-8">
+                <div className="mb-6">
                   <h3 className="text-xl font-semibold text-white mb-2">Patreon</h3>
-                  <div className="text-3xl font-bold text-white mb-1">
-                    $10<span className="text-lg text-text-muted font-normal">/month</span>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-4xl font-bold text-white">$10</span>
+                    <span className="text-text-muted">/month</span>
                   </div>
-                  <p className="text-sm text-text-muted">Through Patreon membership</p>
+                  <p className="text-sm text-text-muted mt-1">Via Patreon membership</p>
                 </div>
+
                 <ul className="space-y-3 mb-6">
                   {benefits.map((benefit) => (
-                    <li key={benefit} className="flex items-start gap-2 text-sm text-text-secondary">
+                    <li key={benefit} className="flex items-start gap-3 text-sm text-text-secondary">
                       <Check className="w-4 h-4 text-success flex-shrink-0 mt-0.5" />
                       {benefit}
                     </li>
                   ))}
                 </ul>
+
                 <a href="https://patreon.com/looplair" target="_blank" rel="noopener noreferrer">
                   <Button variant="secondary" className="w-full">
                     <svg viewBox="0 0 24 24" className="w-5 h-5 mr-2" fill="currentColor">
@@ -249,50 +666,161 @@ export default async function HomePage() {
               </div>
             </div>
 
-            <p className="text-center text-sm text-text-muted mt-6 max-w-xl mx-auto">
+            <p className="text-center text-sm text-text-muted mt-8 max-w-lg mx-auto">
               <strong className="text-white">Already a Patreon supporter?</strong>{" "}
-              Sign up with your Patreon account to automatically link your membership.
-              Choose one subscription method — you don&apos;t need both.
+              Sign up and link your Patreon to activate your access. Choose one method—you don&apos;t need both.
             </p>
           </div>
         </section>
 
-        {/* CTA */}
-        <section className="py-16 sm:py-24 border-t border-grey-800">
-          <div className="container-app text-center">
-            <h2 className="text-h2 sm:text-h1 text-white mb-4">
-              Ready to start creating?
-            </h2>
-            <p className="text-lg text-text-muted mb-8 max-w-xl mx-auto">
-              Join producers who trust Soul Sample Club for quality samples.
-            </p>
-            <Link href="/signup">
-              <Button size="lg" rightIcon={<ArrowRight className="w-4 h-4" />}>
-                Start your free trial
-              </Button>
-            </Link>
+        {/* ============================================
+            TRUST SIGNALS
+            ============================================ */}
+        <section className="section border-t border-grey-800">
+          <div className="container-app">
+            <div className="grid sm:grid-cols-3 gap-8 text-center">
+              <div>
+                <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mx-auto mb-4">
+                  <Shield className="w-5 h-5 text-white" />
+                </div>
+                <h3 className="text-base font-semibold text-white mb-1">Commercial License</h3>
+                <p className="text-sm text-text-muted">Use samples in your commercial releases</p>
+              </div>
+              <div>
+                <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mx-auto mb-4">
+                  <Zap className="w-5 h-5 text-white" />
+                </div>
+                <h3 className="text-base font-semibold text-white mb-1">Instant Downloads</h3>
+                <p className="text-sm text-text-muted">No waiting—download immediately</p>
+              </div>
+              <div>
+                <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mx-auto mb-4">
+                  <Clock className="w-5 h-5 text-white" />
+                </div>
+                <h3 className="text-base font-semibold text-white mb-1">Cancel Anytime</h3>
+                <p className="text-sm text-text-muted">No contracts or commitments</p>
+              </div>
+            </div>
           </div>
         </section>
+
+        {/* ============================================
+            FINAL CTA
+            ============================================ */}
+        {!isLoggedIn && (
+          <section className="section">
+            <div className="container-app">
+              <div className="relative overflow-hidden bg-gradient-to-br from-white/5 to-transparent border border-white/10 rounded-3xl p-8 sm:p-12 lg:p-16 text-center">
+                <div className="relative z-10">
+                  <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-4">
+                    Ready to find your sound?
+                  </h2>
+                  <p className="text-lg text-text-muted mb-8 max-w-xl mx-auto">
+                    Join producers who use Soul Sample Club for inspiration. Start your free trial today.
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                    <Link href="/signup">
+                      <Button size="lg" className="w-full sm:w-auto">
+                        Start free trial
+                        <ArrowRight className="w-4 h-4 ml-2" />
+                      </Button>
+                    </Link>
+                    <a href="#catalog">
+                      <Button variant="secondary" size="lg" className="w-full sm:w-auto">
+                        Browse catalog first
+                      </Button>
+                    </a>
+                  </div>
+                </div>
+
+                {/* Background decoration */}
+                <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl" />
+                <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full blur-3xl" />
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* Logged-in user CTA */}
+        {isLoggedIn && !hasSubscription && (
+          <section className="section">
+            <div className="container-app">
+              <div className="bg-gradient-to-r from-white/5 to-transparent border border-white/10 rounded-2xl p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-white mb-1">Ready to download?</h3>
+                  <p className="text-text-muted">Start your 7-day free trial to download all samples.</p>
+                </div>
+                <Link href="/account?tab=billing">
+                  <Button>
+                    Subscribe now
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </section>
+        )}
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-grey-700 py-8">
+      {/* ============================================
+          FOOTER
+          ============================================ */}
+      <footer className={`border-t border-grey-700 py-8 sm:py-12 ${isLoggedIn ? 'pb-24 sm:pb-12' : ''}`}>
         <div className="container-app">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-sm text-text-muted">
-              © 2024 Soul Sample Club by Looplair
-            </p>
-            <div className="flex items-center gap-6">
-              <Link href="/terms" className="text-sm text-text-muted hover:text-white transition-colors">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            {/* Logo */}
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center">
+                <span className="text-charcoal font-bold text-sm">S</span>
+              </div>
+              <span className="text-white font-medium">Soul Sample Club</span>
+            </div>
+
+            {/* Links */}
+            <div className="flex items-center gap-6 text-sm text-text-muted">
+              <a href="#catalog" className="hover:text-white transition-colors">
+                Catalog
+              </a>
+              <a href="#pricing" className="hover:text-white transition-colors">
+                Pricing
+              </a>
+              <Link href="/terms" className="hover:text-white transition-colors">
                 Terms
               </Link>
-              <Link href="/privacy" className="text-sm text-text-muted hover:text-white transition-colors">
+              <Link href="/privacy" className="hover:text-white transition-colors">
                 Privacy
               </Link>
             </div>
+
+            {/* Copyright */}
+            <p className="text-sm text-text-subtle">
+              © {new Date().getFullYear()} Soul Sample Club by Looplair
+            </p>
           </div>
         </div>
       </footer>
+
+      {/* ============================================
+          MOBILE BOTTOM NAV (for logged-in users)
+          ============================================ */}
+      {isLoggedIn && (
+        <nav className="sm:hidden fixed bottom-0 left-0 right-0 bg-charcoal-elevated/95 backdrop-blur-xl border-t border-grey-700 z-40 safe-area-bottom">
+          <div className="flex items-center justify-around h-14">
+            <Link href="/" className="flex flex-col items-center gap-1 py-2 px-4 text-white">
+              <Music className="w-5 h-5" />
+              <span className="text-[10px]">Catalog</span>
+            </Link>
+            <Link href="/library" className="flex flex-col items-center gap-1 py-2 px-4 text-text-muted">
+              <Archive className="w-5 h-5" />
+              <span className="text-[10px]">Library</span>
+            </Link>
+            <Link href="/account" className="flex flex-col items-center gap-1 py-2 px-4 text-text-muted">
+              <User className="w-5 h-5" />
+              <span className="text-[10px]">Account</span>
+            </Link>
+          </div>
+        </nav>
+      )}
     </div>
   );
 }
