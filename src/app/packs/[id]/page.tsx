@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, Calendar, Music2, Download, Lock, Archive, Sparkles, Star, Play, LogIn, User } from "lucide-react";
+import { ArrowLeft, Calendar, Music2, Download, Lock, Archive, Sparkles, Star, Play, LogIn, User, ArrowRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { formatDate, isPackNew, isPackExpired } from "@/lib/utils";
@@ -9,6 +9,7 @@ import { SampleList } from "@/components/audio/SampleList";
 import { Button } from "@/components/ui";
 import { Badge } from "@/components/ui";
 import { cn } from "@/lib/utils";
+import { SubscribeButton } from "@/components/subscription/SubscribeButton";
 import type { Pack, Sample, Subscription } from "@/types/database";
 
 // -----------------------------------------
@@ -346,15 +347,20 @@ export default async function PackDetailPage({
                   </Link>
                 </div>
               ) : !canDownload ? (
-                <div className="bg-warning/10 border border-warning/30 rounded-card p-4 flex items-start sm:items-center gap-3">
-                  <Lock className="w-5 h-5 text-warning flex-shrink-0 mt-0.5 sm:mt-0" />
-                  <div>
-                    <p className="text-body text-text-secondary font-medium">
-                      Subscribe to download
-                    </p>
-                    <p className="text-body-sm text-text-muted mt-1">
-                      Preview tracks below. Subscribe to download all {pack.samples.length} tracks.
-                    </p>
+                <div className="bg-white/5 border border-white/20 rounded-card p-5">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div className="flex items-start gap-3">
+                      <Lock className="w-5 h-5 text-white flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-body text-white font-medium">
+                          Subscribe to download
+                        </p>
+                        <p className="text-body-sm text-text-muted mt-1">
+                          Start your 7-day free trial to download all {pack.samples.length} tracks.
+                        </p>
+                      </div>
+                    </div>
+                    <SubscribeButton />
                   </div>
                 </div>
               ) : (

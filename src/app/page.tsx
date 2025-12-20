@@ -143,7 +143,7 @@ const howItWorks = [
   {
     step: "02",
     title: "Start your free trial",
-    description: "Get 7 days of full access. No credit card required to start.",
+    description: "Get 7 days free. Cancel anytime before trial ends to avoid charges.",
   },
   {
     step: "03",
@@ -271,7 +271,7 @@ export default async function HomePage() {
                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 mb-6 sm:mb-8">
                   <Sparkles className="w-4 h-4 text-white" />
                   <span className="text-sm text-white font-medium">7-day free trial</span>
-                  <span className="text-sm text-white/60">• No card required</span>
+                  <span className="text-sm text-white/60">• Cancel anytime</span>
                 </div>
 
                 {/* Headline */}

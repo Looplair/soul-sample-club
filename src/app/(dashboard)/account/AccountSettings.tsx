@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   User,
   CreditCard,
@@ -10,6 +11,7 @@ import {
   ExternalLink,
   Link2,
   Unlink,
+  LogOut,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button, Input, Card, CardHeader, CardTitle, CardContent, Badge } from "@/components/ui";
@@ -180,6 +182,10 @@ function BillingTab({ subscription, patreonLink }: { subscription: Subscription 
   const [isLoading, setIsLoading] = useState(false);
   const [isPatreonLoading, setIsPatreonLoading] = useState(false);
 
+  const isStripeActive = subscription?.status === "active" || subscription?.status === "trialing";
+  const hasPatreonAccess = patreonLink?.is_active;
+  const hasDualSubscription = isStripeActive && hasPatreonAccess;
+
   const handleManageBilling = async () => {
     setIsLoading(true);
     try {
@@ -230,11 +236,24 @@ function BillingTab({ subscription, patreonLink }: { subscription: Subscription 
     }
   };
 
-  const isActive = subscription?.status === "active" || subscription?.status === "trialing";
-  const hasPatreonAccess = patreonLink?.is_active;
-
   return (
     <div className="space-y-6">
+      {/* Dual Subscription Warning */}
+      {hasDualSubscription && (
+        <div className="bg-warning/10 border border-warning/30 rounded-xl p-4">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-warning font-medium mb-1">You have both subscriptions active</p>
+              <p className="text-sm text-text-muted">
+                You&apos;re currently paying for both a direct Stripe subscription and Patreon membership.
+                You only need one to access downloads. Consider canceling one to avoid double billing.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Subscription Card */}
       <Card>
         <CardHeader>
@@ -266,7 +285,7 @@ function BillingTab({ subscription, patreonLink }: { subscription: Subscription 
                     )}
                   </div>
                 </div>
-                {isActive && (
+                {isStripeActive && (
                   <div className="sm:text-right">
                     <p className="text-xs text-text-muted mb-1">
                       {subscription.status === "trialing" ? "Trial ends" : "Next billing date"}
@@ -294,14 +313,28 @@ function BillingTab({ subscription, patreonLink }: { subscription: Subscription 
                 </div>
               </div>
 
-              {/* Manage Button */}
-              <Button
-                onClick={handleManageBilling}
-                isLoading={isLoading}
-                rightIcon={<ExternalLink className="w-4 h-4" />}
-              >
-                Manage Billing
-              </Button>
+              {/* Actions */}
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Button
+                  onClick={handleManageBilling}
+                  isLoading={isLoading}
+                  rightIcon={<ExternalLink className="w-4 h-4" />}
+                >
+                  Manage Billing
+                </Button>
+                {isStripeActive && !subscription.cancel_at_period_end && (
+                  <Button
+                    variant="ghost"
+                    onClick={handleManageBilling}
+                    className="text-text-muted hover:text-error"
+                  >
+                    Cancel Subscription
+                  </Button>
+                )}
+              </div>
+              <p className="text-xs text-text-subtle mt-2">
+                Manage billing, update payment method, or cancel your subscription through Stripe.
+              </p>
             </div>
           ) : (
             <div className="text-center py-6">
@@ -334,11 +367,11 @@ function BillingTab({ subscription, patreonLink }: { subscription: Subscription 
                   <p className="text-xs text-text-muted mb-1">Connected Account</p>
                   <p className="text-sm text-white truncate">{patreonLink.patreon_email}</p>
                 </div>
-                <Badge variant={hasPatreonAccess ? "success" : "warning"} className="flex-shrink-0">
-                  {hasPatreonAccess ? "Active Patron" : "Not Active"}
+                <Badge variant={patreonLink.is_active ? "success" : "warning"} className="flex-shrink-0">
+                  {patreonLink.is_active ? "Active Patron" : "Not Active"}
                 </Badge>
               </div>
-              {!hasPatreonAccess && (
+              {!patreonLink.is_active && (
                 <p className="text-sm text-text-muted">
                   Your Patreon account is connected but you don&apos;t have an active pledge.
                   Subscribe on Patreon to get access.
@@ -374,9 +407,11 @@ function BillingTab({ subscription, patreonLink }: { subscription: Subscription 
 
 function PasswordTab() {
   const supabase = createClient();
+  const router = useRouter();
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -415,50 +450,78 @@ function PasswordTab() {
     }
   };
 
+  const handleSignOut = async () => {
+    setIsSigningOut(true);
+    await supabase.auth.signOut();
+    window.location.href = "/";
+  };
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Change Password</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
-            <div className="bg-error/10 border border-error/50 rounded-lg p-3 text-error text-sm flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 flex-shrink-0" />
-              {error}
-            </div>
-          )}
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Change Password</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <div className="bg-error/10 border border-error/50 rounded-lg p-3 text-error text-sm flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                {error}
+              </div>
+            )}
 
-          {success && (
-            <div className="bg-success/10 border border-success/50 rounded-lg p-3 text-success text-sm flex items-center gap-2">
-              <CheckCircle className="w-4 h-4 flex-shrink-0" />
-              Password updated successfully
-            </div>
-          )}
+            {success && (
+              <div className="bg-success/10 border border-success/50 rounded-lg p-3 text-success text-sm flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 flex-shrink-0" />
+                Password updated successfully
+              </div>
+            )}
 
-          <Input
-            label="New Password"
-            type="password"
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-            placeholder="Enter new password"
-            required
-          />
+            <Input
+              label="New Password"
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              placeholder="Enter new password"
+              required
+            />
 
-          <Input
-            label="Confirm New Password"
-            type="password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            placeholder="Confirm new password"
-            required
-          />
+            <Input
+              label="Confirm New Password"
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Confirm new password"
+              required
+            />
 
-          <Button type="submit" isLoading={isLoading}>
-            Update Password
+            <Button type="submit" isLoading={isLoading}>
+              Update Password
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      {/* Sign Out Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Sign Out</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-text-muted mb-4">
+            Sign out of your account on this device.
+          </p>
+          <Button
+            variant="danger"
+            onClick={handleSignOut}
+            isLoading={isSigningOut}
+            leftIcon={<LogOut className="w-4 h-4" />}
+          >
+            Sign Out
           </Button>
-        </form>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

@@ -48,7 +48,7 @@ export function Navbar({ user }: NavbarProps) {
       icon: <Settings className="w-4 h-4" />,
     },
     {
-      label: "Billing",
+      label: "Manage Subscription",
       onClick: () => (window.location.href = "/account?tab=billing"),
       icon: <CreditCard className="w-4 h-4" />,
     },
@@ -72,8 +72,8 @@ export function Navbar({ user }: NavbarProps) {
   return (
     <nav className="h-16 bg-charcoal border-b border-grey-700 sticky top-0 z-40 backdrop-blur-xl bg-charcoal/90">
       <div className="container-app h-full flex items-center justify-between">
-        {/* Logo - now links to /feed */}
-        <Link href="/feed" className="flex items-center gap-3 group">
+        {/* Logo - links to /feed for logged in, / for logged out */}
+        <Link href={user ? "/feed" : "/"} className="flex items-center gap-3 group">
           <div className="w-9 h-9 rounded-lg bg-white flex items-center justify-center shadow-button group-hover:shadow-glow-white-soft transition-shadow duration-300">
             <span className="text-charcoal font-bold text-base">S</span>
           </div>
