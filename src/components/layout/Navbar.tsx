@@ -43,12 +43,12 @@ export function Navbar({ user }: NavbarProps) {
 
   const userMenuItems = [
     {
-      label: "Account Settings",
+      label: "Account",
       onClick: () => (window.location.href = "/account"),
       icon: <Settings className="w-4 h-4" />,
     },
     {
-      label: "Manage Subscription",
+      label: "Billing",
       onClick: () => (window.location.href = "/account?tab=billing"),
       icon: <CreditCard className="w-4 h-4" />,
     },

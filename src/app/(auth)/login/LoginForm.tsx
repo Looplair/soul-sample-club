@@ -10,22 +10,10 @@ import { Button, Input } from "@/components/ui";
 // OAuth Icons
 const GoogleIcon = () => (
   <svg viewBox="0 0 24 24" className="w-5 h-5">
-    <path
-      fill="#4285F4"
-      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-    />
-    <path
-      fill="#34A853"
-      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-    />
-    <path
-      fill="#FBBC05"
-      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-    />
-    <path
-      fill="#EA4335"
-      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-    />
+    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
   </svg>
 );
 
@@ -137,55 +125,46 @@ export function LoginForm() {
         </div>
       )}
 
-      {/* OAuth Buttons */}
-      <div className="space-y-3">
-        <Button
-          type="button"
-          variant="secondary"
-          className="w-full !bg-white hover:!bg-grey-100 !border-grey-300 !text-charcoal"
-          onClick={() => handleOAuthLogin("google")}
-          disabled={oauthLoading !== null}
-          isLoading={oauthLoading === "google"}
-          leftIcon={<GoogleIcon />}
-        >
-          Continue with Google
-        </Button>
+      {/* Account Login Section */}
+      <div>
+        <p className="text-label text-text-muted mb-3">Sign in to your account</p>
+        <div className="space-y-3">
+          <Button
+            type="button"
+            variant="secondary"
+            className="w-full !bg-white hover:!bg-grey-100 !border-grey-300 !text-charcoal"
+            onClick={() => handleOAuthLogin("google")}
+            disabled={oauthLoading !== null}
+            isLoading={oauthLoading === "google"}
+            leftIcon={<GoogleIcon />}
+          >
+            Continue with Google
+          </Button>
 
-        <Button
-          type="button"
-          variant="secondary"
-          className="w-full !bg-black hover:!bg-grey-900 !border-grey-700 !text-white"
-          onClick={() => handleOAuthLogin("apple")}
-          disabled={oauthLoading !== null}
-          isLoading={oauthLoading === "apple"}
-          leftIcon={<AppleIcon />}
-        >
-          Continue with Apple
-        </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            className="w-full !bg-black hover:!bg-grey-900 !border-grey-700 !text-white"
+            onClick={() => handleOAuthLogin("apple")}
+            disabled={oauthLoading !== null}
+            isLoading={oauthLoading === "apple"}
+            leftIcon={<AppleIcon />}
+          >
+            Continue with Apple
+          </Button>
 
-        <Button
-          type="button"
-          variant="secondary"
-          className="w-full !bg-[#1877F2] hover:!bg-[#166FE5] !border-[#1877F2] !text-white"
-          onClick={() => handleOAuthLogin("facebook")}
-          disabled={oauthLoading !== null}
-          isLoading={oauthLoading === "facebook"}
-          leftIcon={<FacebookIcon />}
-        >
-          Continue with Facebook
-        </Button>
-
-        <Button
-          type="button"
-          variant="secondary"
-          className="w-full !bg-[#FF424D] hover:!bg-[#E63E47] !border-[#FF424D] !text-white"
-          onClick={handlePatreonLogin}
-          disabled={oauthLoading !== null}
-          isLoading={oauthLoading === "patreon"}
-          leftIcon={<PatreonIcon />}
-        >
-          Continue with Patreon
-        </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            className="w-full !bg-[#1877F2] hover:!bg-[#166FE5] !border-[#1877F2] !text-white"
+            onClick={() => handleOAuthLogin("facebook")}
+            disabled={oauthLoading !== null}
+            isLoading={oauthLoading === "facebook"}
+            leftIcon={<FacebookIcon />}
+          >
+            Continue with Facebook
+          </Button>
+        </div>
       </div>
 
       {/* Divider */}
@@ -194,12 +173,12 @@ export function LoginForm() {
           <div className="w-full border-t border-grey-700" />
         </div>
         <div className="relative flex justify-center text-caption">
-          <span className="bg-charcoal px-3 text-text-muted">or sign in with email</span>
+          <span className="bg-charcoal px-3 text-text-muted">or with email</span>
         </div>
       </div>
 
       {/* Email/Password Form */}
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form onSubmit={handleSubmit} className="space-y-4">
         <Input
           label="Email"
           type="email"
@@ -239,12 +218,28 @@ export function LoginForm() {
         </Button>
       </form>
 
+      {/* Patreon Access Section */}
+      <div className="pt-4 border-t border-grey-700">
+        <p className="text-label text-text-muted mb-3">Already a Patreon member?</p>
+        <Button
+          type="button"
+          variant="secondary"
+          className="w-full !bg-[#FF424D] hover:!bg-[#E63E47] !border-[#FF424D] !text-white"
+          onClick={handlePatreonLogin}
+          disabled={oauthLoading !== null}
+          isLoading={oauthLoading === "patreon"}
+          leftIcon={<PatreonIcon />}
+        >
+          Connect Patreon for access
+        </Button>
+        <p className="text-caption text-text-subtle mt-2 text-center">
+          Link your Patreon to unlock downloads with your existing membership
+        </p>
+      </div>
+
       <p className="text-center text-body text-text-muted">
         Don&apos;t have an account?{" "}
-        <Link
-          href="/signup"
-          className="text-white hover:underline transition-colors"
-        >
+        <Link href="/signup" className="text-white hover:underline transition-colors">
           Sign up
         </Link>
       </p>

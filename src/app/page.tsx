@@ -436,121 +436,34 @@ export default async function HomePage() {
         </section>
 
         {/* ============================================
-            CATALOG FEED - Main browsing area
+            CATALOG FEED - Single unified view (Netflix style)
             ============================================ */}
         <section id="catalog" className="section scroll-mt-20">
           <div className="container-app">
             {/* Section header */}
             <div className="flex items-center justify-between mb-8">
               <div>
-                <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">Explore the Catalog</h2>
+                <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">Sample Packs</h2>
                 <p className="text-text-muted">
-                  {isLoggedIn
+                  {allPacks.length} packs • {isLoggedIn
                     ? hasSubscription
-                      ? "Download any track below"
+                      ? "Download any track"
                       : "Preview everything • Subscribe to download"
                     : "Preview any track • Sign up to save favorites"}
                 </p>
               </div>
-              <Link
-                href="/feed"
-                className="hidden sm:flex items-center gap-2 text-sm text-text-muted hover:text-white transition-colors"
-              >
-                View all
-                <ArrowRight className="w-4 h-4" />
-              </Link>
             </div>
 
-            {/* Staff Picks */}
-            {staffPicks.length > 0 && (
-              <div className="mb-12">
-                <div className="flex items-center gap-2 mb-4">
-                  <Star className="w-5 h-5 text-yellow-400" />
-                  <h3 className="text-lg font-semibold text-white">Staff Picks</h3>
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-                  {staffPicks.slice(0, 4).map((pack) => (
-                    <PackCard
-                      key={pack.id}
-                      pack={pack}
-                      sampleCount={Array.isArray(pack.samples) ? pack.samples.length : 0}
-                      hasSubscription={hasSubscription}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Latest Releases */}
-            <div className="mb-12">
-              <div className="flex items-center gap-2 mb-4">
-                <Sparkles className="w-5 h-5 text-white" />
-                <h3 className="text-lg font-semibold text-white">Latest Releases</h3>
-                <span className="text-sm text-text-muted ml-2">New this month</span>
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-                {recentPacks.slice(0, 8).map((pack) => (
-                  <PackCard
-                    key={pack.id}
-                    pack={pack}
-                    sampleCount={Array.isArray(pack.samples) ? pack.samples.length : 0}
-                    hasSubscription={hasSubscription}
-                  />
-                ))}
-              </div>
-            </div>
-
-            {/* All Packs */}
-            {recentPacks.length > 8 && (
-              <div className="mb-12">
-                <div className="flex items-center gap-2 mb-4">
-                  <Music className="w-5 h-5 text-white" />
-                  <h3 className="text-lg font-semibold text-white">More to Explore</h3>
-                  <span className="text-sm text-text-muted ml-2">{recentPacks.length - 8} more packs</span>
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
-                  {recentPacks.slice(8, 16).map((pack) => (
-                    <PackCard
-                      key={pack.id}
-                      pack={pack}
-                      sampleCount={Array.isArray(pack.samples) ? pack.samples.length : 0}
-                      hasSubscription={hasSubscription}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Archive preview */}
-            {archivedPacks.length > 0 && (
-              <div className="mb-8">
-                <div className="flex items-center gap-2 mb-4">
-                  <Archive className="w-5 h-5 text-text-muted" />
-                  <h3 className="text-lg font-semibold text-text-muted">Archive</h3>
-                  <span className="text-sm text-text-subtle ml-2">Preview only</span>
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                  {archivedPacks.slice(0, 6).map((pack) => (
-                    <div key={pack.id} className="opacity-60 hover:opacity-100 transition-opacity">
-                      <PackCard
-                        pack={pack}
-                        sampleCount={Array.isArray(pack.samples) ? pack.samples.length : 0}
-                        hasSubscription={hasSubscription}
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* View all link - mobile */}
-            <div className="text-center sm:hidden">
-              <Link href="/feed">
-                <Button variant="secondary" className="w-full">
-                  View full catalog
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
-              </Link>
+            {/* All Packs Grid - unified view */}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
+              {allPacks.map((pack) => (
+                <PackCard
+                  key={pack.id}
+                  pack={pack}
+                  sampleCount={Array.isArray(pack.samples) ? pack.samples.length : 0}
+                  hasSubscription={hasSubscription}
+                />
+              ))}
             </div>
           </div>
         </section>
@@ -596,26 +509,19 @@ export default async function HomePage() {
             <div className="text-center mb-12">
               <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3">Simple Pricing</h2>
               <p className="text-text-muted max-w-xl mx-auto">
-                Two ways to subscribe. Same benefits. Pick what works for you.
+                One price. Full access to everything.
               </p>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
-              {/* Direct Subscription */}
+            {/* Main Pricing Card */}
+            <div className="max-w-lg mx-auto">
               <div className="relative bg-charcoal border-2 border-white/20 rounded-2xl p-6 sm:p-8">
-                <div className="absolute -top-3 left-6">
-                  <span className="px-3 py-1 bg-white text-charcoal text-xs font-bold rounded-full uppercase">
-                    Recommended
-                  </span>
-                </div>
-
-                <div className="mb-6">
-                  <h3 className="text-xl font-semibold text-white mb-2">Direct Subscription</h3>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-4xl font-bold text-white">$9.99</span>
-                    <span className="text-text-muted">/month</span>
+                <div className="text-center mb-6">
+                  <div className="flex items-baseline justify-center gap-1">
+                    <span className="text-5xl font-bold text-white">$9.99</span>
+                    <span className="text-text-muted text-lg">/month</span>
                   </div>
-                  <p className="text-sm text-text-muted mt-1">Billed monthly via Stripe</p>
+                  <p className="text-sm text-text-muted mt-2">7-day free trial included</p>
                 </div>
 
                 <ul className="space-y-3 mb-6">
@@ -628,48 +534,29 @@ export default async function HomePage() {
                 </ul>
 
                 <Link href="/signup">
-                  <Button className="w-full">
-                    Start 7-day free trial
+                  <Button className="w-full" size="lg">
+                    Start free trial
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                 </Link>
               </div>
 
-              {/* Patreon */}
-              <div className="bg-grey-800/50 border border-grey-700 rounded-2xl p-6 sm:p-8">
-                <div className="mb-6">
-                  <h3 className="text-xl font-semibold text-white mb-2">Patreon</h3>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-4xl font-bold text-white">$10</span>
-                    <span className="text-text-muted">/month</span>
-                  </div>
-                  <p className="text-sm text-text-muted mt-1">Via Patreon membership</p>
+              {/* Patreon Alternative */}
+              <div className="mt-8 text-center">
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-grey-800/50 border border-grey-700 mb-4">
+                  <svg viewBox="0 0 24 24" className="w-4 h-4 text-[#FF424D]" fill="currentColor">
+                    <path d="M14.82 2.41C18.78 2.41 22 5.65 22 9.62C22 13.58 18.78 16.8 14.82 16.8C10.85 16.8 7.61 13.58 7.61 9.62C7.61 5.65 10.85 2.41 14.82 2.41M2 21.6H5.5V2.41H2V21.6Z" />
+                  </svg>
+                  <span className="text-sm text-text-muted">Already a Patreon member?</span>
                 </div>
-
-                <ul className="space-y-3 mb-6">
-                  {benefits.map((benefit) => (
-                    <li key={benefit} className="flex items-start gap-3 text-sm text-text-secondary">
-                      <Check className="w-4 h-4 text-success flex-shrink-0 mt-0.5" />
-                      {benefit}
-                    </li>
-                  ))}
-                </ul>
-
-                <a href="https://patreon.com/looplair" target="_blank" rel="noopener noreferrer">
-                  <Button variant="secondary" className="w-full">
-                    <svg viewBox="0 0 24 24" className="w-5 h-5 mr-2" fill="currentColor">
-                      <path d="M14.82 2.41C18.78 2.41 22 5.65 22 9.62C22 13.58 18.78 16.8 14.82 16.8C10.85 16.8 7.61 13.58 7.61 9.62C7.61 5.65 10.85 2.41 14.82 2.41M2 21.6H5.5V2.41H2V21.6Z" />
-                    </svg>
-                    Join on Patreon
-                  </Button>
-                </a>
+                <p className="text-sm text-text-muted max-w-md mx-auto mb-4">
+                  If you&apos;re already supporting on Patreon, just sign up and connect your account to unlock downloads. No need to subscribe twice.
+                </p>
+                <Link href="/signup" className="text-white text-sm underline hover:text-grey-200 transition-colors">
+                  Create account and link Patreon
+                </Link>
               </div>
             </div>
-
-            <p className="text-center text-sm text-text-muted mt-8 max-w-lg mx-auto">
-              <strong className="text-white">Already a Patreon supporter?</strong>{" "}
-              Sign up and link your Patreon to activate your access. Choose one method—you don&apos;t need both.
-            </p>
           </div>
         </section>
 
