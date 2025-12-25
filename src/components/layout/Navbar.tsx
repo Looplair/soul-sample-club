@@ -16,6 +16,7 @@ import {
   CreditCard,
   ChevronDown,
   Library,
+  Monitor,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
@@ -39,6 +40,7 @@ export function Navbar({ user }: NavbarProps) {
   const navLinks = [
     { href: "/feed", label: "Catalog", icon: LayoutGrid },
     { href: "/library", label: "Library", icon: Library },
+    { href: "/app", label: "App", icon: Monitor },
     { href: "/account", label: "Account", icon: User },
   ];
 
