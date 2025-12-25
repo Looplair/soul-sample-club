@@ -213,6 +213,9 @@ export default async function HomePage() {
             <a href="#pricing" className="nav-link">
               Pricing
             </a>
+            <Link href="/app" className="nav-link">
+              App
+            </Link>
           </nav>
 
           <div className="flex items-center gap-2 sm:gap-3">
