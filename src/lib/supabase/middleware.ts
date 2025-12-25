@@ -56,7 +56,7 @@ export async function updateSession(request: NextRequest) {
   const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route));
 
   // Public routes - accessible to everyone (logged in or not)
-  const publicRoutes = ["/feed", "/packs"];
+  const publicRoutes = ["/feed", "/packs", "/app", "/terms", "/privacy"];
   const isPublicRoute = publicRoutes.some((route) => pathname.startsWith(route));
 
   // API routes and static files should pass through
