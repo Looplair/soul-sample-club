@@ -3,6 +3,9 @@ import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { PackCard } from "@/components/packs/PackCard";
+import { CreatorHeroStrip } from "@/components/sections/CreatorHeroStrip";
+import { CompleteControlSection } from "@/components/sections/CompleteControlSection";
+import { CommunityProof } from "@/components/sections/CommunityProof";
 import { Button } from "@/components/ui";
 import {
   Music,
@@ -189,13 +192,15 @@ export default async function HomePage() {
           ============================================ */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-charcoal/80 backdrop-blur-xl border-b border-grey-700/50">
         <div className="container-app h-14 sm:h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 sm:gap-3 group">
-            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-white flex items-center justify-center shadow-button group-hover:shadow-glow-white-soft transition-shadow duration-300">
-              <span className="text-charcoal font-bold text-sm sm:text-base">S</span>
-            </div>
-            <span className="font-wordmark text-lg sm:text-xl tracking-wider text-white uppercase hidden sm:block">
-              Soul Sample Club
-            </span>
+          <Link href="/" className="flex items-center group">
+            <Image
+              src="/logo.svg"
+              alt="Soul Sample Club"
+              width={160}
+              height={36}
+              className="h-7 sm:h-9 w-auto"
+              priority
+            />
           </Link>
 
           <nav className="hidden md:flex items-center gap-8">
@@ -469,6 +474,21 @@ export default async function HomePage() {
         </section>
 
         {/* ============================================
+            CREATOR STRIP
+            ============================================ */}
+        <CreatorHeroStrip />
+
+        {/* ============================================
+            COMPLETE CONTROL (Licensing/Clearance)
+            ============================================ */}
+        <CompleteControlSection />
+
+        {/* ============================================
+            COMMUNITY PROOF
+            ============================================ */}
+        <CommunityProof />
+
+        {/* ============================================
             HOW IT WORKS
             ============================================ */}
         <section id="how-it-works" className="section bg-grey-900/50 scroll-mt-20">
@@ -656,12 +676,13 @@ export default async function HomePage() {
         <div className="container-app">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             {/* Logo */}
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center">
-                <span className="text-charcoal font-bold text-sm">S</span>
-              </div>
-              <span className="text-white font-medium">Soul Sample Club</span>
-            </div>
+            <Image
+              src="/logo.svg"
+              alt="Soul Sample Club"
+              width={140}
+              height={32}
+              className="h-7 w-auto"
+            />
 
             {/* Links */}
             <div className="flex items-center gap-6 text-sm text-text-muted">

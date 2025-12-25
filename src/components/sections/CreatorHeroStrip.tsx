@@ -1,59 +1,54 @@
 "use client";
 
 import Image from "next/image";
-import { Play } from "lucide-react";
 
 // ============================================
-// CONFIGURATION - Edit these values to customize
+// CONFIGURATION
 // ============================================
 
-// Pill/tag text above headline
 const PILL_TEXT = "BUILT ON SOUL";
 
-// Headline - the strikethrough word will have line-through styling
-const HEADLINE_MAIN = "All soul.";
-const HEADLINE_STRIKETHROUGH = "No filler.";
+const HEADLINE_MAIN = "Supreme soul.";
+const HEADLINE_STRIKETHROUGH = "No guesswork.";
 
-// Subheading text
-const SUBHEADING = "Producers bring their best because they sample the best";
+const SUBHEADING = "Used by producers and artists at every level, from independent releases to major label records.";
 
-// Producer data - replace images and names as needed
 const producers = [
   {
     id: 1,
-    name: "Soulchef",
-    image: "/placeholders/producer-1.jpg",
-    accentColor: "#4A5568", // slate/grey
+    name: "Dave East",
+    image: "/placeholders/Daveast.jpg",
+    accentColor: "#4A5568",
   },
   {
     id: 2,
-    name: "Melodic",
-    image: "/placeholders/producer-2.jpg",
-    accentColor: "#E53E3E", // red
+    name: "Statik Selektah",
+    image: "/placeholders/statik.jpg",
+    accentColor: "#E53E3E",
   },
   {
     id: 3,
     name: "VinylDigger",
     image: "/placeholders/producer-3.jpg",
-    accentColor: "#718096", // cool grey
+    accentColor: "#718096",
   },
   {
     id: 4,
     name: "GoldenEra",
     image: "/placeholders/producer-4.jpg",
-    accentColor: "#ED8936", // orange
+    accentColor: "#ED8936",
   },
   {
     id: 5,
     name: "Beatsinner",
     image: "/placeholders/producer-5.jpg",
-    accentColor: "#1A202C", // dark
+    accentColor: "#1A202C",
   },
   {
     id: 6,
     name: "LoFiLou",
     image: "/placeholders/producer-6.jpg",
-    accentColor: "#F687B3", // pink
+    accentColor: "#F687B3",
   },
 ];
 
@@ -66,7 +61,6 @@ export function CreatorHeroStrip() {
     <section className="bg-charcoal py-16 sm:py-24">
       {/* Text Block */}
       <div className="text-center mb-12 sm:mb-16 px-4">
-        {/* Pill/Tag */}
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/10 mb-6 sm:mb-8">
           <svg
             viewBox="0 0 24 24"
@@ -80,7 +74,6 @@ export function CreatorHeroStrip() {
           </span>
         </div>
 
-        {/* Headline */}
         <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-4 sm:mb-6 tracking-tight">
           {HEADLINE_MAIN}{" "}
           <span className="text-rose-400 line-through decoration-rose-400 decoration-[3px]">
@@ -88,46 +81,35 @@ export function CreatorHeroStrip() {
           </span>
         </h2>
 
-        {/* Subheading */}
         <p className="text-lg sm:text-xl text-white/60 max-w-xl mx-auto">
           {SUBHEADING}
         </p>
       </div>
 
-      {/* Horizontal Creator Strip */}
+      {/* Creator Strip */}
       <div className="relative">
-        {/* Scroll container */}
         <div
-          className="flex gap-4 sm:gap-5 overflow-x-auto px-4 sm:px-8 pb-4 scrollbar-hide"
+          className="flex gap-4 sm:gap-5 overflow-x-auto px-4 sm:px-8 pb-6 scrollbar-hide"
           style={{
             scrollbarWidth: "none",
             msOverflowStyle: "none",
           }}
         >
-          {/* Left spacer for centering on large screens */}
           <div className="flex-shrink-0 w-0 lg:w-[calc((100vw-1280px)/2)]" />
 
           {producers.map((producer) => (
-            <div
-              key={producer.id}
-              className="flex-shrink-0 group cursor-pointer"
-            >
-              {/* Card */}
+            <div key={producer.id} className="flex-shrink-0 group">
               <div
-                className="relative w-[180px] sm:w-[200px] md:w-[220px] aspect-[3/4] rounded-3xl overflow-hidden"
-                style={{
-                  backgroundColor: producer.accentColor,
-                }}
+                className="relative w-[180px] sm:w-[200px] md:w-[220px] aspect-[3/4] rounded-3xl overflow-hidden transition-all duration-500 group-hover:-translate-y-1 group-hover:shadow-2xl shadow-black/30"
+                style={{ backgroundColor: producer.accentColor }}
               >
-                {/* Image */}
                 <Image
                   src={producer.image}
                   alt={producer.name}
                   fill
-                  className="object-cover transition-transform duration-500 group-hover:scale-105"
                   sizes="220px"
+                  className="object-cover transition-all duration-500 group-hover:scale-[1.05] group-hover:brightness-110"
                   onError={(e) => {
-                    // Hide broken image, show accent color background
                     e.currentTarget.style.display = "none";
                   }}
                 />
@@ -135,17 +117,7 @@ export function CreatorHeroStrip() {
                 {/* Gradient overlay */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
 
-                {/* Play button overlay - appears on hover */}
-                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30">
-                    <Play
-                      className="w-6 h-6 sm:w-7 sm:h-7 text-white ml-1"
-                      fill="currentColor"
-                    />
-                  </div>
-                </div>
-
-                {/* Producer name label */}
+                {/* Name */}
                 <div className="absolute bottom-4 left-4 right-4">
                   <span className="inline-block px-3 py-1.5 bg-black/50 backdrop-blur-sm rounded-full text-white text-sm font-medium">
                     {producer.name}
@@ -155,13 +127,12 @@ export function CreatorHeroStrip() {
             </div>
           ))}
 
-          {/* Right spacer for centering on large screens */}
           <div className="flex-shrink-0 w-4 lg:w-[calc((100vw-1280px)/2)]" />
         </div>
 
-        {/* Fade edges for scroll indication */}
-        <div className="absolute left-0 top-0 bottom-4 w-8 bg-gradient-to-r from-charcoal to-transparent pointer-events-none" />
-        <div className="absolute right-0 top-0 bottom-4 w-8 bg-gradient-to-l from-charcoal to-transparent pointer-events-none" />
+        {/* Fade edges */}
+        <div className="absolute left-0 top-0 bottom-6 w-8 bg-gradient-to-r from-charcoal to-transparent pointer-events-none" />
+        <div className="absolute right-0 top-0 bottom-6 w-8 bg-gradient-to-l from-charcoal to-transparent pointer-events-none" />
       </div>
     </section>
   );

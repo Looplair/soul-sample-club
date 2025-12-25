@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -73,13 +74,15 @@ export function Navbar({ user }: NavbarProps) {
     <nav className="h-16 bg-charcoal border-b border-grey-700 sticky top-0 z-40 backdrop-blur-xl bg-charcoal/90">
       <div className="container-app h-full flex items-center justify-between">
         {/* Logo - links to /feed for logged in, / for logged out */}
-        <Link href={user ? "/feed" : "/"} className="flex items-center gap-3 group">
-          <div className="w-9 h-9 rounded-lg bg-white flex items-center justify-center shadow-button group-hover:shadow-glow-white-soft transition-shadow duration-300">
-            <span className="text-charcoal font-bold text-base">S</span>
-          </div>
-          <span className="text-h4 text-white hidden sm:block group-hover:text-grey-200 transition-colors">
-            Soul Sample Club
-          </span>
+        <Link href={user ? "/feed" : "/"} className="flex items-center group">
+          <Image
+            src="/logo.svg"
+            alt="Soul Sample Club"
+            width={160}
+            height={36}
+            className="h-8 sm:h-9 w-auto"
+            priority
+          />
         </Link>
 
         {/* Desktop Navigation - Tracklib style with underline indicators */}

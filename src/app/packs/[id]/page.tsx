@@ -164,11 +164,15 @@ export default async function PackDetailPage({
       {/* Header */}
       <header className="border-b border-grey-700 bg-charcoal/90 backdrop-blur-xl sticky top-0 z-40">
         <div className="container-app h-16 flex items-center justify-between">
-          <Link href="/feed" className="flex items-center gap-3 group">
-            <div className="w-9 h-9 rounded-lg bg-white flex items-center justify-center shadow-button group-hover:shadow-glow-white-soft transition-shadow duration-300">
-              <span className="text-charcoal font-bold text-base">S</span>
-            </div>
-            <span className="text-h4 text-white hidden sm:block">Soul Sample Club</span>
+          <Link href="/feed" className="flex items-center group">
+            <Image
+              src="/logo.svg"
+              alt="Soul Sample Club"
+              width={160}
+              height={36}
+              className="h-8 sm:h-9 w-auto"
+              priority
+            />
           </Link>
 
           <div className="flex items-center gap-3">

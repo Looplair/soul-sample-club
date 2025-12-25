@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 export default function AuthLayout({
   children,
@@ -8,13 +9,15 @@ export default function AuthLayout({
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-black">
       {/* Logo */}
-      <Link href="/" className="flex items-center gap-3 mb-10 group">
-        <div className="w-11 h-11 rounded-xl bg-purple flex items-center justify-center shadow-glow-purple-soft group-hover:shadow-glow-purple transition-shadow duration-300">
-          <span className="text-white font-bold text-lg">S</span>
-        </div>
-        <span className="text-h2 text-white group-hover:text-purple-light transition-colors">
-          Soul Sample Club
-        </span>
+      <Link href="/" className="mb-10">
+        <Image
+          src="/logo.svg"
+          alt="Soul Sample Club"
+          width={200}
+          height={45}
+          className="h-10 sm:h-12 w-auto"
+          priority
+        />
       </Link>
 
       {/* Content */}
