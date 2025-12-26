@@ -34,7 +34,7 @@ export function Navbar({ user }: NavbarProps) {
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
-    window.location.href = "/feed";
+    window.location.href = "/";
   };
 
   const navLinks = [

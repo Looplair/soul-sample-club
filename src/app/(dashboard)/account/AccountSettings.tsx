@@ -195,9 +195,13 @@ function BillingTab({ subscription, patreonLink }: { subscription: Subscription 
       const data = await response.json();
       if (data.url) {
         window.location.href = data.url;
+      } else if (data.error) {
+        console.error("Portal session error:", data.error);
+        alert("Unable to open billing portal. Please try again or contact support.");
       }
     } catch (error) {
       console.error("Error opening billing portal:", error);
+      alert("Unable to open billing portal. Please try again.");
     } finally {
       setIsLoading(false);
     }

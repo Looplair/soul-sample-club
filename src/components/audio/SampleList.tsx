@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { SampleRow } from "./SampleRow";
+// TESTING: Using SampleRowWithLoop instead of SampleRow
+// To revert: change this back to: import { SampleRow } from "./SampleRow";
+import { SampleRowWithLoop as SampleRow } from "./SampleRowWithLoop";
 import type { Sample, Pack } from "@/types/database";
 
 // Extended sample type that may include pack info
