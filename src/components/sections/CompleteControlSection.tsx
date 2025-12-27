@@ -15,11 +15,11 @@ const HEADLINE_LINE_1 = "Complete control.";
 const HEADLINE_LINE_2 = "From day one.";
 
 // Supporting paragraph
-const DESCRIPTION = `Every sound in the Soul Sample Club is pre-cleared and royalty-free at every stage. There are no limits, no thresholds, and no future clearance requirements. Release independently, with a major label, or years from now — nothing changes.`;
+const DESCRIPTION = `Every sound in the Soul Sample Club is pre-cleared and royalty-free at every stage. There are no limits, no thresholds, and no future clearance requirements. Release independently, with a major label, or years from now, nothing changes.`;
 
 // Secondary CTA
 const CTA_TEXT = "Learn about licensing";
-const CTA_HREF = "/terms"; // or could be a modal trigger
+const CTA_HREF = "/terms#license"; // Links directly to Section 5 - License to Use Samples
 
 // Video configuration
 const VIDEO_SRC = "/videos/completecontrolvideo_curtiss.mp4";
@@ -39,6 +39,8 @@ export function CompleteControlSection() {
       videoRef.current.pause();
       setIsPlaying(false);
     } else {
+      // Unmute when user initiates playback
+      videoRef.current.muted = false;
       videoRef.current.play();
       setIsPlaying(true);
     }
@@ -108,17 +110,17 @@ export function CompleteControlSection() {
           {/* Right Column - Video Card */}
           <div className="order-2">
             <div className="relative aspect-[4/3] rounded-2xl sm:rounded-3xl overflow-hidden bg-grey-800 shadow-2xl">
-              {/* Video Element */}
+              {/* Video Element - #t=0.001 forces mobile browsers to show first frame as thumbnail */}
               <video
                 ref={videoRef}
                 preload="metadata"
                 playsInline
+                muted
                 onEnded={handleVideoEnded}
                 onClick={handlePlayPause}
                 className="absolute inset-0 w-full h-full object-cover cursor-pointer"
-              >
-                <source src={VIDEO_SRC} type="video/mp4" />
-              </video>
+                src={`${VIDEO_SRC}#t=0.001`}
+              />
 
               {/* Play/Pause Button Overlay */}
               <div

@@ -9,9 +9,9 @@ import Image from "next/image";
 const PILL_TEXT = "BUILT ON SOUL";
 
 const HEADLINE_MAIN = "Supreme soul.";
-const HEADLINE_STRIKETHROUGH = "No guesswork.";
+const HEADLINE_STRIKETHROUGH = "Generic.";
 
-const SUBHEADING = "Used by producers and artists at every level, from independent releases to major label records.";
+const SUBHEADING = "Our sounds have been used by everyone from independent artists to industry heavyweights.";
 
 const producers = [
   {
@@ -29,7 +29,7 @@ const producers = [
   {
     id: 3,
     name: "Mick Jenkins",
-    image: "/placeholders/mickjenkins.webp",
+    image: "/placeholders/mickjenkins.jpg",
     accentColor: "#718096",
   },
   {
@@ -58,7 +58,7 @@ const producers = [
 
 export function CreatorHeroStrip() {
   return (
-    <section className="bg-charcoal py-16 sm:py-24">
+    <section className="bg-charcoal py-16 sm:py-24 overflow-hidden">
       {/* Text Block */}
       <div className="text-center mb-12 sm:mb-16 px-4">
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/10 mb-6 sm:mb-8">
@@ -86,53 +86,100 @@ export function CreatorHeroStrip() {
         </p>
       </div>
 
-      {/* Creator Strip */}
-      <div className="relative">
-        <div
-          className="flex gap-4 sm:gap-5 overflow-x-auto px-4 sm:px-8 pb-6 scrollbar-hide"
-          style={{
-            scrollbarWidth: "none",
-            msOverflowStyle: "none",
-          }}
-        >
-          <div className="flex-shrink-0 w-0 lg:w-[calc((100vw-1280px)/2)]" />
-
+      {/* Creator Strip - Centered grid on desktop, scrollable on mobile */}
+      <div className="relative px-4 sm:px-8">
+        {/* Desktop: Centered flex layout */}
+        <div className="hidden md:flex justify-center gap-5 lg:gap-6">
           {producers.map((producer) => (
-            <div key={producer.id} className="flex-shrink-0 group">
+            <div key={producer.id} className="group">
               <div
-                className="relative w-[180px] sm:w-[200px] md:w-[220px] aspect-[3/4] rounded-3xl overflow-hidden transition-all duration-500 group-hover:-translate-y-1 group-hover:shadow-2xl shadow-black/30"
+                className="relative w-[180px] lg:w-[200px] aspect-[3/4] rounded-3xl overflow-hidden transition-all duration-500 group-hover:-translate-y-2 group-hover:scale-[1.02]"
                 style={{ backgroundColor: producer.accentColor }}
               >
+                {/* Subtle inner shadow for depth */}
+                <div className="absolute inset-0 rounded-3xl shadow-[inset_0_0_30px_rgba(0,0,0,0.3)] z-10 pointer-events-none" />
+
+                {/* Border highlight on hover */}
+                <div className="absolute inset-0 rounded-3xl border border-white/0 group-hover:border-white/20 transition-colors duration-500 z-10 pointer-events-none" />
+
                 <Image
                   src={producer.image}
                   alt={producer.name}
                   fill
-                  sizes="220px"
-                  className="object-cover transition-all duration-500 group-hover:scale-[1.05] group-hover:brightness-110"
+                  sizes="200px"
+                  className="object-cover transition-all duration-700 group-hover:scale-[1.05] group-hover:brightness-110"
                   onError={(e) => {
                     e.currentTarget.style.display = "none";
                   }}
                 />
 
                 {/* Gradient overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
 
-                {/* Name */}
+                {/* Top shine on hover */}
+                <div className="absolute inset-x-0 top-0 h-1/3 bg-gradient-to-b from-white/0 group-hover:from-white/10 to-transparent transition-all duration-500" />
+
+                {/* Name badge */}
                 <div className="absolute bottom-4 left-4 right-4">
-                  <span className="inline-block px-3 py-1.5 bg-black/50 backdrop-blur-sm rounded-full text-white text-sm font-medium">
+                  <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-black/60 backdrop-blur-md rounded-full text-white text-sm font-medium border border-white/10 transition-all duration-300 group-hover:bg-black/70 group-hover:border-white/20">
+                    <span
+                      className="w-1.5 h-1.5 rounded-full"
+                      style={{ backgroundColor: producer.accentColor }}
+                    />
                     {producer.name}
                   </span>
                 </div>
               </div>
             </div>
           ))}
-
-          <div className="flex-shrink-0 w-4 lg:w-[calc((100vw-1280px)/2)]" />
         </div>
 
-        {/* Fade edges */}
-        <div className="absolute left-0 top-0 bottom-6 w-8 bg-gradient-to-r from-charcoal to-transparent pointer-events-none" />
-        <div className="absolute right-0 top-0 bottom-6 w-8 bg-gradient-to-l from-charcoal to-transparent pointer-events-none" />
+        {/* Mobile: Horizontal scroll */}
+        <div
+          className="flex md:hidden gap-4 overflow-x-auto pb-4 snap-x snap-mandatory"
+          style={{
+            scrollbarWidth: "none",
+            msOverflowStyle: "none",
+          }}
+        >
+          {producers.map((producer) => (
+            <div key={producer.id} className="flex-shrink-0 snap-center first:ml-4 last:mr-4">
+              <div
+                className="relative w-[160px] sm:w-[180px] aspect-[3/4] rounded-2xl overflow-hidden"
+                style={{ backgroundColor: producer.accentColor }}
+              >
+                <Image
+                  src={producer.image}
+                  alt={producer.name}
+                  fill
+                  sizes="180px"
+                  className="object-cover"
+                  onError={(e) => {
+                    e.currentTarget.style.display = "none";
+                  }}
+                />
+
+                {/* Gradient overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+
+                {/* Name badge */}
+                <div className="absolute bottom-3 left-3 right-3">
+                  <span className="inline-flex items-center gap-2 px-2.5 py-1 bg-black/60 backdrop-blur-md rounded-full text-white text-xs font-medium border border-white/10">
+                    <span
+                      className="w-1.5 h-1.5 rounded-full"
+                      style={{ backgroundColor: producer.accentColor }}
+                    />
+                    {producer.name}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Mobile fade edges */}
+        <div className="md:hidden absolute left-0 top-0 bottom-4 w-8 bg-gradient-to-r from-charcoal to-transparent pointer-events-none z-10" />
+        <div className="md:hidden absolute right-0 top-0 bottom-4 w-8 bg-gradient-to-l from-charcoal to-transparent pointer-events-none z-10" />
       </div>
     </section>
   );

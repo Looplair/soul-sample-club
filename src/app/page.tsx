@@ -7,6 +7,7 @@ import { CreatorHeroStrip } from "@/components/sections/CreatorHeroStrip";
 import { CompleteControlSection } from "@/components/sections/CompleteControlSection";
 import { CommunityProof } from "@/components/sections/CommunityProof";
 import { FAQSection } from "@/components/sections/FAQSection";
+import { HowItWorksSection } from "@/components/sections/HowItWorksSection";
 import { Button } from "@/components/ui";
 import {
   Music,
@@ -123,51 +124,33 @@ function isArchived(releaseDate: string): boolean {
 const features = [
   {
     icon: Music,
-    title: "Premium Samples",
-    description: "Curated soul, funk, and jazz samples ready for your productions",
+    title: "Exclusive Compositions",
+    description: "Original soul, gospel, and funk compositions curated for real releases.",
   },
   {
     icon: Download,
-    title: "WAV + Stems",
-    description: "High-quality downloads with individual stems included",
+    title: "Full Stems Included",
+    description: "Download full compositions with individual stems.",
   },
   {
     icon: Headphones,
     title: "Preview Everything",
-    description: "Listen to every track before you subscribe",
-  },
-];
-
-const howItWorks = [
-  {
-    step: "01",
-    title: "Browse the catalog",
-    description: "Explore our curated library of soul samples. Preview any track instantly.",
-  },
-  {
-    step: "02",
-    title: "Start your free trial",
-    description: "Get 7 days free. Cancel anytime before trial ends to avoid charges.",
-  },
-  {
-    step: "03",
-    title: "Download & create",
-    description: "Download WAV files and stems. Use in your productions royalty-free.",
+    description: "Listen to every composition before you subscribe.",
   },
 ];
 
 const benefits = [
-  "New sample packs every month",
-  "3-month rolling access window",
-  "WAV files with stems",
-  "Commercial license included",
+  "Exclusive soul compositions added regularly",
+  "Access new releases as they drop",
+  "Download full compositions with stems",
+  "No clearance needed. Ever.",
   "Cancel anytime",
 ];
 
 const stats = [
-  { value: "500+", label: "Samples" },
-  { value: "50+", label: "Packs" },
-  { value: "7", label: "Day Trial" },
+  { value: "1000+", label: "members" },
+  { value: "7-day", label: "free trial" },
+  { value: "0", label: "restrictions" },
 ];
 
 // ============================================
@@ -288,15 +271,15 @@ export default async function HomePage() {
 
                 {/* Headline */}
                 <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-white mb-6 leading-[1.1] tracking-tight">
-                  Soul samples.
-                  <br />
-                  <span className="text-gradient">Made for producers.</span>
+                  Pre-cleared and original soul compositions.{" "}
+                  <span className="text-gradient">Built for producers.</span>
                 </h1>
 
                 {/* Subheadline */}
                 <p className="text-lg sm:text-xl text-text-muted max-w-xl mx-auto lg:mx-0 mb-8">
-                  Curated sample packs delivered monthly. Preview everything free.
-                  Subscribe to download stems and WAVs.
+                  Exclusive, curated soul packs delivered regularly.
+                  <br />
+                  Preview everything free. Subscribe for full access.
                 </p>
 
                 {/* CTAs */}
@@ -455,13 +438,9 @@ export default async function HomePage() {
             {/* Section header */}
             <div className="flex items-center justify-between mb-8">
               <div>
-                <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">Sample Packs</h2>
+                <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">Catalog</h2>
                 <p className="text-text-muted">
-                  {allPacks.length} packs • {isLoggedIn
-                    ? hasSubscription
-                      ? "Download any track"
-                      : "Preview everything • Subscribe to download"
-                    : "Preview any track • Sign up to save favorites"}
+                  Preview any composition. Subscribe to save and download.
                 </p>
               </div>
             </div>
@@ -498,35 +477,7 @@ export default async function HomePage() {
         {/* ============================================
             HOW IT WORKS
             ============================================ */}
-        <section id="how-it-works" className="section bg-grey-900/50 scroll-mt-20">
-          <div className="container-app">
-            <div className="text-center mb-12">
-              <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3">How It Works</h2>
-              <p className="text-text-muted max-w-xl mx-auto">
-                Get started in minutes. No complicated setup or contracts.
-              </p>
-            </div>
-
-            <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-              {howItWorks.map((item, index) => (
-                <div key={item.step} className="relative">
-                  {/* Connector line */}
-                  {index < howItWorks.length - 1 && (
-                    <div className="hidden md:block absolute top-8 left-[60%] w-full h-px bg-gradient-to-r from-grey-600 to-transparent" />
-                  )}
-
-                  <div className="text-center">
-                    <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mx-auto mb-4">
-                      <span className="text-2xl font-bold text-white">{item.step}</span>
-                    </div>
-                    <h3 className="text-lg font-semibold text-white mb-2">{item.title}</h3>
-                    <p className="text-sm text-text-muted">{item.description}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
+        <HowItWorksSection />
 
         {/* ============================================
             PRICING
@@ -545,7 +496,7 @@ export default async function HomePage() {
               <div className="relative bg-charcoal border-2 border-white/20 rounded-2xl p-6 sm:p-8">
                 <div className="text-center mb-6">
                   <div className="flex items-baseline justify-center gap-1">
-                    <span className="text-5xl font-bold text-white">$9.99</span>
+                    <span className="text-5xl font-bold text-white">$4.99</span>
                     <span className="text-text-muted text-lg">/month</span>
                   </div>
                   <p className="text-sm text-text-muted mt-2">7-day free trial included</p>
@@ -610,7 +561,7 @@ export default async function HomePage() {
                   <Zap className="w-5 h-5 text-white" />
                 </div>
                 <h3 className="text-base font-semibold text-white mb-1">Instant Downloads</h3>
-                <p className="text-sm text-text-muted">No waiting—download immediately</p>
+                <p className="text-sm text-text-muted">No waiting, download immediately</p>
               </div>
               <div>
                 <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mx-auto mb-4">

@@ -17,7 +17,7 @@ const HEADLINE = "Producers already inside the club";
 
 // Supporting paragraph
 const DESCRIPTION =
-  "Producers who value originality and want zero friction. No clearance stress, no usage limits, no surprises down the line — just sounds they can trust.";
+  "Producers who value originality and want zero friction. No clearance stress, no usage limits, no surprises down the line, just sounds they can trust.";
 
 // Trust badges
 const TRUST_BADGES = [

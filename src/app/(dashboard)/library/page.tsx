@@ -1,8 +1,8 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { SampleList } from "@/components/audio/SampleList";
-import { Heart, Download, Clock, Music2 } from "lucide-react";
+import { CollapsibleSampleList } from "@/components/audio/CollapsibleSampleList";
+import { Heart, Download, Clock } from "lucide-react";
 import type { Sample, Pack } from "@/types/database";
 
 export const metadata = {
@@ -213,11 +213,12 @@ export default async function LibraryPage() {
 
             <Suspense fallback={<SampleListSkeleton />}>
               {likedSamples.length > 0 ? (
-                <SampleList
+                <CollapsibleSampleList
                   samples={likedSamples}
                   canDownload={canDownload}
                   likedSampleIds={likedIds}
                   showPackName
+                  initialCount={5}
                 />
               ) : (
                 <EmptyState
@@ -241,11 +242,12 @@ export default async function LibraryPage() {
 
             <Suspense fallback={<SampleListSkeleton />}>
               {downloadHistory.length > 0 ? (
-                <SampleList
+                <CollapsibleSampleList
                   samples={downloadHistory}
                   canDownload={canDownload}
                   likedSampleIds={likedIds}
                   showPackName
+                  initialCount={5}
                 />
               ) : (
                 <EmptyState

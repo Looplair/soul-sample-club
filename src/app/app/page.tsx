@@ -33,7 +33,7 @@ const FAQ_ITEMS = [
   {
     question: "What can I do in the app?",
     answer:
-      "Browse the full catalog, preview samples with the built-in player, download WAV files and stems, organize your library, and access your favorites — all without opening a browser.",
+      "Browse the full catalog, preview samples with the built-in player, download WAV files and stems, organize your library, and access your favorites, all without opening a browser.",
   },
   {
     question: "How do I start using the desktop app?",
