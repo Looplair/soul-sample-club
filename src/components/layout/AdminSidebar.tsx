@@ -29,7 +29,7 @@ export function AdminSidebar() {
       {/* Back Link */}
       <div className="mb-6">
         <Link
-          href="/feed"
+          href="/"
           className="flex items-center gap-2 text-label text-text-muted hover:text-white transition-colors"
           onClick={() => setIsOpen(false)}
         >

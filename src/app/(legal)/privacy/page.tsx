@@ -11,7 +11,7 @@ export default function PrivacyPage() {
       {/* Header */}
       <header className="border-b border-grey-700 bg-charcoal/90 backdrop-blur-xl sticky top-0 z-40">
         <div className="container-app h-14 sm:h-16 flex items-center">
-          <Link href="/feed" className="flex items-center gap-2 sm:gap-3 group">
+          <Link href="/" className="flex items-center gap-2 sm:gap-3 group">
             <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-white flex items-center justify-center">
               <span className="text-charcoal font-bold text-sm sm:text-base">S</span>
             </div>
@@ -114,7 +114,7 @@ export default function PrivacyPage() {
 
           <div className="mt-12 pt-8 border-t border-grey-700">
             <Link
-              href="/feed"
+              href="/"
               className="text-white hover:underline"
             >
               ← Back to Catalog

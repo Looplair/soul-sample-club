@@ -1,7 +1,7 @@
 "use client";
 
-import Image from "next/image";
-import { Play } from "lucide-react";
+import { useState, useRef } from "react";
+import { Play, Pause } from "lucide-react";
 
 // ============================================
 // CONFIGURATION - Edit these values to customize
@@ -21,15 +21,33 @@ const DESCRIPTION = `Every sound in the Soul Sample Club is pre-cleared and roya
 const CTA_TEXT = "Learn about licensing";
 const CTA_HREF = "/terms"; // or could be a modal trigger
 
-// Media placeholder (replace with actual video/image later)
-const MEDIA_IMAGE = "/placeholders/studio-session.jpg";
-const SHOW_PLAY_BUTTON = true;
+// Video configuration
+const VIDEO_SRC = "/videos/completecontrolvideo_curtiss.mp4";
 
 // ============================================
 // COMPONENT
 // ============================================
 
 export function CompleteControlSection() {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  const handlePlayPause = () => {
+    if (!videoRef.current) return;
+
+    if (isPlaying) {
+      videoRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      videoRef.current.play();
+      setIsPlaying(true);
+    }
+  };
+
+  const handleVideoEnded = () => {
+    setIsPlaying(false);
+  };
+
   return (
     <section className="bg-charcoal py-16 sm:py-24 lg:py-32">
       <div className="container-app">
@@ -87,38 +105,44 @@ export function CompleteControlSection() {
             </a>
           </div>
 
-          {/* Right Column - Media Card */}
+          {/* Right Column - Video Card */}
           <div className="order-2">
             <div className="relative aspect-[4/3] rounded-2xl sm:rounded-3xl overflow-hidden bg-grey-800 shadow-2xl">
-              {/* Background Image */}
-              <Image
-                src={MEDIA_IMAGE}
-                alt="Producer in studio"
-                fill
-                className="object-cover"
-                sizes="(max-width: 1024px) 100vw, 50vw"
-                onError={(e) => {
-                  e.currentTarget.style.display = "none";
-                }}
-              />
+              {/* Video Element */}
+              <video
+                ref={videoRef}
+                preload="metadata"
+                playsInline
+                onEnded={handleVideoEnded}
+                onClick={handlePlayPause}
+                className="absolute inset-0 w-full h-full object-cover cursor-pointer"
+              >
+                <source src={VIDEO_SRC} type="video/mp4" />
+              </video>
 
-              {/* Fallback gradient if no image */}
-              <div className="absolute inset-0 bg-gradient-to-br from-grey-700 via-grey-800 to-grey-900" />
-
-              {/* Cinematic overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20" />
-
-              {/* Optional Play Button */}
-              {SHOW_PLAY_BUTTON && (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <button className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center hover:bg-white/20 hover:scale-105 transition-all duration-300 group">
+              {/* Play/Pause Button Overlay */}
+              <div
+                className={`absolute inset-0 flex items-center justify-center transition-opacity duration-300 ${
+                  isPlaying ? "opacity-0 hover:opacity-100" : "opacity-100"
+                }`}
+              >
+                <button
+                  onClick={handlePlayPause}
+                  className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center hover:bg-white/20 hover:scale-105 transition-all duration-300 group"
+                >
+                  {isPlaying ? (
+                    <Pause
+                      className="w-6 h-6 sm:w-7 sm:h-7 text-white group-hover:scale-110 transition-transform"
+                      fill="currentColor"
+                    />
+                  ) : (
                     <Play
                       className="w-6 h-6 sm:w-7 sm:h-7 text-white ml-1 group-hover:scale-110 transition-transform"
                       fill="currentColor"
                     />
-                  </button>
-                </div>
-              )}
+                  )}
+                </button>
+              </div>
 
               {/* Subtle brand watermark (optional) */}
               <div className="absolute bottom-4 right-4 sm:bottom-6 sm:right-6">

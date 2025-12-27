@@ -6,6 +6,7 @@ import { PackCard } from "@/components/packs/PackCard";
 import { CreatorHeroStrip } from "@/components/sections/CreatorHeroStrip";
 import { CompleteControlSection } from "@/components/sections/CompleteControlSection";
 import { CommunityProof } from "@/components/sections/CommunityProof";
+import { FAQSection } from "@/components/sections/FAQSection";
 import { Button } from "@/components/ui";
 import {
   Music,
@@ -212,6 +213,9 @@ export default async function HomePage() {
             </a>
             <a href="#pricing" className="nav-link">
               Pricing
+            </a>
+            <a href="#faq" className="nav-link">
+              FAQ
             </a>
             <Link href="/app" className="nav-link">
               App
@@ -582,6 +586,11 @@ export default async function HomePage() {
             </div>
           </div>
         </section>
+
+        {/* ============================================
+            FAQ SECTION
+            ============================================ */}
+        <FAQSection />
 
         {/* ============================================
             TRUST SIGNALS

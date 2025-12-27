@@ -66,7 +66,7 @@ export default async function AppPage() {
       {/* Header */}
       <header className="border-b border-grey-700 bg-charcoal/90 backdrop-blur-xl sticky top-0 z-40">
         <div className="container-app h-14 sm:h-16 flex items-center justify-between">
-          <Link href={isLoggedIn ? "/feed" : "/"} className="flex items-center group">
+          <Link href="/" className="flex items-center group">
             <Image
               src="/logo.svg"
               alt="Soul Sample Club"
@@ -80,7 +80,7 @@ export default async function AppPage() {
           <nav className="hidden md:flex items-center gap-8">
             {isLoggedIn ? (
               <>
-                <Link href="/feed" className="nav-link">
+                <Link href="/" className="nav-link">
                   Catalog
                 </Link>
                 <Link href="/library" className="nav-link">
@@ -113,7 +113,7 @@ export default async function AppPage() {
 
           <div className="flex items-center gap-2 sm:gap-3">
             {isLoggedIn ? (
-              <Link href="/feed">
+              <Link href="/">
                 <Button size="sm">Back to Catalog</Button>
               </Link>
             ) : (

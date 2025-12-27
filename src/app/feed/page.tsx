@@ -123,7 +123,7 @@ export default async function FeedPage() {
       {/* Header */}
       <header className="border-b border-grey-700 bg-charcoal/90 backdrop-blur-xl sticky top-0 z-40">
         <div className="container-app h-14 sm:h-16 flex items-center justify-between">
-          <Link href="/feed" className="flex items-center group">
+          <Link href="/" className="flex items-center group">
             <Image
               src="/logo.svg"
               alt="Soul Sample Club"
@@ -334,7 +334,7 @@ export default async function FeedPage() {
           {isLoggedIn && (
             <nav className="sm:hidden fixed bottom-0 left-0 right-0 bg-charcoal-elevated/95 backdrop-blur-xl border-t border-grey-700 z-40 safe-area-bottom">
               <div className="flex items-center justify-around h-14">
-                <Link href="/feed" className="flex flex-col items-center gap-1 py-2 px-4 text-white">
+                <Link href="/" className="flex flex-col items-center gap-1 py-2 px-4 text-white">
                   <Music className="w-5 h-5" />
                   <span className="text-[10px]">Catalog</span>
                 </Link>

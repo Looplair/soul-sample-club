@@ -106,6 +106,24 @@ export function SampleManager({ packId, initialSamples }: SampleManagerProps) {
 
       setUploadQueue((prev) =>
         prev.map((u) =>
+          u.id === upload.id ? { ...u, progress: 80, status: "processing" } : u
+        )
+      );
+
+      // Generate waveform peaks in background
+      try {
+        await fetch("/api/admin/samples/generate-peaks", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sampleId: newSample.id }),
+        });
+      } catch (peakError) {
+        console.warn("Failed to generate peaks:", peakError);
+        // Non-fatal - continue without peaks
+      }
+
+      setUploadQueue((prev) =>
+        prev.map((u) =>
           u.id === upload.id ? { ...u, progress: 100, status: "done" } : u
         )
       );

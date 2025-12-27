@@ -75,8 +75,8 @@ export function Navbar({ user }: NavbarProps) {
   return (
     <nav className="h-16 bg-charcoal border-b border-grey-700 sticky top-0 z-40 backdrop-blur-xl bg-charcoal/90">
       <div className="container-app h-full flex items-center justify-between">
-        {/* Logo - links to /feed for logged in, / for logged out */}
-        <Link href={user ? "/feed" : "/"} className="flex items-center group">
+        {/* Logo - always links to homepage */}
+        <Link href="/" className="flex items-center group">
           <Image
             src="/logo.svg"
             alt="Soul Sample Club"

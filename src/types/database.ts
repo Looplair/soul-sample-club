@@ -188,6 +188,7 @@ export interface Database {
           bpm: number | null;
           key: string | null;
           order_index: number;
+          waveform_peaks: number[] | null;
           created_at: string;
         };
         Insert: {
@@ -202,6 +203,7 @@ export interface Database {
           bpm?: number | null;
           key?: string | null;
           order_index?: number;
+          waveform_peaks?: number[] | null;
           created_at?: string;
         };
         Update: {
@@ -216,6 +218,7 @@ export interface Database {
           bpm?: number | null;
           key?: string | null;
           order_index?: number;
+          waveform_peaks?: number[] | null;
           created_at?: string;
         };
       };

@@ -80,6 +80,9 @@ export function SampleRowWithLoop({
   const [audioDuration, setAudioDuration] = useState(0);
   const [audioBufferLoaded, setAudioBufferLoaded] = useState(false);
 
+  // Track when we're switching to loop mode (to prevent pause event from setting localIsPlaying=false)
+  const switchingToLoopModeRef = useRef(false);
+
   const sampleIdRef = useRef(sample.id);
   sampleIdRef.current = sample.id;
 
@@ -183,6 +186,9 @@ export function SampleRowWithLoop({
     const audio = new Audio();
     audioRef.current = audio;
 
+    // Check if we have pre-computed peaks for faster loading
+    const hasPeaks = sample.waveform_peaks && sample.waveform_peaks.length > 0;
+
     const wavesurfer = WaveSurfer.create({
       container: containerRef.current,
       waveColor: "#3A3A3A",
@@ -196,6 +202,8 @@ export function SampleRowWithLoop({
       normalize: true,
       backend: "MediaElement",
       media: audio,
+      // Use pre-computed peaks if available (much faster!)
+      ...(hasPeaks && { peaks: [sample.waveform_peaks as number[]] }),
     });
 
     wavesurferRef.current = wavesurfer;
@@ -222,6 +230,11 @@ export function SampleRowWithLoop({
     };
 
     const handlePause = () => {
+      // Don't set localIsPlaying=false if we're switching to loop mode
+      // (we pause WaveSurfer but continue playing via Web Audio)
+      if (switchingToLoopModeRef.current) {
+        return;
+      }
       setLocalIsPlaying(false);
       setIsPlaying(false);
     };
@@ -309,9 +322,13 @@ export function SampleRowWithLoop({
 
   // Start Web Audio seamless loop playback
   const startLoopPlayback = useCallback(() => {
+    // Ensure we have an audio context (create if needed)
+    if (!audioContextRef.current) {
+      audioContextRef.current = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+    }
     const ctx = audioContextRef.current;
     const buffer = audioBufferRef.current;
-    if (!ctx || !buffer || !hasBpm) return;
+    if (!buffer || !hasBpm) return;
 
     // Resume context if suspended
     if (ctx.state === "suspended") {
@@ -427,26 +444,59 @@ export function SampleRowWithLoop({
     }
   }, [localIsPlaying, waveformReady, isLooping, audioBufferLoaded, hasBpm, playTrack, setDuration, sample, packName, previewUrl, startLoopPlayback, stopLoopPlayback, setIsPlaying]);
 
-  // When loop settings change during playback, restart loop with new settings
+  // When barCount or pitchOffset change during playback, restart loop with new settings
+  // Note: loopStartTime changes are handled directly in handleWaveformClick for immediate response
   useEffect(() => {
     // Only handle changes while playing with loop enabled
     if (!localIsPlaying || !isLooping || !audioBufferLoaded || !hasBpm) return;
 
     // Restart loop playback with updated settings
     startLoopPlayback();
-  }, [barCount, loopStartTime, pitchOffset]);
+  }, [barCount, pitchOffset, localIsPlaying, isLooping, audioBufferLoaded, hasBpm, startLoopPlayback]);
 
   // Handle toggling loop on/off during playback
   useEffect(() => {
     if (!localIsPlaying) return;
 
-    if (isLooping && audioBufferLoaded && hasBpm) {
+    if (isLooping && hasBpm) {
       // Switching TO loop mode - mute WaveSurfer, use Web Audio
+      // Set flag to prevent pause event from setting localIsPlaying=false
+      switchingToLoopModeRef.current = true;
+
       if (audioRef.current) {
         audioRef.current.volume = 0;
       }
       wavesurferRef.current?.pause();
-      startLoopPlayback();
+
+      // Start loop playback - load buffer on-demand if needed
+      const startLoop = async () => {
+        // Load buffer if not already loaded
+        if (!audioBufferRef.current && previewUrl) {
+          try {
+            if (!audioContextRef.current) {
+              audioContextRef.current = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+            }
+            const response = await fetch(previewUrl);
+            if (response.ok) {
+              const arrayBuffer = await response.arrayBuffer();
+              audioBufferRef.current = await audioContextRef.current.decodeAudioData(arrayBuffer);
+            }
+          } catch (err) {
+            console.error("Error loading audio buffer:", err);
+            switchingToLoopModeRef.current = false;
+            return;
+          }
+        }
+
+        if (audioBufferRef.current) {
+          startLoopPlayback();
+        }
+
+        // Clear the flag after loop playback has started
+        switchingToLoopModeRef.current = false;
+      };
+
+      startLoop();
     } else if (!isLooping) {
       // Switching FROM loop mode - stop Web Audio, use WaveSurfer
       stopLoopPlayback();
@@ -455,11 +505,78 @@ export function SampleRowWithLoop({
       }
       wavesurferRef.current?.play();
     }
-    // Include startLoopPlayback and stopLoopPlayback to use fresh loopStartTime
-  }, [isLooping, startLoopPlayback, stopLoopPlayback, localIsPlaying, audioBufferLoaded, hasBpm]);
+  }, [isLooping, startLoopPlayback, stopLoopPlayback, localIsPlaying, hasBpm, previewUrl]);
 
-  // Snap-to-grid click handler
-  const handleWaveformClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+  // Helper to start loop at a specific position - used by both click handler and other functions
+  const startLoopAtPosition = useCallback((startTime: number) => {
+    // Ensure we have an audio context (create if needed)
+    if (!audioContextRef.current) {
+      audioContextRef.current = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+    }
+    const ctx = audioContextRef.current;
+    const buffer = audioBufferRef.current;
+    if (!buffer || !hasBpm) return;
+
+    // Resume context if suspended
+    if (ctx.state === "suspended") {
+      ctx.resume();
+    }
+
+    // Stop current playback
+    if (sourceNodeRef.current) {
+      try {
+        sourceNodeRef.current.stop();
+        sourceNodeRef.current.disconnect();
+      } catch {
+        // Already stopped
+      }
+      sourceNodeRef.current = null;
+    }
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+
+    // Create new source with loop points
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+
+    if (!gainNodeRef.current) {
+      gainNodeRef.current = ctx.createGain();
+      gainNodeRef.current.connect(ctx.destination);
+    }
+    source.connect(gainNodeRef.current);
+
+    source.loop = true;
+    source.loopStart = startTime;
+    source.loopEnd = Math.min(startTime + loopDuration, buffer.duration);
+    source.detune.value = pitchOffset * 100;
+
+    sourceNodeRef.current = source;
+    loopPlaybackStartTimeRef.current = ctx.currentTime;
+
+    source.start(0, startTime);
+
+    // Start time update animation
+    const effectiveRate = Math.pow(2, pitchOffset / 12);
+    const updateTime = () => {
+      if (!audioContextRef.current || !sourceNodeRef.current) return;
+      const realElapsed = audioContextRef.current.currentTime - loopPlaybackStartTimeRef.current;
+      const audioElapsed = realElapsed * effectiveRate;
+      const posInLoop = audioElapsed % loopDuration;
+      const currentPos = startTime + posInLoop;
+      setLocalCurrentTime(currentPos);
+      setCurrentTime(currentPos);
+      if (wavesurferRef.current && audioDuration > 0) {
+        wavesurferRef.current.seekTo(currentPos / audioDuration);
+      }
+      animationFrameRef.current = requestAnimationFrame(updateTime);
+    };
+    animationFrameRef.current = requestAnimationFrame(updateTime);
+  }, [hasBpm, loopDuration, pitchOffset, setCurrentTime, audioDuration]);
+
+  // Snap-to-grid click handler - immediately restarts loop at new position
+  const handleWaveformClick = useCallback(async (e: React.MouseEvent<HTMLDivElement>) => {
     if (!isLooping || !waveformWrapperRef.current || !audioDuration || !sample.bpm) return;
 
     const rect = waveformWrapperRef.current.getBoundingClientRect();
@@ -474,7 +591,102 @@ export function SampleRowWithLoop({
     const newStartTime = Math.min(Math.max(0, snappedTime), maxStartTime);
 
     setLoopStartTime(newStartTime);
-  }, [isLooping, audioDuration, loopDuration, sample.bpm, barCount]);
+
+    // If loop is enabled and we have BPM, start/restart loop at new position
+    // We check isLooping (not localIsPlaying) because localIsPlaying can be stale
+    // when switching modes. If user is clicking while loop is on, they want audio.
+    if (isLooping && hasBpm) {
+      // Make sure WaveSurfer is muted
+      if (audioRef.current) {
+        audioRef.current.volume = 0;
+      }
+      wavesurferRef.current?.pause();
+
+      // Ensure audio context exists
+      if (!audioContextRef.current) {
+        audioContextRef.current = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+      }
+      const ctx = audioContextRef.current;
+
+      // Load audio buffer on-demand if not already loaded
+      if (!audioBufferRef.current && previewUrl) {
+        try {
+          const response = await fetch(previewUrl);
+          if (response.ok) {
+            const arrayBuffer = await response.arrayBuffer();
+            audioBufferRef.current = await ctx.decodeAudioData(arrayBuffer);
+          }
+        } catch (err) {
+          console.error("Error loading audio buffer on click:", err);
+          return;
+        }
+      }
+
+      const buffer = audioBufferRef.current;
+      if (!buffer) return;
+
+      // Resume context if suspended
+      if (ctx.state === "suspended") {
+        await ctx.resume();
+      }
+
+      // Stop current playback
+      if (sourceNodeRef.current) {
+        try {
+          sourceNodeRef.current.stop();
+          sourceNodeRef.current.disconnect();
+        } catch {
+          // Already stopped
+        }
+        sourceNodeRef.current = null;
+      }
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+
+      // Create new source with loop points
+      const source = ctx.createBufferSource();
+      source.buffer = buffer;
+
+      if (!gainNodeRef.current) {
+        gainNodeRef.current = ctx.createGain();
+        gainNodeRef.current.connect(ctx.destination);
+      }
+      source.connect(gainNodeRef.current);
+
+      source.loop = true;
+      source.loopStart = newStartTime;
+      source.loopEnd = Math.min(newStartTime + loopDuration, buffer.duration);
+      source.detune.value = pitchOffset * 100;
+
+      sourceNodeRef.current = source;
+      loopPlaybackStartTimeRef.current = ctx.currentTime;
+
+      source.start(0, newStartTime);
+
+      // Ensure playing state is true
+      setLocalIsPlaying(true);
+      setIsPlaying(true);
+
+      // Start time update animation
+      const effectiveRate = Math.pow(2, pitchOffset / 12);
+      const updateTime = () => {
+        if (!audioContextRef.current || !sourceNodeRef.current) return;
+        const realElapsed = audioContextRef.current.currentTime - loopPlaybackStartTimeRef.current;
+        const audioElapsed = realElapsed * effectiveRate;
+        const posInLoop = audioElapsed % loopDuration;
+        const currentPos = newStartTime + posInLoop;
+        setLocalCurrentTime(currentPos);
+        setCurrentTime(currentPos);
+        if (wavesurferRef.current && audioDuration > 0) {
+          wavesurferRef.current.seekTo(currentPos / audioDuration);
+        }
+        animationFrameRef.current = requestAnimationFrame(updateTime);
+      };
+      animationFrameRef.current = requestAnimationFrame(updateTime);
+    }
+  }, [isLooping, audioDuration, loopDuration, sample.bpm, barCount, hasBpm, pitchOffset, setCurrentTime, setIsPlaying, previewUrl]);
 
   const handleToggleLoop = useCallback(() => {
     if (!isLooping && sample.bpm && audioDuration > 0) {
