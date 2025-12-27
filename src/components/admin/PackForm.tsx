@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useDropzone } from "react-dropzone";
-import { Upload, X, AlertCircle, CheckCircle } from "lucide-react";
+import { Upload, X, AlertCircle, CheckCircle, Gift, Calendar } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button, Input, Card, CardContent } from "@/components/ui";
 import type { Pack } from "@/types/database";
@@ -23,7 +23,9 @@ export function PackForm({ pack }: PackFormProps) {
   const [releaseDate, setReleaseDate] = useState(
     pack?.release_date || new Date().toISOString().split("T")[0]
   );
+  const [endDate, setEndDate] = useState(pack?.end_date || "");
   const [isPublished, setIsPublished] = useState(pack?.is_published || false);
+  const [isBonus, setIsBonus] = useState(pack?.is_bonus || false);
   const [coverImage, setCoverImage] = useState<File | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(
     pack?.cover_image_url || null
@@ -85,7 +87,9 @@ export function PackForm({ pack }: PackFormProps) {
         name,
         description,
         release_date: releaseDate,
+        end_date: endDate || null,
         is_published: isPublished,
+        is_bonus: isBonus,
         cover_image_url: coverImageUrl,
       };
 
@@ -206,30 +210,74 @@ export function PackForm({ pack }: PackFormProps) {
             />
           </div>
 
-          {/* Release Date */}
-          <Input
-            label="Release Date"
-            type="date"
-            value={releaseDate}
-            onChange={(e) => setReleaseDate(e.target.value)}
-            required
-          />
+          {/* Dates Section */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
+            {/* Release Date */}
+            <Input
+              label="Release Date"
+              type="date"
+              value={releaseDate}
+              onChange={(e) => setReleaseDate(e.target.value)}
+              required
+            />
 
-          {/* Published Status */}
-          <div className="flex items-center gap-12">
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={isPublished}
-                onChange={(e) => setIsPublished(e.target.checked)}
-                className="sr-only peer"
+            {/* End Date */}
+            <div>
+              <Input
+                label="End Date (Optional)"
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
               />
-              <div className="w-11 h-6 bg-steel rounded-full peer peer-checked:bg-velvet transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full" />
-            </label>
-            <span className="text-body text-snow">
-              {isPublished ? "Published" : "Draft"}
-            </span>
+              <p className="text-caption text-snow/40 mt-4">
+                <Calendar className="w-3 h-3 inline mr-1" />
+                Leave empty for default 3-month window. Set explicitly for bonus packs (1 month).
+              </p>
+            </div>
           </div>
+
+          {/* Toggle Options */}
+          <div className="flex flex-wrap items-center gap-24">
+            {/* Published Status */}
+            <div className="flex items-center gap-12">
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isPublished}
+                  onChange={(e) => setIsPublished(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-steel rounded-full peer peer-checked:bg-velvet transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full" />
+              </label>
+              <span className="text-body text-snow">
+                {isPublished ? "Published" : "Draft"}
+              </span>
+            </div>
+
+            {/* Bonus Pack Toggle */}
+            <div className="flex items-center gap-12">
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isBonus}
+                  onChange={(e) => setIsBonus(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-steel rounded-full peer peer-checked:bg-amber-500 transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full" />
+              </label>
+              <span className="text-body text-snow flex items-center gap-8">
+                <Gift className="w-4 h-4 text-amber-500" />
+                {isBonus ? "Bonus Pack" : "Regular Pack"}
+              </span>
+            </div>
+          </div>
+
+          {isBonus && (
+            <div className="bg-amber-500/10 border border-amber-500/30 rounded-button p-12 text-amber-200 text-body-sm">
+              <Gift className="w-4 h-4 inline mr-8" />
+              Bonus packs are from partner libraries and typically expire after 1 month. Make sure to set an explicit end date.
+            </div>
+          )}
         </CardContent>
       </Card>
 

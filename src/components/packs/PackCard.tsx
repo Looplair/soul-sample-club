@@ -2,12 +2,12 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Music2, Archive, Star, Sparkles, Play } from "lucide-react";
-import { cn, formatDate, isPackNew, isPackExpired } from "@/lib/utils";
+import { Music2, Archive, Star, Sparkles, Play, Gift, Clock } from "lucide-react";
+import { cn, formatDate, isPackNew, isPackExpiredWithEndDate, getDaysUntilEndDate, getExpiryBadgeText } from "@/lib/utils";
 import type { Pack } from "@/types/database";
 
 interface PackCardProps {
-  pack: Pack & { is_staff_pick?: boolean };
+  pack: Pack & { is_staff_pick?: boolean; is_bonus?: boolean; end_date?: string | null };
   sampleCount: number;
   hasSubscription: boolean;
 }
@@ -16,10 +16,16 @@ export function PackCard({ pack, sampleCount }: PackCardProps) {
   const name = pack.name ?? "Untitled Release";
   const description = pack.description ?? "";
   const releaseDate = pack.release_date ?? "";
+  const endDate = pack.end_date ?? null;
 
   const isNew = isPackNew(releaseDate);
-  const isExpired = isPackExpired(releaseDate);
+  const isExpired = isPackExpiredWithEndDate(releaseDate, endDate);
   const isStaffPick = pack.is_staff_pick ?? false;
+  const isBonus = pack.is_bonus ?? false;
+
+  // Calculate expiry badge for non-expired packs
+  const daysRemaining = !isExpired ? getDaysUntilEndDate(releaseDate, endDate, isBonus ? 1 : 3) : 0;
+  const expiryBadgeText = !isExpired ? getExpiryBadgeText(daysRemaining) : null;
 
   return (
     <Link
@@ -55,17 +61,32 @@ export function PackCard({ pack, sampleCount }: PackCardProps) {
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
         {/* Badges - Top Left */}
-        <div className="absolute top-3 left-3 flex items-center gap-1.5 z-10">
-          {isNew && !isExpired && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-success text-charcoal text-[10px] font-bold tracking-wide uppercase">
-              <Sparkles className="w-2.5 h-2.5" />
-              New
-            </span>
-          )}
-          {isStaffPick && !isExpired && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white text-charcoal text-[10px] font-bold tracking-wide uppercase">
-              <Star className="w-2.5 h-2.5" />
-              Pick
+        <div className="absolute top-3 left-3 flex flex-col items-start gap-1.5 z-10">
+          <div className="flex items-center gap-1.5">
+            {isBonus && !isExpired && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500 text-charcoal text-[10px] font-bold tracking-wide uppercase">
+                <Gift className="w-2.5 h-2.5" />
+                Bonus
+              </span>
+            )}
+            {isNew && !isExpired && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-success text-charcoal text-[10px] font-bold tracking-wide uppercase">
+                <Sparkles className="w-2.5 h-2.5" />
+                New
+              </span>
+            )}
+            {isStaffPick && !isExpired && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white text-charcoal text-[10px] font-bold tracking-wide uppercase">
+                <Star className="w-2.5 h-2.5" />
+                Pick
+              </span>
+            )}
+          </div>
+          {/* Expiry Warning Badge */}
+          {expiryBadgeText && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-500/90 text-white text-[10px] font-medium tracking-wide backdrop-blur-sm">
+              <Clock className="w-2.5 h-2.5" />
+              {expiryBadgeText}
             </span>
           )}
         </div>

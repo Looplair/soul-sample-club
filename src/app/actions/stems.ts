@@ -18,13 +18,13 @@ export async function uploadStems(formData: FormData) {
     // Check if user is admin
     const { data: profile } = await supabase
       .from("profiles")
-      .select("role")
+      .select("is_admin")
       .eq("id", user.id)
       .single();
 
-    const profileData = profile as { role: string } | null;
-    if (profileData?.role !== "admin") {
-      return { error: "Forbidden" };
+    const profileData = profile as { is_admin: boolean } | null;
+    if (!profileData?.is_admin) {
+      return { error: "Admin access required" };
     }
 
     // Get the form data

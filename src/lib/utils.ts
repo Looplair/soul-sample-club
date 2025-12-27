@@ -73,3 +73,46 @@ export function getDaysUntilExpiry(releaseDate: string | Date, months: number = 
   const diffTime = expiryDate.getTime() - now.getTime();
   return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 }
+
+// New utilities for explicit end_date support
+export function getPackEndDate(
+  releaseDate: string | Date,
+  endDate: string | null,
+  defaultMonths: number = 3
+): Date {
+  if (endDate) {
+    return new Date(endDate);
+  }
+  // Fallback to release date + default months
+  const release = new Date(releaseDate);
+  const expiryDate = new Date(release);
+  expiryDate.setMonth(expiryDate.getMonth() + defaultMonths);
+  return expiryDate;
+}
+
+export function isPackExpiredWithEndDate(
+  releaseDate: string | Date,
+  endDate: string | null
+): boolean {
+  const expiry = getPackEndDate(releaseDate, endDate);
+  return new Date() > expiry;
+}
+
+export function getDaysUntilEndDate(
+  releaseDate: string | Date,
+  endDate: string | null,
+  defaultMonths: number = 3
+): number {
+  const expiry = getPackEndDate(releaseDate, endDate, defaultMonths);
+  const now = new Date();
+  const diffTime = expiry.getTime() - now.getTime();
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+}
+
+export function getExpiryBadgeText(daysRemaining: number): string | null {
+  if (daysRemaining <= 0) return null;
+  if (daysRemaining === 1) return "Expires tomorrow";
+  if (daysRemaining <= 7) return `Expires in ${daysRemaining} days`;
+  if (daysRemaining <= 14) return "Expires in ~2 weeks";
+  return null;
+}

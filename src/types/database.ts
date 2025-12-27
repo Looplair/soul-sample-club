@@ -147,8 +147,10 @@ export interface Database {
           description: string;
           cover_image_url: string | null;
           release_date: string;
+          end_date: string | null;
           is_published: boolean;
           is_staff_pick?: boolean;
+          is_bonus: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -158,8 +160,10 @@ export interface Database {
           description: string;
           cover_image_url?: string | null;
           release_date: string;
+          end_date?: string | null;
           is_published?: boolean;
           is_staff_pick?: boolean;
+          is_bonus?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -169,8 +173,10 @@ export interface Database {
           description?: string;
           cover_image_url?: string | null;
           release_date?: string;
+          end_date?: string | null;
           is_published?: boolean;
           is_staff_pick?: boolean;
+          is_bonus?: boolean;
           created_at?: string;
           updated_at?: string;
         };

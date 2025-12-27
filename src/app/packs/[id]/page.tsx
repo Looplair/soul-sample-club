@@ -1,10 +1,10 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, Calendar, Music2, Download, Lock, Archive, Sparkles, Star, Play, LogIn, User } from "lucide-react";
+import { ArrowLeft, Calendar, Music2, Download, Lock, Archive, Sparkles, Star, Play, LogIn, User, Gift, Clock } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { formatDate, isPackNew, isPackExpired } from "@/lib/utils";
+import { formatDate, isPackNew, isPackExpiredWithEndDate, getDaysUntilEndDate, getExpiryBadgeText } from "@/lib/utils";
 import { SampleList } from "@/components/audio/SampleList";
 import { Button } from "@/components/ui";
 import { Badge } from "@/components/ui";
@@ -171,8 +171,14 @@ export default async function PackDetailPage({
 
   // Pack status checks
   const isNew = isPackNew(pack.release_date);
-  const isExpired = isPackExpired(pack.release_date);
+  const isBonus = pack.is_bonus ?? false;
+  const endDate = pack.end_date ?? null;
+  const isExpired = isPackExpiredWithEndDate(pack.release_date, endDate);
   const isStaffPick = pack.is_staff_pick ?? false;
+
+  // Calculate expiry countdown for non-expired packs
+  const daysRemaining = !isExpired ? getDaysUntilEndDate(pack.release_date, endDate, isBonus ? 1 : 3) : 0;
+  const expiryBadgeText = !isExpired ? getExpiryBadgeText(daysRemaining) : null;
 
   // Expired packs: everyone can preview, no one can download
   // Active packs: subscribers/patrons can download, others can preview
@@ -265,16 +271,31 @@ export default async function PackDetailPage({
 
               {/* Badges - Top Left */}
               <div className="absolute top-4 left-4 flex flex-col gap-2 z-10">
-                {isNew && !isExpired && (
-                  <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-success text-charcoal text-label font-semibold">
-                    <Sparkles className="w-4 h-4" />
-                    NEW
-                  </span>
-                )}
-                {isStaffPick && !isExpired && (
-                  <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-white/90 text-charcoal text-label font-semibold">
-                    <Star className="w-4 h-4" />
-                    Staff Pick
+                <div className="flex items-center gap-2">
+                  {isBonus && !isExpired && (
+                    <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-amber-500 text-charcoal text-label font-semibold">
+                      <Gift className="w-4 h-4" />
+                      BONUS
+                    </span>
+                  )}
+                  {isNew && !isExpired && (
+                    <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-success text-charcoal text-label font-semibold">
+                      <Sparkles className="w-4 h-4" />
+                      NEW
+                    </span>
+                  )}
+                  {isStaffPick && !isExpired && (
+                    <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-white/90 text-charcoal text-label font-semibold">
+                      <Star className="w-4 h-4" />
+                      Staff Pick
+                    </span>
+                  )}
+                </div>
+                {/* Expiry countdown badge */}
+                {expiryBadgeText && (
+                  <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-orange-500 text-white text-label font-medium">
+                    <Clock className="w-4 h-4" />
+                    {expiryBadgeText}
                   </span>
                 )}
               </div>
@@ -297,6 +318,12 @@ export default async function PackDetailPage({
             <div className="lg:col-span-2">
               {/* Status Badges */}
               <div className="flex flex-wrap items-center gap-2 mb-4">
+                {isBonus && (
+                  <Badge variant="default" className="bg-amber-500/20 text-amber-400 border-amber-500/30">
+                    <Gift className="w-3 h-3 mr-1" />
+                    Bonus Pack
+                  </Badge>
+                )}
                 {isExpired ? (
                   <Badge variant="default">
                     <Archive className="w-3 h-3 mr-1" />
@@ -311,6 +338,12 @@ export default async function PackDetailPage({
                   <Badge variant="warning">
                     <Lock className="w-3 h-3 mr-1" />
                     Subscribe to Download
+                  </Badge>
+                )}
+                {expiryBadgeText && (
+                  <Badge variant="default" className="bg-orange-500/20 text-orange-400 border-orange-500/30">
+                    <Clock className="w-3 h-3 mr-1" />
+                    {expiryBadgeText}
                   </Badge>
                 )}
                 <span className="text-label text-text-muted">
@@ -354,6 +387,21 @@ export default async function PackDetailPage({
                   />
                 </div>
               </div>
+
+              {/* Bonus Pack Notice */}
+              {isBonus && !isExpired && (
+                <div className="bg-amber-500/10 border border-amber-500/30 rounded-card p-4 flex items-start sm:items-center gap-3 mb-4">
+                  <Gift className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5 sm:mt-0" />
+                  <div>
+                    <p className="text-body text-amber-200 font-medium">
+                      Bonus Pack from Partner Library
+                    </p>
+                    <p className="text-body-sm text-amber-200/70 mt-1">
+                      This is a limited-time bonus release. {expiryBadgeText ? `${expiryBadgeText}.` : 'Download before it expires!'}
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {/* Status Messages */}
               {isExpired ? (

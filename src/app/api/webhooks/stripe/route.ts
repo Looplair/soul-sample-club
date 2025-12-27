@@ -6,6 +6,21 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
+// In-memory idempotency cache for processed webhook events
+// For production with multiple servers, use Redis or database table
+const processedEvents = new Map<string, number>();
+const EVENT_CACHE_TTL = 60 * 60 * 1000; // 1 hour
+
+// Clean up old entries periodically
+setInterval(() => {
+  const now = Date.now();
+  processedEvents.forEach((timestamp, eventId) => {
+    if (now - timestamp > EVENT_CACHE_TTL) {
+      processedEvents.delete(eventId);
+    }
+  });
+}, 10 * 60 * 1000); // Clean every 10 minutes
+
 // Helper to get user ID from various Stripe objects
 function getUserIdFromMetadata(
   obj: Stripe.Customer | Stripe.Subscription | Stripe.Checkout.Session
@@ -39,6 +54,11 @@ export async function POST(request: Request) {
         { error: "Webhook signature verification failed" },
         { status: 400 }
       );
+    }
+
+    // Idempotency check - skip if we've already processed this event
+    if (processedEvents.has(event.id)) {
+      return NextResponse.json({ received: true, cached: true });
     }
 
     const supabase = createAdminClient();
@@ -202,6 +222,9 @@ export async function POST(request: Request) {
       default:
         console.log(`Unhandled event type: ${event.type}`);
     }
+
+    // Mark event as processed
+    processedEvents.set(event.id, Date.now());
 
     return NextResponse.json({ received: true });
   } catch (error) {

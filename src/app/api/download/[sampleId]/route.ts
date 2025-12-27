@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import type { Sample } from "@/types/database";
+
+// UUID validation regex
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // Type for sample with pack relation
 interface SampleWithPack extends Sample {
@@ -18,6 +22,12 @@ export async function GET(
 ) {
   try {
     const { sampleId } = await params;
+
+    // Validate sampleId format
+    if (!UUID_REGEX.test(sampleId)) {
+      return NextResponse.json({ error: "Invalid sample ID format" }, { status: 400 });
+    }
+
     const supabase = await createClient();
     const adminSupabase = createAdminClient();
 
@@ -28,6 +38,20 @@ export async function GET(
 
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Rate limiting - 100 downloads per minute per user
+    const rateLimit = checkRateLimit(`download:${user.id}`, RATE_LIMITS.download);
+    if (!rateLimit.success) {
+      return NextResponse.json(
+        { error: "Too many download requests. Please wait a moment." },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": Math.ceil((rateLimit.resetTime - Date.now()) / 1000).toString(),
+          },
+        }
+      );
     }
 
     // Check subscription status
