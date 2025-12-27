@@ -2,7 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { PackCard } from "@/components/packs/PackCard";
+import { CatalogSearch } from "@/components/catalog/CatalogSearch";
 import { CreatorHeroStrip } from "@/components/sections/CreatorHeroStrip";
 import { CompleteControlSection } from "@/components/sections/CompleteControlSection";
 import { CommunityProof } from "@/components/sections/CommunityProof";
@@ -436,26 +436,15 @@ export default async function HomePage() {
         <section id="catalog" className="section scroll-mt-20">
           <div className="container-app">
             {/* Section header */}
-            <div className="flex items-center justify-between mb-8">
-              <div>
-                <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">Catalog</h2>
-                <p className="text-text-muted">
-                  Preview any composition. Subscribe to save and download.
-                </p>
-              </div>
+            <div className="mb-8">
+              <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">Catalog</h2>
+              <p className="text-text-muted">
+                Preview any composition. Subscribe to save and download.
+              </p>
             </div>
 
-            {/* All Packs Grid - unified view */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
-              {allPacks.map((pack) => (
-                <PackCard
-                  key={pack.id}
-                  pack={pack}
-                  sampleCount={Array.isArray(pack.samples) ? pack.samples.length : 0}
-                  hasSubscription={hasSubscription}
-                />
-              ))}
-            </div>
+            {/* Searchable Catalog */}
+            <CatalogSearch packs={allPacks} hasSubscription={hasSubscription} />
           </div>
         </section>
 

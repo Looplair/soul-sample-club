@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, Calendar, Music2, Download, Lock, Archive, Sparkles, Star, Play, LogIn, User, ArrowRight } from "lucide-react";
+import { ArrowLeft, Calendar, Music2, Download, Lock, Archive, Sparkles, Star, Play, LogIn, User } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { formatDate, isPackNew, isPackExpired } from "@/lib/utils";
@@ -10,7 +10,8 @@ import { Button } from "@/components/ui";
 import { Badge } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import { SubscribeButton } from "@/components/subscription/SubscribeButton";
-import type { Pack, Sample, Subscription } from "@/types/database";
+import { ShareButtonsInline } from "@/components/social/ShareButtons";
+import type { Pack, Sample } from "@/types/database";
 
 // -----------------------------------------
 // TYPE DEFINITIONS
@@ -28,14 +29,15 @@ export async function generateMetadata({
   params: { id: string };
 }) {
   const adminSupabase = createAdminClient();
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://soulsampleclub.com";
 
   const result = await adminSupabase
     .from("packs")
-    .select("name, description")
+    .select("name, description, cover_image_url")
     .eq("id", params.id)
     .single();
 
-  const data = result.data as { name: string; description: string } | null;
+  const data = result.data as { name: string; description: string; cover_image_url: string | null } | null;
 
   if (result.error || !data) {
     return {
@@ -44,9 +46,33 @@ export async function generateMetadata({
     };
   }
 
+  const packUrl = `${siteUrl}/packs/${params.id}`;
+  const ogImage = data.cover_image_url || `${siteUrl}/og-image.png`;
+
   return {
     title: `${data.name} | Soul Sample Club`,
     description: data.description,
+    openGraph: {
+      title: `${data.name} | Soul Sample Club`,
+      description: data.description,
+      url: packUrl,
+      siteName: "Soul Sample Club",
+      images: [
+        {
+          url: ogImage,
+          width: 1200,
+          height: 630,
+          alt: data.name,
+        },
+      ],
+      type: "music.album",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${data.name} | Soul Sample Club`,
+      description: data.description,
+      images: [ogImage],
+    },
   };
 }
 
@@ -307,7 +333,7 @@ export default async function PackDetailPage({
               </p>
 
               {/* Stats */}
-              <div className="flex flex-wrap gap-4 sm:gap-6 mb-6">
+              <div className="flex flex-wrap items-center gap-4 sm:gap-6 mb-6">
                 <div className="flex items-center gap-2 text-body text-text-muted">
                   <Music2 className="w-5 h-5 text-white" />
                   <span>{pack.samples.length} tracks</span>
@@ -319,6 +345,13 @@ export default async function PackDetailPage({
                 <div className="flex items-center gap-2 text-body text-text-muted">
                   <Calendar className="w-5 h-5 text-white" />
                   <span>Released {formatDate(pack.release_date)}</span>
+                </div>
+                <div className="ml-auto">
+                  <ShareButtonsInline
+                    url={`${process.env.NEXT_PUBLIC_SITE_URL || 'https://soulsampleclub.com'}/packs/${pack.id}`}
+                    title={`${pack.name} - Soul Sample Club`}
+                    description={pack.description}
+                  />
                 </div>
               </div>
 
