@@ -51,8 +51,14 @@ export async function updateSession(request: NextRequest) {
     return supabaseResponse;
   }
 
+  // Allow /callback to pass through - it handles its own redirects after OAuth
+  // This is critical for OAuth flows (Google, Facebook, etc.)
+  if (pathname.startsWith("/callback")) {
+    return supabaseResponse;
+  }
+
   // Auth pages - redirect logged-in users away from these
-  const authRoutes = ["/login", "/signup", "/reset-password", "/callback"];
+  const authRoutes = ["/login", "/signup", "/reset-password"];
   const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route));
 
   // Public routes - accessible to everyone (logged in or not)

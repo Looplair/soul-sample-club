@@ -268,6 +268,26 @@ export interface Database {
           created_at?: string;
         };
       };
+      pack_votes: {
+        Row: {
+          id: string;
+          user_id: string;
+          pack_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          pack_id: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          pack_id?: string;
+          created_at?: string;
+        };
+      };
     };
     Views: {
       [_ in never]: never;
@@ -301,6 +321,7 @@ export type Pack = Database["public"]["Tables"]["packs"]["Row"];
 export type Sample = Database["public"]["Tables"]["samples"]["Row"];
 export type Download = Database["public"]["Tables"]["downloads"]["Row"];
 export type Like = Database["public"]["Tables"]["likes"]["Row"];
+export type PackVote = Database["public"]["Tables"]["pack_votes"]["Row"];
 
 // Extended types with relations
 export type PackWithSamples = Pack & {

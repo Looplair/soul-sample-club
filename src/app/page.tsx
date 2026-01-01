@@ -24,6 +24,7 @@ import {
   ChevronRight,
   Archive,
   User,
+  Shuffle,
 } from "lucide-react";
 import type { Sample, Profile } from "@/types/database";
 
@@ -327,6 +328,20 @@ export default async function HomePage() {
                     </div>
                   ))}
                 </div>
+
+                {/* Explore Button */}
+                <div className="pt-6 flex justify-center lg:justify-start">
+                  <Link
+                    href="/explore"
+                    className="group flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all"
+                  >
+                    <Shuffle className="w-4 h-4 text-white/70 group-hover:text-white transition-colors" />
+                    <span className="text-sm text-white/70 group-hover:text-white transition-colors">
+                      Explore random samples
+                    </span>
+                    <ChevronRight className="w-4 h-4 text-white/40 group-hover:text-white/70 transition-colors" />
+                  </Link>
+                </div>
               </div>
 
               {/* Right: Featured pack showcase */}
@@ -451,6 +466,39 @@ export default async function HomePage() {
         </section>
 
         {/* ============================================
+            MADE BY HUMANS STRIP
+            ============================================ */}
+        <section className="py-16 sm:py-24 border-y border-grey-800 bg-gradient-to-b from-charcoal via-grey-900/20 to-charcoal overflow-hidden">
+          <div className="container-app">
+            <div className="flex flex-col items-center text-center">
+              {/* Decorative line */}
+              <div className="w-16 h-[1px] bg-gradient-to-r from-transparent via-white/40 to-transparent mb-8" />
+
+              {/* Main text with premium styling */}
+              <div className="relative">
+                {/* Background glow effect */}
+                <div className="absolute inset-0 blur-3xl bg-white/5 rounded-full scale-150" />
+
+                <h2 className="relative text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold tracking-tight">
+                  <span className="text-white/90">MADE IN HOUSE.</span>
+                  <br className="sm:hidden" />
+                  <span className="sm:ml-3 text-white">MADE BY HUMANS</span>
+                  <span className="text-white">.</span>
+                </h2>
+              </div>
+
+              {/* Subtext */}
+              <p className="mt-6 text-sm sm:text-base text-text-muted max-w-md tracking-wide">
+                Every composition crafted by real musicians. No AI. No loops from a library. Just authentic soul.
+              </p>
+
+              {/* Decorative line */}
+              <div className="w-16 h-[1px] bg-gradient-to-r from-transparent via-white/40 to-transparent mt-8" />
+            </div>
+          </div>
+        </section>
+
+        {/* ============================================
             CREATOR STRIP
             ============================================ */}
         <CreatorHeroStrip />
@@ -487,7 +535,7 @@ export default async function HomePage() {
               <div className="relative bg-charcoal border-2 border-white/20 rounded-2xl p-6 sm:p-8">
                 <div className="text-center mb-6">
                   <div className="flex items-baseline justify-center gap-1">
-                    <span className="text-5xl font-bold text-white">$4.99</span>
+                    <span className="text-5xl font-bold text-white">$3.99</span>
                     <span className="text-text-muted text-lg">/month</span>
                   </div>
                   <p className="text-sm text-text-muted mt-2">7-day free trial included</p>

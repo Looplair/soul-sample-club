@@ -7,6 +7,8 @@ import {
   LayoutDashboard,
   Package,
   Users,
+  TrendingUp,
+  Settings,
   ArrowLeft,
   Plus,
   Menu,
@@ -18,6 +20,8 @@ const adminLinks = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard },
   { href: "/admin/packs", label: "Packs", icon: Package },
   { href: "/admin/users", label: "Users", icon: Users },
+  { href: "/admin/analytics", label: "Analytics", icon: TrendingUp },
+  { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
 
 export function AdminSidebar() {
