@@ -13,7 +13,6 @@ import {
   Vote,
   Shuffle,
   Archive,
-  Loader2,
   ExternalLink,
   Sparkles,
   ChevronUp,
@@ -57,12 +56,14 @@ export function ExplorePlayer({
   const router = useRouter();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [progress, setProgress] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [votes, setVotes] = useState<Set<string>>(new Set(initialVotes));
   const [showVoteToast, setShowVoteToast] = useState(false);
   const [voteMessage, setVoteMessage] = useState("");
+  const [showSwipeHint, setShowSwipeHint] = useState(true);
+  const [hasInteracted, setHasInteracted] = useState(false);
 
   // Vertical swipe state (TikTok style)
   const [touchStartY, setTouchStartY] = useState<number | null>(null);
@@ -81,31 +82,64 @@ export function ExplorePlayer({
   // Audio URL for current sample
   const audioUrl = currentSample ? `/api/preview/${currentSample.id}?stream=true` : null;
 
-  // Audio playback handlers
-  const togglePlay = useCallback(async () => {
+  // Autoplay on mount and when changing tracks
+  useEffect(() => {
     if (!audioRef.current || !audioUrl) return;
 
-    try {
-      if (isPlaying) {
-        audioRef.current.pause();
-        setIsPlaying(false);
-      } else {
+    const playAudio = async () => {
+      try {
         setIsLoading(true);
-        await audioRef.current.play();
+        await audioRef.current?.play();
         setIsPlaying(true);
         setIsLoading(false);
+        setHasInteracted(true);
+      } catch (error) {
+        // Autoplay blocked - wait for user interaction
+        console.log("Autoplay blocked, waiting for interaction");
+        setIsLoading(false);
+        setIsPlaying(false);
       }
+    };
+
+    // Small delay to ensure audio element is ready
+    const timer = setTimeout(playAudio, 100);
+    return () => clearTimeout(timer);
+  }, [audioUrl, currentIndex]);
+
+  // Handle user tap to start playback (for when autoplay is blocked)
+  const handleTapToPlay = useCallback(async () => {
+    if (!audioRef.current || isPlaying) return;
+
+    try {
+      setIsLoading(true);
+      await audioRef.current.play();
+      setIsPlaying(true);
+      setIsLoading(false);
+      setHasInteracted(true);
+      setShowSwipeHint(false);
     } catch (error) {
       console.error("Playback error:", error);
       setIsLoading(false);
-      setIsPlaying(false);
     }
-  }, [isPlaying, audioUrl]);
+  }, [isPlaying]);
+
+  // Toggle play/pause
+  const togglePlay = useCallback(() => {
+    if (!audioRef.current) return;
+
+    if (isPlaying) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      handleTapToPlay();
+    }
+  }, [isPlaying, handleTapToPlay]);
 
   // Navigation handlers
   const goToNext = useCallback(() => {
     if (currentIndex < samples.length - 1 && !isTransitioning) {
       setIsTransitioning(true);
+      setShowSwipeHint(false);
       if (audioRef.current) {
         audioRef.current.pause();
       }
@@ -113,6 +147,7 @@ export function ExplorePlayer({
       setProgress(0);
       setCurrentTime(0);
       setIsPlaying(false);
+      setIsLoading(true);
       setTimeout(() => setIsTransitioning(false), 300);
     }
   }, [currentIndex, samples.length, isTransitioning]);
@@ -120,6 +155,7 @@ export function ExplorePlayer({
   const goToPrev = useCallback(() => {
     if (currentIndex > 0 && !isTransitioning) {
       setIsTransitioning(true);
+      setShowSwipeHint(false);
       if (audioRef.current) {
         audioRef.current.pause();
       }
@@ -127,6 +163,7 @@ export function ExplorePlayer({
       setProgress(0);
       setCurrentTime(0);
       setIsPlaying(false);
+      setIsLoading(true);
       setTimeout(() => setIsTransitioning(false), 300);
     }
   }, [currentIndex, isTransitioning]);
@@ -136,7 +173,6 @@ export function ExplorePlayer({
     if (!isLoggedIn) {
       router.push("/signup");
     } else if (!hasSubscription) {
-      // Trigger checkout
       fetch("/api/create-checkout-session", {
         method: "POST",
       })
@@ -196,17 +232,21 @@ export function ExplorePlayer({
     setTimeout(() => setShowVoteToast(false), 2000);
   };
 
-  // Vertical touch handlers (TikTok style - swipe UP for next, DOWN for previous)
+  // Vertical touch handlers (TikTok style)
   const handleTouchStart = (e: React.TouchEvent) => {
     if (isTransitioning) return;
     setTouchStartY(e.touches[0].clientY);
+
+    // If not playing yet, start on first touch
+    if (!hasInteracted && !isPlaying) {
+      handleTapToPlay();
+    }
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
     if (touchStartY === null || isTransitioning) return;
     const deltaY = e.touches[0].clientY - touchStartY;
 
-    // Limit the drag distance
     const maxDrag = 200;
     const limitedDelta = Math.max(-maxDrag, Math.min(maxDrag, deltaY));
     setTouchDeltaY(limitedDelta);
@@ -217,10 +257,8 @@ export function ExplorePlayer({
 
     const threshold = 80;
     if (touchDeltaY < -threshold && currentIndex < samples.length - 1) {
-      // Swiped UP -> go to next
       goToNext();
     } else if (touchDeltaY > threshold && currentIndex > 0) {
-      // Swiped DOWN -> go to previous
       goToPrev();
     }
 
@@ -247,6 +285,14 @@ export function ExplorePlayer({
     return () => container.removeEventListener("wheel", handleWheel);
   }, [handleWheel]);
 
+  // Hide swipe hint after 4 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowSwipeHint(false);
+    }, 4000);
+    return () => clearTimeout(timer);
+  }, []);
+
   // Audio progress tracking
   useEffect(() => {
     const audio = audioRef.current;
@@ -263,7 +309,6 @@ export function ExplorePlayer({
       setIsPlaying(false);
       setProgress(0);
       setCurrentTime(0);
-      // Auto-advance to next track
       if (currentIndex < samples.length - 1) {
         setTimeout(goToNext, 500);
       }
@@ -317,7 +362,6 @@ export function ExplorePlayer({
     );
   }
 
-  // Calculate transform based on drag
   const dragOffset = touchDeltaY;
 
   return (
@@ -327,6 +371,7 @@ export function ExplorePlayer({
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
+      onClick={!hasInteracted ? handleTapToPlay : undefined}
     >
       {/* Previous sample (above - peek) */}
       {prevSample && (
@@ -337,7 +382,7 @@ export function ExplorePlayer({
             opacity: dragOffset > 0 ? Math.min(1, dragOffset / 100) : 0,
           }}
         >
-          <div className="w-full max-w-[280px] aspect-square rounded-2xl overflow-hidden shadow-2xl opacity-60">
+          <div className="w-full max-w-[280px] aspect-square rounded-2xl overflow-hidden shadow-2xl opacity-60 relative">
             {prevSample.pack.cover_image_url ? (
               <Image
                 src={prevSample.pack.cover_image_url}
@@ -395,44 +440,80 @@ export function ExplorePlayer({
 
         {/* Main Content */}
         <main className="relative z-10 h-[calc(100vh-64px)] flex flex-col items-center justify-center px-6">
-          {/* Album Art */}
-          <Link
-            href={`/packs/${currentSample.pack.id}`}
-            className="relative w-full max-w-[300px] sm:max-w-[340px] aspect-square mb-6 group"
-          >
-            <div className="absolute inset-0 rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/10">
-              {currentSample.pack.cover_image_url ? (
-                <Image
-                  src={currentSample.pack.cover_image_url}
-                  alt={currentSample.pack.name}
-                  fill
-                  className="object-cover group-hover:scale-105 transition-transform duration-500"
-                  sizes="(max-width: 640px) 300px, 340px"
-                  priority
-                />
-              ) : (
-                <div className="absolute inset-0 bg-gradient-to-br from-grey-700 to-grey-800 flex items-center justify-center">
-                  <Music className="w-24 h-24 text-grey-600" />
-                </div>
-              )}
+          {/* Album Art with Loading/Playing indicator */}
+          <div className="relative w-full max-w-[300px] sm:max-w-[340px] aspect-square mb-6">
+            <Link
+              href={`/packs/${currentSample.pack.id}`}
+              className="block group"
+            >
+              <div className="absolute inset-0 rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/10">
+                {currentSample.pack.cover_image_url ? (
+                  <Image
+                    src={currentSample.pack.cover_image_url}
+                    alt={currentSample.pack.name}
+                    fill
+                    className="object-cover group-hover:scale-105 transition-transform duration-500"
+                    sizes="(max-width: 640px) 300px, 340px"
+                    priority
+                  />
+                ) : (
+                  <div className="absolute inset-0 bg-gradient-to-br from-grey-700 to-grey-800 flex items-center justify-center">
+                    <Music className="w-24 h-24 text-grey-600" />
+                  </div>
+                )}
 
-              {/* Archive Badge */}
-              {packIsArchived && (
-                <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-sm">
-                  <Archive className="w-3 h-3 text-amber-400" />
-                  <span className="text-xs font-medium text-amber-400">Archived</span>
-                </div>
-              )}
+                {/* Archive Badge */}
+                {packIsArchived && (
+                  <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-sm">
+                    <Archive className="w-3 h-3 text-amber-400" />
+                    <span className="text-xs font-medium text-amber-400">Archived</span>
+                  </div>
+                )}
 
-              {/* Tap to view pack */}
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/90 text-charcoal text-sm font-medium">
-                  <ExternalLink className="w-4 h-4" />
-                  View Pack
+                {/* Hover overlay for pack link */}
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/90 text-charcoal text-sm font-medium">
+                    <ExternalLink className="w-4 h-4" />
+                    View Pack
+                  </div>
                 </div>
               </div>
+            </Link>
+
+            {/* Embossed Loading/Playing indicator - centered on album art */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              {isLoading ? (
+                // Sleek embossed loading spinner
+                <div className="w-16 h-16 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center shadow-inner">
+                  <div className="w-10 h-10 rounded-full border-2 border-white/20 border-t-white/60 animate-spin" />
+                </div>
+              ) : !isPlaying ? (
+                // Tap to play hint (when autoplay blocked)
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleTapToPlay();
+                  }}
+                  className="w-16 h-16 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center shadow-inner hover:bg-black/40 transition-colors pointer-events-auto"
+                >
+                  <Play className="w-7 h-7 text-white/70 ml-1" fill="currentColor" />
+                </button>
+              ) : (
+                // Playing - show pause on tap
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    togglePlay();
+                  }}
+                  className="w-16 h-16 rounded-full bg-black/20 backdrop-blur-md flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity pointer-events-auto"
+                >
+                  <Pause className="w-7 h-7 text-white/70" fill="currentColor" />
+                </button>
+              )}
             </div>
-          </Link>
+          </div>
 
           {/* Track Info */}
           <div className="w-full max-w-sm text-center mb-4">
@@ -469,20 +550,6 @@ export function ExplorePlayer({
               <span>{formatDuration(currentSample.duration)}</span>
             </div>
           </div>
-
-          {/* Play Button */}
-          <button
-            onClick={togglePlay}
-            className="w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-xl hover:scale-105 active:scale-95 transition-transform mb-5"
-          >
-            {isLoading ? (
-              <Loader2 className="w-7 h-7 text-charcoal animate-spin" />
-            ) : isPlaying ? (
-              <Pause className="w-7 h-7 text-charcoal" fill="currentColor" />
-            ) : (
-              <Play className="w-7 h-7 text-charcoal ml-1" fill="currentColor" />
-            )}
-          </button>
 
           {/* Action Buttons Row */}
           <div className="flex items-center gap-3 mb-4">
@@ -556,7 +623,22 @@ export function ExplorePlayer({
         </div>
       )}
 
-      {/* Scroll hint indicators */}
+      {/* Swipe Hint - Prominent and clear */}
+      {showSwipeHint && currentIndex < samples.length - 1 && (
+        <div className="absolute bottom-32 left-1/2 -translate-x-1/2 z-40 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="flex flex-col items-center gap-2 text-white/80">
+            <div className="flex flex-col items-center animate-bounce">
+              <ChevronUp className="w-6 h-6 opacity-40" />
+              <ChevronUp className="w-6 h-6 -mt-3" />
+            </div>
+            <span className="text-sm font-medium bg-black/40 backdrop-blur-sm px-4 py-2 rounded-full">
+              Swipe up for more
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Side navigation buttons */}
       <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col items-center gap-2 z-30">
         {currentIndex > 0 && (
           <button
@@ -569,7 +651,7 @@ export function ExplorePlayer({
         {currentIndex < samples.length - 1 && (
           <button
             onClick={goToNext}
-            className="w-10 h-10 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center text-white/60 hover:text-white hover:bg-black/50 transition-all animate-bounce"
+            className="w-10 h-10 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center text-white/60 hover:text-white hover:bg-black/50 transition-all"
           >
             <ChevronDown className="w-5 h-5" />
           </button>
