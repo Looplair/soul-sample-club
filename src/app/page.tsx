@@ -329,17 +329,20 @@ export default async function HomePage() {
                   ))}
                 </div>
 
-                {/* Explore Button */}
+                {/* Explore Button - with shine/gleam effect */}
                 <div className="pt-6 flex justify-center lg:justify-start">
                   <Link
                     href="/explore"
-                    className="group flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all"
+                    className="group relative flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all overflow-hidden"
                   >
-                    <Shuffle className="w-4 h-4 text-white/70 group-hover:text-white transition-colors" />
-                    <span className="text-sm text-white/70 group-hover:text-white transition-colors">
+                    {/* Shine/gleam effect */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-[shimmer_3s_ease-in-out_infinite]" />
+                    <Shuffle className="w-4 h-4 text-white/70 group-hover:text-white transition-colors relative z-10" />
+                    <span className="text-sm text-white/70 group-hover:text-white transition-colors relative z-10">
                       Explore random samples
                     </span>
-                    <ChevronRight className="w-4 h-4 text-white/40 group-hover:text-white/70 transition-colors" />
+                    <ChevronRight className="w-4 h-4 text-white/40 group-hover:text-white/70 transition-colors relative z-10" />
                   </Link>
                 </div>
               </div>
@@ -420,8 +423,8 @@ export default async function HomePage() {
             </div>
           </div>
 
-          {/* Scroll indicator */}
-          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
+          {/* Scroll indicator - positioned lower to not block content */}
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 animate-bounce">
             <ChevronRight className="w-6 h-6 text-white/40 rotate-90" />
           </div>
         </section>

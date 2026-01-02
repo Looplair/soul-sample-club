@@ -227,8 +227,9 @@ const config: Config = {
           "50%": { boxShadow: "0 0 20px rgba(255, 255, 255, 0.1)" },
         },
         shimmer: {
-          "0%": { backgroundPosition: "-200% 0" },
-          "100%": { backgroundPosition: "200% 0" },
+          "0%": { transform: "translateX(-100%)" },
+          "50%": { transform: "translateX(100%)" },
+          "100%": { transform: "translateX(100%)" },
         },
         press: {
           "0%": { transform: "scale(1)" },

@@ -73,6 +73,10 @@ export function ExplorePlayer({
   const audioRef = useRef<HTMLAudioElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Preload cache for upcoming tracks
+  const preloadedAudioRef = useRef<Map<string, HTMLAudioElement>>(new Map());
+  const [preloadedTracks, setPreloadedTracks] = useState<Set<string>>(new Set());
+
   const currentSample = samples[currentIndex];
   const nextSample = samples[currentIndex + 1];
   const prevSample = samples[currentIndex - 1];
@@ -81,6 +85,50 @@ export function ExplorePlayer({
 
   // Audio URL for current sample
   const audioUrl = currentSample ? `/api/preview/${currentSample.id}?stream=true` : null;
+
+  // Background preload next 3 tracks for smoother experience
+  useEffect(() => {
+    if (!hasInteracted) return; // Only preload after user has interacted
+
+    const preloadCount = 3;
+    const startIdx = currentIndex + 1;
+    const endIdx = Math.min(currentIndex + preloadCount + 1, samples.length);
+
+    for (let i = startIdx; i < endIdx; i++) {
+      const sample = samples[i];
+      if (!sample || preloadedTracks.has(sample.id)) continue;
+
+      const audioUrl = `/api/preview/${sample.id}?stream=true`;
+
+      // Create a hidden audio element to preload
+      const audio = new Audio();
+      audio.preload = "auto";
+      audio.src = audioUrl;
+
+      // Store in cache
+      preloadedAudioRef.current.set(sample.id, audio);
+
+      // Mark as preloaded when enough data is loaded
+      audio.addEventListener("canplaythrough", () => {
+        setPreloadedTracks((prev) => new Set([...Array.from(prev), sample.id]));
+      }, { once: true });
+
+      // Start loading
+      audio.load();
+    }
+
+    // Cleanup old preloaded audio that we've passed
+    const keysToDelete: string[] = [];
+    preloadedAudioRef.current.forEach((audio, id) => {
+      const idx = samples.findIndex((s) => s.id === id);
+      if (idx < currentIndex - 1) {
+        audio.src = "";
+        keysToDelete.push(id);
+      }
+    });
+    keysToDelete.forEach((key) => preloadedAudioRef.current.delete(key));
+
+  }, [currentIndex, hasInteracted, samples, preloadedTracks]);
 
   // Autoplay on mount and when changing tracks
   useEffect(() => {
@@ -442,72 +490,63 @@ export function ExplorePlayer({
         <main className="relative z-10 h-[calc(100vh-64px)] flex flex-col items-center justify-center px-6">
           {/* Album Art with Loading/Playing indicator */}
           <div className="relative w-full max-w-[300px] sm:max-w-[340px] aspect-square mb-6">
-            <Link
-              href={`/packs/${currentSample.pack.id}`}
-              className="block group"
-            >
-              <div className="absolute inset-0 rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/10">
-                {currentSample.pack.cover_image_url ? (
-                  <Image
-                    src={currentSample.pack.cover_image_url}
-                    alt={currentSample.pack.name}
-                    fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-500"
-                    sizes="(max-width: 640px) 300px, 340px"
-                    priority
-                  />
-                ) : (
-                  <div className="absolute inset-0 bg-gradient-to-br from-grey-700 to-grey-800 flex items-center justify-center">
-                    <Music className="w-24 h-24 text-grey-600" />
-                  </div>
-                )}
-
-                {/* Archive Badge */}
-                {packIsArchived && (
-                  <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-sm">
-                    <Archive className="w-3 h-3 text-amber-400" />
-                    <span className="text-xs font-medium text-amber-400">Archived</span>
-                  </div>
-                )}
-
-                {/* Hover overlay for pack link */}
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                  <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/90 text-charcoal text-sm font-medium">
-                    <ExternalLink className="w-4 h-4" />
-                    View Pack
-                  </div>
+            {/* Album art container - NOT clickable by default */}
+            <div className="absolute inset-0 rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/10">
+              {currentSample.pack.cover_image_url ? (
+                <Image
+                  src={currentSample.pack.cover_image_url}
+                  alt={currentSample.pack.name}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 640px) 300px, 340px"
+                  priority
+                />
+              ) : (
+                <div className="absolute inset-0 bg-gradient-to-br from-grey-700 to-grey-800 flex items-center justify-center">
+                  <Music className="w-24 h-24 text-grey-600" />
                 </div>
-              </div>
-            </Link>
+              )}
+
+              {/* Archive Badge */}
+              {packIsArchived && (
+                <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-sm z-20">
+                  <Archive className="w-3 h-3 text-amber-400" />
+                  <span className="text-xs font-medium text-amber-400">Archived</span>
+                </div>
+              )}
+
+              {/* View Pack button - at top on mobile, this IS the link */}
+              <Link
+                href={`/packs/${currentSample.pack.id}`}
+                className="absolute top-3 right-3 z-20"
+              >
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/90 text-charcoal text-sm font-medium shadow-lg hover:bg-white transition-colors">
+                  <ExternalLink className="w-4 h-4" />
+                  View Pack
+                </div>
+              </Link>
+            </div>
 
             {/* Embossed Loading/Playing indicator - centered on album art */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="absolute inset-0 flex items-center justify-center z-10">
               {isLoading ? (
                 // Sleek embossed loading spinner
                 <div className="w-16 h-16 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center shadow-inner">
                   <div className="w-10 h-10 rounded-full border-2 border-white/20 border-t-white/60 animate-spin" />
                 </div>
               ) : !isPlaying ? (
-                // Tap to play hint (when autoplay blocked)
+                // Tap to play button (when autoplay blocked)
                 <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    handleTapToPlay();
-                  }}
-                  className="w-16 h-16 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center shadow-inner hover:bg-black/40 transition-colors pointer-events-auto"
+                  onClick={handleTapToPlay}
+                  className="w-16 h-16 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center shadow-inner hover:bg-black/40 transition-colors"
                 >
                   <Play className="w-7 h-7 text-white/70 ml-1" fill="currentColor" />
                 </button>
               ) : (
                 // Playing - show pause on tap
                 <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    togglePlay();
-                  }}
-                  className="w-16 h-16 rounded-full bg-black/20 backdrop-blur-md flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity pointer-events-auto"
+                  onClick={togglePlay}
+                  className="w-16 h-16 rounded-full bg-black/20 backdrop-blur-md flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity"
                 >
                   <Pause className="w-7 h-7 text-white/70" fill="currentColor" />
                 </button>
@@ -578,14 +617,16 @@ export function ExplorePlayer({
             )}
           </div>
 
-          {/* CTA Button - Always visible for non-subscribers */}
+          {/* CTA Button - Always visible for non-subscribers - Metallic/Silver styling */}
           {(!isLoggedIn || !hasSubscription) && (
             <button
               onClick={handleCTA}
-              className="flex items-center gap-2 px-6 py-3 rounded-full bg-white text-charcoal font-semibold shadow-xl hover:shadow-2xl active:scale-95 transition-all"
+              className="relative flex items-center gap-2 px-6 py-3 rounded-full font-semibold shadow-xl hover:shadow-2xl active:scale-95 transition-all overflow-hidden bg-gradient-to-b from-[#d4d4d8] via-[#a1a1aa] to-[#71717a] text-charcoal border border-white/30"
             >
-              <Sparkles className="w-5 h-5" />
-              <span>Start Sampling For Free</span>
+              {/* Metallic shine overlay */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full animate-[shimmer_3s_ease-in-out_infinite]" />
+              <Sparkles className="w-5 h-5 relative z-10" />
+              <span className="relative z-10">Start Sampling For Free</span>
             </button>
           )}
 
@@ -623,17 +664,17 @@ export function ExplorePlayer({
         </div>
       )}
 
-      {/* Swipe Hint - Prominent and clear */}
+      {/* Swipe Hint - At top, above the pack picture */}
       {showSwipeHint && currentIndex < samples.length - 1 && (
-        <div className="absolute bottom-32 left-1/2 -translate-x-1/2 z-40 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="absolute top-20 left-1/2 -translate-x-1/2 z-40 animate-in fade-in slide-in-from-top-4 duration-500">
           <div className="flex flex-col items-center gap-2 text-white/80">
-            <div className="flex flex-col items-center animate-bounce">
-              <ChevronUp className="w-6 h-6 opacity-40" />
-              <ChevronUp className="w-6 h-6 -mt-3" />
-            </div>
             <span className="text-sm font-medium bg-black/40 backdrop-blur-sm px-4 py-2 rounded-full">
               Swipe up for more
             </span>
+            <div className="flex flex-col items-center animate-bounce">
+              <ChevronUp className="w-6 h-6 -mb-3" />
+              <ChevronUp className="w-6 h-6 opacity-40" />
+            </div>
           </div>
         </div>
       )}
