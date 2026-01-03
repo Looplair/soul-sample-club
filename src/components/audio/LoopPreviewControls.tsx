@@ -28,7 +28,7 @@ interface LoopPreviewControlsProps {
   isLooping: boolean;
   /** Current bar count (1, 2, or 4) */
   barCount: BarCount;
-  /** Current pitch offset in semitones (-3 to +3) */
+  /** Current pitch offset in semitones (-12 to +12) */
   pitchOffset: number;
   /** Whether BPM is available (loop controls only work with BPM) */
   hasBpm: boolean;
@@ -116,54 +116,62 @@ export function LoopPreviewControls({
       {/* Divider */}
       <div className="w-px h-5 bg-grey-700 mx-0.5" />
 
-      {/* Pitch Controls */}
-      <div className="flex items-center gap-0.5">
-        <button
-          onClick={onPitchDown}
-          disabled={disabled || pitchOffset <= -3}
-          title="Pitch down (-1 semitone)"
-          className={cn(
-            buttonBase,
-            size === "sm" ? "w-7" : "w-8",
-            pitchOffset <= -3
-              ? "bg-grey-800 text-text-muted cursor-not-allowed"
-              : "bg-grey-700 text-text-secondary hover:bg-grey-600 hover:text-white"
-          )}
-        >
-          <Minus className={size === "sm" ? "w-3 h-3" : "w-3.5 h-3.5"} />
-        </button>
+      {/* Pitch Controls with label */}
+      <div className="flex items-center gap-1">
+        <span className={cn(
+          "font-medium text-text-muted uppercase",
+          size === "sm" ? "text-[10px]" : "text-xs"
+        )}>
+          Pitch
+        </span>
+        <div className="flex items-center gap-0.5">
+          <button
+            onClick={onPitchDown}
+            disabled={disabled || pitchOffset <= -12}
+            title="Pitch down (-1 semitone)"
+            className={cn(
+              buttonBase,
+              size === "sm" ? "w-7" : "w-8",
+              pitchOffset <= -12
+                ? "bg-grey-800 text-text-muted cursor-not-allowed"
+                : "bg-grey-700 text-text-secondary hover:bg-grey-600 hover:text-white"
+            )}
+          >
+            <Minus className={size === "sm" ? "w-3 h-3" : "w-3.5 h-3.5"} />
+          </button>
 
-        {/* Pitch display - clickable to reset */}
-        <button
-          onClick={onResetPitch}
-          disabled={disabled || pitchOffset === 0}
-          title={pitchOffset === 0 ? "Pitch: 0" : "Reset pitch"}
-          className={cn(
-            buttonBase,
-            size === "sm" ? "w-8" : "w-10",
-            "tabular-nums",
-            pitchOffset !== 0
-              ? "bg-grey-700 text-white hover:bg-grey-600"
-              : "bg-grey-800 text-text-muted cursor-default"
-          )}
-        >
-          {pitchOffset > 0 ? `+${pitchOffset}` : pitchOffset}
-        </button>
+          {/* Pitch display - clickable to reset */}
+          <button
+            onClick={onResetPitch}
+            disabled={disabled || pitchOffset === 0}
+            title={pitchOffset === 0 ? "Pitch: 0" : "Reset pitch"}
+            className={cn(
+              buttonBase,
+              size === "sm" ? "w-10" : "w-12",
+              "tabular-nums",
+              pitchOffset !== 0
+                ? "bg-grey-700 text-white hover:bg-grey-600"
+                : "bg-grey-800 text-text-muted cursor-default"
+            )}
+          >
+            {pitchOffset > 0 ? `+${pitchOffset}` : pitchOffset}
+          </button>
 
-        <button
-          onClick={onPitchUp}
-          disabled={disabled || pitchOffset >= 3}
-          title="Pitch up (+1 semitone)"
-          className={cn(
-            buttonBase,
-            size === "sm" ? "w-7" : "w-8",
-            pitchOffset >= 3
-              ? "bg-grey-800 text-text-muted cursor-not-allowed"
-              : "bg-grey-700 text-text-secondary hover:bg-grey-600 hover:text-white"
-          )}
-        >
-          <Plus className={size === "sm" ? "w-3 h-3" : "w-3.5 h-3.5"} />
-        </button>
+          <button
+            onClick={onPitchUp}
+            disabled={disabled || pitchOffset >= 12}
+            title="Pitch up (+1 semitone)"
+            className={cn(
+              buttonBase,
+              size === "sm" ? "w-7" : "w-8",
+              pitchOffset >= 12
+                ? "bg-grey-800 text-text-muted cursor-not-allowed"
+                : "bg-grey-700 text-text-secondary hover:bg-grey-600 hover:text-white"
+            )}
+          >
+            <Plus className={size === "sm" ? "w-3 h-3" : "w-3.5 h-3.5"} />
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -208,19 +216,20 @@ export function LoopPreviewControlsMinimal({
       </button>
 
       {/* Pitch */}
+      <span className="text-[9px] text-text-muted uppercase font-medium">Pitch</span>
       <button
         onClick={onPitchDown}
-        disabled={disabled || pitchOffset <= -3}
+        disabled={disabled || pitchOffset <= -12}
         className={cn(buttonBase, "w-5", "bg-grey-700 text-text-muted hover:text-white")}
       >
         <Minus className="w-2.5 h-2.5" />
       </button>
-      <span className="text-xs text-text-muted tabular-nums w-5 text-center">
+      <span className="text-xs text-text-muted tabular-nums w-7 text-center">
         {pitchOffset > 0 ? `+${pitchOffset}` : pitchOffset}
       </span>
       <button
         onClick={onPitchUp}
-        disabled={disabled || pitchOffset >= 3}
+        disabled={disabled || pitchOffset >= 12}
         className={cn(buttonBase, "w-5", "bg-grey-700 text-text-muted hover:text-white")}
       >
         <Plus className="w-2.5 h-2.5" />

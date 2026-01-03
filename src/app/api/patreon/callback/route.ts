@@ -52,9 +52,14 @@ export async function GET(request: NextRequest) {
     const accessToken = tokens.access_token;
     const refreshToken = tokens.refresh_token;
 
-    // Fetch user identity and memberships
+    // Fetch user identity and memberships with campaign info
     const identityResponse = await fetch(
-      "https://www.patreon.com/api/oauth2/v2/identity?include=memberships.campaign&fields[user]=email,full_name&fields[member]=patron_status,currently_entitled_tiers",
+      "https://www.patreon.com/api/oauth2/v2/identity" +
+        "?include=memberships,memberships.campaign,memberships.currently_entitled_tiers" +
+        "&fields[user]=email,full_name" +
+        "&fields[member]=patron_status,currently_entitled_amount_cents" +
+        "&fields[tier]=title" +
+        "&fields[campaign]=vanity,creation_name",
       {
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -63,6 +68,8 @@ export async function GET(request: NextRequest) {
     );
 
     if (!identityResponse.ok) {
+      const errorText = await identityResponse.text();
+      console.error("Patreon identity API error:", identityResponse.status, errorText);
       return NextResponse.redirect(`${appUrl}/account?patreon_error=identity_failed`);
     }
 
@@ -77,21 +84,42 @@ export async function GET(request: NextRequest) {
     let tierId: string | null = null;
     let tierTitle: string | null = null;
 
+    console.log("Looking for campaign ID:", campaignId);
+    console.log("Patreon identity data:", JSON.stringify(identityData, null, 2));
+
     if (identityData.included) {
       for (const item of identityData.included) {
         if (item.type === "member") {
           const patronStatus = item.attributes?.patron_status;
-          if (patronStatus === "active_patron") {
+          const memberCampaignId = item.relationships?.campaign?.data?.id;
+
+          console.log("Found member:", { patronStatus, memberCampaignId, targetCampaignId: campaignId });
+
+          // Check if this membership is for our campaign (if campaignId is set)
+          // If no campaignId is configured, accept any active patron status
+          const isOurCampaign = !campaignId || memberCampaignId === campaignId;
+
+          if (isOurCampaign && patronStatus === "active_patron") {
             isActivePatron = true;
             // Get tier info if available
             const tiers = item.relationships?.currently_entitled_tiers?.data;
             if (tiers && tiers.length > 0) {
               tierId = tiers[0].id;
+              // Try to find tier title from included data
+              const tierData = identityData.included.find(
+                (inc: { type: string; id: string; attributes?: { title?: string } }) =>
+                  inc.type === "tier" && inc.id === tierId
+              );
+              if (tierData?.attributes?.title) {
+                tierTitle = tierData.attributes.title;
+              }
             }
           }
         }
       }
     }
+
+    console.log("Final patron status:", { isActivePatron, tierId, tierTitle });
 
     // Save to database
     const adminSupabase = createAdminClient();

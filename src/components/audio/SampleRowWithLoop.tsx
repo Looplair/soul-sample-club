@@ -86,6 +86,7 @@ export function SampleRowWithLoop({
   const sampleIdRef = useRef(sample.id);
   sampleIdRef.current = sample.id;
 
+
   const {
     currentTrack,
     playTrack,
@@ -113,6 +114,20 @@ export function SampleRowWithLoop({
 
   const loopStartPercent = audioDuration > 0 ? (loopStartTime / audioDuration) * 100 : 0;
   const loopWidthPercent = audioDuration > 0 ? (loopDuration / audioDuration) * 100 : 0;
+
+  // Refs for values needed in restartWithPitch (to avoid stale closures)
+  const localIsPlayingRef = useRef(localIsPlaying);
+  localIsPlayingRef.current = localIsPlaying;
+  const isLoopingRef = useRef(isLooping);
+  isLoopingRef.current = isLooping;
+  const loopStartTimeRef = useRef(loopStartTime);
+  loopStartTimeRef.current = loopStartTime;
+  const loopDurationRef = useRef(loopDuration);
+  loopDurationRef.current = loopDuration;
+  const localCurrentTimeRef = useRef(localCurrentTime);
+  localCurrentTimeRef.current = localCurrentTime;
+  const audioDurationRef = useRef(audioDuration);
+  audioDurationRef.current = audioDuration;
 
   // Grid markers for snap-to positions
   const gridMarkers = useMemo(() => {
@@ -320,15 +335,16 @@ export function SampleRowWithLoop({
     return Math.pow(2, semitones / 12);
   }, []);
 
-  // Start Web Audio seamless loop playback
-  const startLoopPlayback = useCallback(() => {
+  // Start Web Audio playback with pitch and optional loop
+  // This is used when pitch != 0 OR loop is enabled
+  const startWebAudioPlayback = useCallback((fromTime: number = 0) => {
     // Ensure we have an audio context (create if needed)
     if (!audioContextRef.current) {
       audioContextRef.current = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
     }
     const ctx = audioContextRef.current;
     const buffer = audioBufferRef.current;
-    if (!buffer || !hasBpm) return;
+    if (!buffer) return;
 
     // Resume context if suspended
     if (ctx.state === "suspended") {
@@ -350,36 +366,58 @@ export function SampleRowWithLoop({
 
     source.connect(gainNodeRef.current);
 
-    // Configure seamless looping with Web Audio's native loop
-    source.loop = true;
-    source.loopStart = loopStartTime;
-    source.loopEnd = Math.min(loopStartTime + loopDuration, buffer.duration);
+    // Configure looping if enabled and has BPM
+    if (isLooping && hasBpm) {
+      source.loop = true;
+      source.loopStart = loopStartTime;
+      source.loopEnd = Math.min(loopStartTime + loopDuration, buffer.duration);
+    } else {
+      source.loop = false;
+    }
 
     // Apply pitch shift using detune (cents = semitones * 100)
-    // Note: detune DOES affect playback rate - we account for this in time display
     source.detune.value = pitchOffset * 100;
 
     sourceNodeRef.current = source;
     loopPlaybackStartTimeRef.current = ctx.currentTime;
-    loopPlaybackOffsetRef.current = loopStartTime;
+    loopPlaybackOffsetRef.current = fromTime;
 
     // Calculate the effective playback rate from detune
     const effectiveRate = getPlaybackRateFromPitch(pitchOffset);
 
-    // Start playback from loop start
-    source.start(0, loopStartTime);
+    // Handle playback end (only fires when not looping)
+    source.onended = () => {
+      if (!source.loop) {
+        setLocalIsPlaying(false);
+        setLocalCurrentTime(0);
+        setIsPlaying(false);
+        setCurrentTime(0);
+        if (animationFrameRef.current) {
+          cancelAnimationFrame(animationFrameRef.current);
+          animationFrameRef.current = null;
+        }
+      }
+    };
 
-    // Update time display during loop playback
-    // Account for detune-induced speed change in elapsed time calculation
+    // Start playback
+    const startTime = isLooping && hasBpm ? loopStartTime : fromTime;
+    source.start(0, startTime);
+
+    // Update time display during playback
     const updateTime = () => {
       if (!audioContextRef.current || !sourceNodeRef.current) return;
 
-      // Real elapsed time multiplied by playback rate gives audio position
       const realElapsed = audioContextRef.current.currentTime - loopPlaybackStartTimeRef.current;
       const audioElapsed = realElapsed * effectiveRate;
-      const loopLen = loopDuration;
-      const posInLoop = audioElapsed % loopLen;
-      const currentPos = loopStartTime + posInLoop;
+
+      let currentPos: number;
+      if (isLooping && hasBpm) {
+        const loopLen = loopDuration;
+        const posInLoop = audioElapsed % loopLen;
+        currentPos = loopStartTime + posInLoop;
+      } else {
+        currentPos = Math.min(startTime + audioElapsed, buffer.duration);
+      }
 
       setLocalCurrentTime(currentPos);
       setCurrentTime(currentPos);
@@ -393,7 +431,10 @@ export function SampleRowWithLoop({
     };
 
     animationFrameRef.current = requestAnimationFrame(updateTime);
-  }, [hasBpm, loopStartTime, loopDuration, pitchOffset, stopLoopPlayback, setCurrentTime, audioDuration, getPlaybackRateFromPitch]);
+  }, [isLooping, hasBpm, loopStartTime, loopDuration, pitchOffset, stopLoopPlayback, setCurrentTime, setIsPlaying, audioDuration, getPlaybackRateFromPitch]);
+
+  // Legacy alias for backwards compatibility
+  const startLoopPlayback = startWebAudioPlayback;
 
   // Handle play/pause
   const handlePlayPause = useCallback(() => {
@@ -424,15 +465,16 @@ export function SampleRowWithLoop({
         if (actualDuration > 0) setDuration(actualDuration);
       }
 
-      if (isLooping && audioBufferLoaded && hasBpm) {
-        // Use Web Audio for seamless looping with pitch
+      // Use Web Audio only if loop is enabled (pitch only works with loop)
+      if (isLooping && hasBpm && audioBufferLoaded) {
+        // Use Web Audio for looping (with optional pitch)
         // Mute WaveSurfer audio but keep it for visual
         if (audioRef.current) {
           audioRef.current.volume = 0;
         }
-        startLoopPlayback();
+        startWebAudioPlayback(0);
       } else {
-        // Normal playback via WaveSurfer (no loop, or no BPM)
+        // Normal playback via WaveSurfer (no loop = no pitch)
         if (audioRef.current) {
           audioRef.current.volume = 1;
         }
@@ -442,70 +484,133 @@ export function SampleRowWithLoop({
       setLocalIsPlaying(true);
       setIsPlaying(true);
     }
-  }, [localIsPlaying, waveformReady, isLooping, audioBufferLoaded, hasBpm, playTrack, setDuration, sample, packName, previewUrl, startLoopPlayback, stopLoopPlayback, setIsPlaying]);
+  }, [localIsPlaying, waveformReady, isLooping, audioBufferLoaded, hasBpm, playTrack, setDuration, sample, packName, previewUrl, startWebAudioPlayback, stopLoopPlayback, setIsPlaying]);
 
-  // When barCount or pitchOffset change during playback, restart loop with new settings
-  // Note: loopStartTime changes are handled directly in handleWaveformClick for immediate response
+  // Track previous values to detect actual changes
+  const prevBarCountRef = useRef(barCount);
+  const prevIsLoopingRef = useRef(isLooping);
+
+  // When barCount or isLooping change during playback, restart with new settings
+  // Note: pitchOffset changes are handled directly via restartWithPitch()
   useEffect(() => {
-    // Only handle changes while playing with loop enabled
-    if (!localIsPlaying || !isLooping || !audioBufferLoaded || !hasBpm) return;
+    // Check if any value actually changed
+    const barCountChanged = prevBarCountRef.current !== barCount;
+    const loopingChanged = prevIsLoopingRef.current !== isLooping;
 
-    // Restart loop playback with updated settings
-    startLoopPlayback();
-  }, [barCount, pitchOffset, localIsPlaying, isLooping, audioBufferLoaded, hasBpm, startLoopPlayback]);
+    // Update refs
+    prevBarCountRef.current = barCount;
+    prevIsLoopingRef.current = isLooping;
 
-  // Handle toggling loop on/off during playback
-  useEffect(() => {
+    // Only proceed if something changed and we're playing
+    if (!barCountChanged && !loopingChanged) return;
     if (!localIsPlaying) return;
 
     if (isLooping && hasBpm) {
-      // Switching TO loop mode - mute WaveSurfer, use Web Audio
-      // Set flag to prevent pause event from setting localIsPlaying=false
-      switchingToLoopModeRef.current = true;
-
+      // Switch to or restart Web Audio looping playback
       if (audioRef.current) {
         audioRef.current.volume = 0;
       }
       wavesurferRef.current?.pause();
+      switchingToLoopModeRef.current = true;
 
-      // Start loop playback - load buffer on-demand if needed
-      const startLoop = async () => {
-        // Load buffer if not already loaded
-        if (!audioBufferRef.current && previewUrl) {
-          try {
-            if (!audioContextRef.current) {
-              audioContextRef.current = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
-            }
-            const response = await fetch(previewUrl);
-            if (response.ok) {
-              const arrayBuffer = await response.arrayBuffer();
-              audioBufferRef.current = await audioContextRef.current.decodeAudioData(arrayBuffer);
-            }
-          } catch (err) {
-            console.error("Error loading audio buffer:", err);
-            switchingToLoopModeRef.current = false;
-            return;
+      // Stop current Web Audio playback first
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+      if (sourceNodeRef.current) {
+        try {
+          sourceNodeRef.current.stop();
+          sourceNodeRef.current.disconnect();
+        } catch {
+          // Already stopped
+        }
+        sourceNodeRef.current = null;
+      }
+
+      // Ensure audio context exists
+      if (!audioContextRef.current) {
+        audioContextRef.current = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+      }
+      const ctx = audioContextRef.current;
+      const buffer = audioBufferRef.current;
+
+      if (buffer) {
+        // Resume context if suspended
+        if (ctx.state === "suspended") {
+          ctx.resume();
+        }
+
+        // Create new source
+        const source = ctx.createBufferSource();
+        source.buffer = buffer;
+
+        if (!gainNodeRef.current) {
+          gainNodeRef.current = ctx.createGain();
+          gainNodeRef.current.connect(ctx.destination);
+        }
+        source.connect(gainNodeRef.current);
+
+        // Configure looping
+        source.loop = true;
+        source.loopStart = loopStartTime;
+        source.loopEnd = Math.min(loopStartTime + loopDuration, buffer.duration);
+
+        // Apply pitch
+        source.detune.value = pitchOffset * 100;
+
+        sourceNodeRef.current = source;
+        loopPlaybackStartTimeRef.current = ctx.currentTime;
+
+        const effectiveRate = Math.pow(2, pitchOffset / 12);
+        loopPlaybackOffsetRef.current = loopStartTime;
+
+        source.start(0, loopStartTime);
+
+        // Update time display
+        const updateTime = () => {
+          if (!audioContextRef.current || !sourceNodeRef.current) return;
+
+          const realElapsed = audioContextRef.current.currentTime - loopPlaybackStartTimeRef.current;
+          const audioElapsed = realElapsed * effectiveRate;
+          const posInLoop = audioElapsed % loopDuration;
+          const currentPos = loopStartTime + posInLoop;
+
+          setLocalCurrentTime(currentPos);
+          setCurrentTime(currentPos);
+
+          if (wavesurferRef.current && audioDuration > 0) {
+            wavesurferRef.current.seekTo(currentPos / audioDuration);
           }
+
+          animationFrameRef.current = requestAnimationFrame(updateTime);
+        };
+
+        animationFrameRef.current = requestAnimationFrame(updateTime);
+      }
+
+      switchingToLoopModeRef.current = false;
+    } else {
+      // Switch back to WaveSurfer (no loop = no pitch)
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+      if (sourceNodeRef.current) {
+        try {
+          sourceNodeRef.current.stop();
+          sourceNodeRef.current.disconnect();
+        } catch {
+          // Already stopped
         }
-
-        if (audioBufferRef.current) {
-          startLoopPlayback();
-        }
-
-        // Clear the flag after loop playback has started
-        switchingToLoopModeRef.current = false;
-      };
-
-      startLoop();
-    } else if (!isLooping) {
-      // Switching FROM loop mode - stop Web Audio, use WaveSurfer
-      stopLoopPlayback();
+        sourceNodeRef.current = null;
+      }
       if (audioRef.current) {
         audioRef.current.volume = 1;
       }
       wavesurferRef.current?.play();
     }
-  }, [isLooping, startLoopPlayback, stopLoopPlayback, localIsPlaying, hasBpm, previewUrl]);
+  }, [barCount, pitchOffset, isLooping, localIsPlaying, hasBpm, loopStartTime, loopDuration, audioDuration, setCurrentTime, setIsPlaying]);
 
   // Helper to start loop at a specific position - used by both click handler and other functions
   const startLoopAtPosition = useCallback((startTime: number) => {
@@ -698,6 +803,9 @@ export function SampleRowWithLoop({
       const maxStartTime = Math.max(0, audioDuration - loopDuration);
       const newStartTime = Math.min(Math.max(0, snappedTime), maxStartTime);
       setLoopStartTime(newStartTime);
+    } else if (isLooping) {
+      // Turning loop OFF - reset pitch to 0
+      setPitchOffset(0);
     }
     setIsLooping((prev) => !prev);
   }, [isLooping, sample.bpm, audioDuration, barCount, loopDuration]);
@@ -706,17 +814,123 @@ export function SampleRowWithLoop({
     setBarCount(bars);
   }, []);
 
+  // Helper to restart loop playback with a specific pitch value
+  // Only used when looping is enabled - uses refs to get current values
+  const restartWithPitch = useCallback((newPitch: number) => {
+    // Use refs to get current values (avoids stale closures)
+    const isPlaying = localIsPlayingRef.current;
+    const loopStart = loopStartTimeRef.current;
+    const loopLen = loopDurationRef.current;
+    const totalDuration = audioDurationRef.current;
+
+    // Only restart if we're currently playing and have BPM
+    if (!isPlaying || !hasBpm) return;
+
+    // Mute WaveSurfer (we use Web Audio for looping)
+    if (audioRef.current) {
+      audioRef.current.volume = 0;
+    }
+    wavesurferRef.current?.pause();
+
+    // Stop current Web Audio
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+    if (sourceNodeRef.current) {
+      try {
+        sourceNodeRef.current.stop();
+        sourceNodeRef.current.disconnect();
+      } catch {
+        // Already stopped
+      }
+      sourceNodeRef.current = null;
+    }
+
+    // Ensure audio context exists
+    if (!audioContextRef.current) {
+      audioContextRef.current = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+    }
+    const ctx = audioContextRef.current;
+    const buffer = audioBufferRef.current;
+    if (!buffer) return;
+
+    // Resume context if suspended
+    if (ctx.state === "suspended") {
+      ctx.resume();
+    }
+
+    // Create new source with loop enabled
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+
+    if (!gainNodeRef.current) {
+      gainNodeRef.current = ctx.createGain();
+      gainNodeRef.current.connect(ctx.destination);
+    }
+    source.connect(gainNodeRef.current);
+
+    // Always loop (pitch only works with loop)
+    source.loop = true;
+    source.loopStart = loopStart;
+    source.loopEnd = Math.min(loopStart + loopLen, buffer.duration);
+
+    // Apply the NEW pitch value
+    source.detune.value = newPitch * 100;
+
+    sourceNodeRef.current = source;
+    loopPlaybackStartTimeRef.current = ctx.currentTime;
+
+    const effectiveRate = Math.pow(2, newPitch / 12);
+    loopPlaybackOffsetRef.current = loopStart;
+
+    source.start(0, loopStart);
+
+    // Update time display
+    const updateTime = () => {
+      if (!audioContextRef.current || !sourceNodeRef.current) return;
+
+      const realElapsed = audioContextRef.current.currentTime - loopPlaybackStartTimeRef.current;
+      const audioElapsed = realElapsed * effectiveRate;
+      const posInLoop = audioElapsed % loopLen;
+      const displayPos = loopStart + posInLoop;
+
+      setLocalCurrentTime(displayPos);
+      setCurrentTime(displayPos);
+
+      if (wavesurferRef.current && totalDuration > 0) {
+        wavesurferRef.current.seekTo(displayPos / totalDuration);
+      }
+
+      animationFrameRef.current = requestAnimationFrame(updateTime);
+    };
+
+    animationFrameRef.current = requestAnimationFrame(updateTime);
+  }, [hasBpm, setCurrentTime]);
+
   const handlePitchUp = useCallback(() => {
-    setPitchOffset((prev) => Math.min(prev + 1, 3));
-  }, []);
+    setPitchOffset((prev) => {
+      const newPitch = Math.min(prev + 1, 12);
+      // Directly restart with new pitch
+      setTimeout(() => restartWithPitch(newPitch), 0);
+      return newPitch;
+    });
+  }, [restartWithPitch]);
 
   const handlePitchDown = useCallback(() => {
-    setPitchOffset((prev) => Math.max(prev - 1, -3));
-  }, []);
+    setPitchOffset((prev) => {
+      const newPitch = Math.max(prev - 1, -12);
+      // Directly restart with new pitch
+      setTimeout(() => restartWithPitch(newPitch), 0);
+      return newPitch;
+    });
+  }, [restartWithPitch]);
 
   const handleResetPitch = useCallback(() => {
     setPitchOffset(0);
-  }, []);
+    // Directly restart with pitch 0
+    setTimeout(() => restartWithPitch(0), 0);
+  }, [restartWithPitch]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -1027,51 +1241,56 @@ export function SampleRowWithLoop({
             </div>
           )}
 
-          {/* Divider */}
-          <div className="w-px h-5 bg-grey-700 mx-1" />
+          {/* Pitch Controls - only show when looping */}
+          {isLooping && hasBpm && (
+            <>
+              {/* Divider */}
+              <div className="w-px h-5 bg-grey-700 mx-1" />
 
-          {/* Pitch Controls */}
-          <button
-            onClick={handlePitchDown}
-            disabled={pitchOffset <= -3}
-            title="Pitch down"
-            className={cn(
-              "h-7 w-7 flex items-center justify-center text-xs rounded-md transition-all duration-150",
-              pitchOffset <= -3
-                ? "bg-grey-800 text-text-muted cursor-not-allowed"
-                : "bg-grey-700 text-text-secondary hover:bg-grey-600 hover:text-white"
-            )}
-          >
-            <Minus className="w-3 h-3" />
-          </button>
+              <span className="text-[10px] font-medium text-text-muted uppercase mr-1">Pitch</span>
+              <button
+                onClick={handlePitchDown}
+                disabled={pitchOffset <= -12}
+                title="Pitch down (-1 semitone)"
+                className={cn(
+                  "h-7 w-7 flex items-center justify-center text-xs rounded-md transition-all duration-150",
+                  pitchOffset <= -12
+                    ? "bg-grey-800 text-text-muted cursor-not-allowed"
+                    : "bg-grey-700 text-text-secondary hover:bg-grey-600 hover:text-white"
+                )}
+              >
+                <Minus className="w-3 h-3" />
+              </button>
 
-          <button
-            onClick={handleResetPitch}
-            disabled={pitchOffset === 0}
-            title={pitchOffset === 0 ? "Pitch: 0" : "Reset pitch"}
-            className={cn(
-              "h-7 w-8 flex items-center justify-center text-xs font-medium rounded-md tabular-nums transition-all duration-150",
-              pitchOffset !== 0
-                ? "bg-grey-700 text-white hover:bg-grey-600"
-                : "bg-grey-800 text-text-muted"
-            )}
-          >
-            {pitchOffset > 0 ? `+${pitchOffset}` : pitchOffset}
-          </button>
+              <button
+                onClick={handleResetPitch}
+                disabled={pitchOffset === 0}
+                title={pitchOffset === 0 ? "Pitch: 0" : "Reset pitch"}
+                className={cn(
+                  "h-7 w-10 flex items-center justify-center text-xs font-medium rounded-md tabular-nums transition-all duration-150",
+                  pitchOffset !== 0
+                    ? "bg-grey-700 text-white hover:bg-grey-600"
+                    : "bg-grey-800 text-text-muted"
+                )}
+              >
+                {pitchOffset > 0 ? `+${pitchOffset}` : pitchOffset}
+              </button>
 
-          <button
-            onClick={handlePitchUp}
-            disabled={pitchOffset >= 3}
-            title="Pitch up"
-            className={cn(
-              "h-7 w-7 flex items-center justify-center text-xs rounded-md transition-all duration-150",
-              pitchOffset >= 3
-                ? "bg-grey-800 text-text-muted cursor-not-allowed"
-                : "bg-grey-700 text-text-secondary hover:bg-grey-600 hover:text-white"
-            )}
-          >
-            <Plus className="w-3 h-3" />
-          </button>
+              <button
+                onClick={handlePitchUp}
+                disabled={pitchOffset >= 12}
+                title="Pitch up (+1 semitone)"
+                className={cn(
+                  "h-7 w-7 flex items-center justify-center text-xs rounded-md transition-all duration-150",
+                  pitchOffset >= 12
+                    ? "bg-grey-800 text-text-muted cursor-not-allowed"
+                    : "bg-grey-700 text-text-secondary hover:bg-grey-600 hover:text-white"
+                )}
+              >
+                <Plus className="w-3 h-3" />
+              </button>
+            </>
+          )}
         </div>
 
         {/* Loop hint */}

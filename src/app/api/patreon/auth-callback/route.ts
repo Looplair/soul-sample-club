@@ -86,25 +86,40 @@ export async function GET(request: NextRequest) {
     }
 
     // Check if user is an active patron or creator
+    const campaignId = process.env.PATREON_CAMPAIGN_ID;
     let isActivePatron = false;
     let tierId: string | null = null;
     let tierTitle: string | null = null;
 
     // Log the full response for debugging
+    console.log("Looking for campaign ID:", campaignId);
     console.log("Patreon identity data:", JSON.stringify(identityData, null, 2));
 
     if (identityData.included) {
       for (const item of identityData.included) {
         if (item.type === "member") {
           const patronStatus = item.attributes?.patron_status;
-          console.log("Found member with patron_status:", patronStatus);
+          const memberCampaignId = item.relationships?.campaign?.data?.id;
 
-          // Accept active_patron, or if they have any entitled tiers
-          if (patronStatus === "active_patron") {
+          console.log("Found member:", { patronStatus, memberCampaignId, targetCampaignId: campaignId });
+
+          // Check if this membership is for our campaign (if campaignId is set)
+          // If no campaignId is configured, accept any active patron status
+          const isOurCampaign = !campaignId || memberCampaignId === campaignId;
+
+          if (isOurCampaign && patronStatus === "active_patron") {
             isActivePatron = true;
             const tiers = item.relationships?.currently_entitled_tiers?.data;
             if (tiers && tiers.length > 0) {
               tierId = tiers[0].id;
+              // Try to find tier title from included data
+              const tierData = identityData.included.find(
+                (inc: { type: string; id: string; attributes?: { title?: string } }) =>
+                  inc.type === "tier" && inc.id === tierId
+              );
+              if (tierData?.attributes?.title) {
+                tierTitle = tierData.attributes.title;
+              }
             }
           }
         }

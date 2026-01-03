@@ -19,9 +19,9 @@ import { useRef, useState, useCallback, useEffect } from "react";
 // Bar count options (musical measures in 4/4 time)
 export type BarCount = 1 | 2 | 4;
 
-// Pitch range limits (semitones)
-const MIN_PITCH = -3;
-const MAX_PITCH = 3;
+// Pitch range limits (semitones) - full octave each way
+const MIN_PITCH = -12;
+const MAX_PITCH = 12;
 
 interface UseLoopPreviewOptions {
   /** Audio URL to load */

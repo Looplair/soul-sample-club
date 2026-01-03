@@ -20,7 +20,10 @@ export async function GET() {
   }
 
   // Build Patreon OAuth URL
-  const scopes = ["identity", "identity.memberships"].join(" ");
+  // identity - basic user info
+  // identity[email] - user's email address
+  // identity.memberships - user's memberships (patron status)
+  const scopes = ["identity", "identity[email]", "identity.memberships"].join(" ");
   const patreonAuthUrl = new URL("https://www.patreon.com/oauth2/authorize");
   patreonAuthUrl.searchParams.set("response_type", "code");
   patreonAuthUrl.searchParams.set("client_id", clientId);
