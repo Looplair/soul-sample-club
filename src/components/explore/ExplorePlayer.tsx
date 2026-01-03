@@ -294,15 +294,28 @@ export function ExplorePlayer({
     if (touchStartY === null || isTransitioning) return;
     const deltaY = e.touches[0].clientY - touchStartY;
 
+    // Apply resistance when dragging in a direction with no content
+    let adjustedDelta = deltaY;
+
+    // At first item, add resistance when pulling down
+    if (currentIndex === 0 && deltaY > 0) {
+      adjustedDelta = deltaY * 0.3; // More resistance
+    }
+    // At last item, add resistance when pulling up
+    if (currentIndex === samples.length - 1 && deltaY < 0) {
+      adjustedDelta = deltaY * 0.3; // More resistance
+    }
+
     const maxDrag = 200;
-    const limitedDelta = Math.max(-maxDrag, Math.min(maxDrag, deltaY));
+    const limitedDelta = Math.max(-maxDrag, Math.min(maxDrag, adjustedDelta));
     setTouchDeltaY(limitedDelta);
   };
 
   const handleTouchEnd = () => {
     if (isTransitioning) return;
 
-    const threshold = 80;
+    // Lower threshold for more responsive swiping
+    const threshold = 50;
     if (touchDeltaY < -threshold && currentIndex < samples.length - 1) {
       goToNext();
     } else if (touchDeltaY > threshold && currentIndex > 0) {
@@ -409,7 +422,8 @@ export function ExplorePlayer({
   return (
     <div
       ref={containerRef}
-      className="h-screen bg-charcoal relative overflow-hidden touch-none select-none"
+      className="fixed inset-0 bg-charcoal overflow-hidden touch-none select-none"
+      style={{ height: '100dvh' }}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
@@ -418,10 +432,12 @@ export function ExplorePlayer({
       {/* Previous sample (above - peek) */}
       {prevSample && (
         <div
-          className="absolute inset-x-0 h-screen flex items-center justify-center transition-transform duration-300 ease-out"
+          className="absolute inset-x-0 flex items-center justify-center pointer-events-none"
           style={{
+            height: '100dvh',
             transform: `translateY(calc(-100% + ${dragOffset}px))`,
             opacity: dragOffset > 0 ? Math.min(1, dragOffset / 100) : 0,
+            transition: touchStartY === null ? 'transform 0.4s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.3s ease-out' : 'none',
           }}
         >
           <div className="w-full max-w-[280px] aspect-square rounded-2xl overflow-hidden shadow-2xl opacity-60 relative">
@@ -444,9 +460,10 @@ export function ExplorePlayer({
 
       {/* Current sample */}
       <div
-        className="absolute inset-0 transition-transform duration-300 ease-out"
+        className="absolute inset-0"
         style={{
           transform: `translateY(${dragOffset}px)`,
+          transition: touchStartY === null ? 'transform 0.4s cubic-bezier(0.32, 0.72, 0, 1)' : 'none',
         }}
       >
         {/* Background - blurred album art */}
@@ -481,7 +498,7 @@ export function ExplorePlayer({
         </header>
 
         {/* Main Content */}
-        <main className="relative z-10 h-[calc(100vh-64px)] flex flex-col items-center justify-center px-6">
+        <main className="relative z-10 flex flex-col items-center justify-center px-6" style={{ height: 'calc(100dvh - 64px)' }}>
           {/* Album Art with Loading/Playing indicator */}
           <div className="relative w-full max-w-[300px] sm:max-w-[340px] aspect-square mb-6">
             {/* Album art container - NOT clickable by default */}
@@ -631,10 +648,12 @@ export function ExplorePlayer({
       {/* Next sample (below - peek) */}
       {nextSample && (
         <div
-          className="absolute inset-x-0 h-screen flex items-center justify-center transition-transform duration-300 ease-out pointer-events-none"
+          className="absolute inset-x-0 flex items-center justify-center pointer-events-none"
           style={{
+            height: '100dvh',
             transform: `translateY(calc(100% + ${dragOffset}px))`,
             opacity: dragOffset < 0 ? Math.min(1, Math.abs(dragOffset) / 100) : 0,
+            transition: touchStartY === null ? 'transform 0.4s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.3s ease-out' : 'none',
           }}
         >
           <div className="w-full max-w-[280px] aspect-square rounded-2xl overflow-hidden shadow-2xl opacity-60 relative">
