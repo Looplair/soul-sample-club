@@ -330,7 +330,7 @@ export default async function HomePage() {
                 </div>
 
                 {/* Explore Button - with shine/gleam effect */}
-                <div className="pt-6 flex justify-center lg:justify-start">
+                <div className="pt-6 pb-8 sm:pb-0 flex justify-center lg:justify-start">
                   <Link
                     href="/explore"
                     className="group relative flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all overflow-hidden"
@@ -423,8 +423,8 @@ export default async function HomePage() {
             </div>
           </div>
 
-          {/* Scroll indicator - positioned lower to not block content */}
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 animate-bounce">
+          {/* Scroll indicator - positioned lower on mobile to give more space */}
+          <div className="absolute bottom-6 sm:bottom-4 left-1/2 -translate-x-1/2 animate-bounce">
             <ChevronRight className="w-6 h-6 text-white/40 rotate-90" />
           </div>
         </section>

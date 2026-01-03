@@ -14,7 +14,6 @@ import {
   Shuffle,
   Archive,
   ExternalLink,
-  Sparkles,
   ChevronUp,
   ChevronDown,
 } from "lucide-react";
@@ -333,13 +332,8 @@ export function ExplorePlayer({
     return () => container.removeEventListener("wheel", handleWheel);
   }, [handleWheel]);
 
-  // Hide swipe hint after 4 seconds
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowSwipeHint(false);
-    }, 4000);
-    return () => clearTimeout(timer);
-  }, []);
+  // Hide swipe hint after first interaction (swipe or navigation)
+  // No longer auto-hide - hint stays until user actually swipes
 
   // Audio progress tracking
   useEffect(() => {
@@ -473,7 +467,7 @@ export function ExplorePlayer({
         <header className="relative z-20 px-4 pt-4 pb-2 flex items-center justify-between">
           <Link
             href="/"
-            className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center active:scale-95 transition-transform"
+            className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center transition-all active:scale-90 active:bg-black/60"
           >
             <X className="w-5 h-5 text-white" />
           </Link>
@@ -520,7 +514,7 @@ export function ExplorePlayer({
                 href={`/packs/${currentSample.pack.id}`}
                 className="absolute top-3 right-3 z-20"
               >
-                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/90 text-charcoal text-sm font-medium shadow-lg hover:bg-white transition-colors">
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/90 text-charcoal text-sm font-medium shadow-lg hover:bg-white active:scale-95 active:bg-white/80 transition-all">
                   <ExternalLink className="w-4 h-4" />
                   View Pack
                 </div>
@@ -538,7 +532,7 @@ export function ExplorePlayer({
                 // Tap to play button (when autoplay blocked)
                 <button
                   onClick={handleTapToPlay}
-                  className="w-16 h-16 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center shadow-inner hover:bg-black/40 transition-colors"
+                  className="w-16 h-16 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center shadow-inner hover:bg-black/40 active:scale-90 active:bg-black/50 transition-all"
                 >
                   <Play className="w-7 h-7 text-white/70 ml-1" fill="currentColor" />
                 </button>
@@ -546,7 +540,7 @@ export function ExplorePlayer({
                 // Playing - show pause on tap
                 <button
                   onClick={togglePlay}
-                  className="w-16 h-16 rounded-full bg-black/20 backdrop-blur-md flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity"
+                  className="w-16 h-16 rounded-full bg-black/20 backdrop-blur-md flex items-center justify-center opacity-0 hover:opacity-100 active:scale-90 active:opacity-100 transition-all"
                 >
                   <Pause className="w-7 h-7 text-white/70" fill="currentColor" />
                 </button>
@@ -617,16 +611,13 @@ export function ExplorePlayer({
             )}
           </div>
 
-          {/* CTA Button - Always visible for non-subscribers - Metallic/Silver styling */}
+          {/* CTA Button - Always visible for non-subscribers */}
           {(!isLoggedIn || !hasSubscription) && (
             <button
               onClick={handleCTA}
-              className="relative flex items-center gap-2 px-6 py-3 rounded-full font-semibold shadow-xl hover:shadow-2xl active:scale-95 transition-all overflow-hidden bg-gradient-to-b from-[#d4d4d8] via-[#a1a1aa] to-[#71717a] text-charcoal border border-white/30"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium bg-white text-charcoal hover:bg-white/90 active:scale-95 active:bg-white/80 transition-all"
             >
-              {/* Metallic shine overlay */}
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full animate-[shimmer_3s_ease-in-out_infinite]" />
-              <Sparkles className="w-5 h-5 relative z-10" />
-              <span className="relative z-10">Start Sampling For Free</span>
+              Start Free Trial
             </button>
           )}
 
@@ -664,17 +655,17 @@ export function ExplorePlayer({
         </div>
       )}
 
-      {/* Swipe Hint - At top, above the pack picture */}
+      {/* Swipe Hint - At top, always visible on mobile until user swipes */}
       {showSwipeHint && currentIndex < samples.length - 1 && (
-        <div className="absolute top-20 left-1/2 -translate-x-1/2 z-40 animate-in fade-in slide-in-from-top-4 duration-500">
-          <div className="flex flex-col items-center gap-2 text-white/80">
-            <span className="text-sm font-medium bg-black/40 backdrop-blur-sm px-4 py-2 rounded-full">
-              Swipe up for more
-            </span>
+        <div className="absolute top-20 left-1/2 -translate-x-1/2 z-40 sm:hidden">
+          <div className="flex flex-col items-center gap-1 text-white/60">
             <div className="flex flex-col items-center animate-bounce">
-              <ChevronUp className="w-6 h-6 -mb-3" />
-              <ChevronUp className="w-6 h-6 opacity-40" />
+              <ChevronUp className="w-5 h-5 -mb-2" />
+              <ChevronUp className="w-5 h-5 opacity-40" />
             </div>
+            <span className="text-xs font-medium">
+              Swipe up
+            </span>
           </div>
         </div>
       )}
@@ -684,7 +675,7 @@ export function ExplorePlayer({
         {currentIndex > 0 && (
           <button
             onClick={goToPrev}
-            className="w-10 h-10 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center text-white/60 hover:text-white hover:bg-black/50 transition-all"
+            className="w-10 h-10 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center text-white/60 hover:text-white hover:bg-black/50 active:scale-90 active:bg-black/60 transition-all"
           >
             <ChevronUp className="w-5 h-5" />
           </button>
@@ -692,7 +683,7 @@ export function ExplorePlayer({
         {currentIndex < samples.length - 1 && (
           <button
             onClick={goToNext}
-            className="w-10 h-10 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center text-white/60 hover:text-white hover:bg-black/50 transition-all"
+            className="w-10 h-10 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center text-white/60 hover:text-white hover:bg-black/50 active:scale-90 active:bg-black/60 transition-all"
           >
             <ChevronDown className="w-5 h-5" />
           </button>
