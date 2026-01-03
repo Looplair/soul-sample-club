@@ -189,29 +189,32 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Upsert patreon link
+    // Delete any existing link for this user or this patreon account
+    // This handles reconnection scenarios and prevents duplicate key errors
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error: upsertError } = await (adminSupabase as any)
+    await (adminSupabase as any)
       .from("patreon_links")
-      .upsert(
-        {
-          user_id: userId,
-          patreon_user_id: patreonUserId,
-          patreon_email: patreonEmail,
-          access_token: accessToken,
-          refresh_token: refreshToken,
-          is_active: isActivePatron,
-          tier_id: tierId,
-          tier_title: tierTitle,
-          updated_at: new Date().toISOString(),
-        },
-        {
-          onConflict: "user_id",
-        }
-      );
+      .delete()
+      .or(`user_id.eq.${userId},patreon_user_id.eq.${patreonUserId}`);
 
-    if (upsertError) {
-      console.error("Failed to save Patreon link:", upsertError);
+    // Insert the new link
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error: insertError } = await (adminSupabase as any)
+      .from("patreon_links")
+      .insert({
+        user_id: userId,
+        patreon_user_id: patreonUserId,
+        patreon_email: patreonEmail,
+        access_token: accessToken,
+        refresh_token: refreshToken,
+        is_active: isActivePatron,
+        tier_id: tierId,
+        tier_title: tierTitle,
+        updated_at: new Date().toISOString(),
+      });
+
+    if (insertError) {
+      console.error("Failed to save Patreon link:", insertError);
       // Continue anyway - the user is still logged in
     }
 

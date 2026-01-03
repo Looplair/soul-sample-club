@@ -124,11 +124,19 @@ export async function GET(request: NextRequest) {
     // Save to database
     const adminSupabase = createAdminClient();
 
-    // Upsert patreon link
+    // First, delete any existing link for this user or this patreon account
+    // This handles the case where user disconnected and is reconnecting
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error: upsertError } = await (adminSupabase as any)
+    await (adminSupabase as any)
       .from("patreon_links")
-      .upsert({
+      .delete()
+      .or(`user_id.eq.${state},patreon_user_id.eq.${patreonUserId}`);
+
+    // Now insert the new link
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error: insertError } = await (adminSupabase as any)
+      .from("patreon_links")
+      .insert({
         user_id: state,
         patreon_user_id: patreonUserId,
         patreon_email: patreonEmail,
@@ -138,12 +146,10 @@ export async function GET(request: NextRequest) {
         tier_id: tierId,
         tier_title: tierTitle,
         updated_at: new Date().toISOString(),
-      }, {
-        onConflict: "user_id",
       });
 
-    if (upsertError) {
-      console.error("Database error:", upsertError);
+    if (insertError) {
+      console.error("Database error:", insertError);
       return NextResponse.redirect(`${appUrl}/account?patreon_error=db_failed`);
     }
 
