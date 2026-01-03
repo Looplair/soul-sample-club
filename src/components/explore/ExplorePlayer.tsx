@@ -79,6 +79,13 @@ export function ExplorePlayer({
   const currentSample = samples[currentIndex];
   const nextSample = samples[currentIndex + 1];
   const prevSample = samples[currentIndex - 1];
+
+  // Get samples for preloading (prev, current, next few)
+  const samplesToPreload = samples.slice(
+    Math.max(0, currentIndex - 1),
+    Math.min(samples.length, currentIndex + 5)
+  );
+
   const packIsArchived = currentSample ? isArchived(currentSample.pack.release_date) : false;
   const hasVoted = currentSample ? votes.has(currentSample.pack.id) : false;
 
@@ -195,7 +202,8 @@ export function ExplorePlayer({
       setCurrentTime(0);
       setIsPlaying(false);
       setIsLoading(true);
-      setTimeout(() => setIsTransitioning(false), 300);
+      // Match the CSS transition duration (500ms)
+      setTimeout(() => setIsTransitioning(false), 500);
     }
   }, [currentIndex, samples.length, isTransitioning]);
 
@@ -211,7 +219,8 @@ export function ExplorePlayer({
       setCurrentTime(0);
       setIsPlaying(false);
       setIsLoading(true);
-      setTimeout(() => setIsTransitioning(false), 300);
+      // Match the CSS transition duration (500ms)
+      setTimeout(() => setIsTransitioning(false), 500);
     }
   }, [currentIndex, isTransitioning]);
 
@@ -437,7 +446,8 @@ export function ExplorePlayer({
             height: '100dvh',
             transform: `translateY(calc(-100% + ${dragOffset}px))`,
             opacity: dragOffset > 0 ? Math.min(1, dragOffset / 100) : 0,
-            transition: touchStartY === null ? 'transform 0.4s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.3s ease-out' : 'none',
+            transition: touchStartY === null ? 'transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.4s ease-out' : 'none',
+            willChange: 'transform, opacity',
           }}
         >
           <div className="w-full max-w-[280px] aspect-square rounded-2xl overflow-hidden shadow-2xl opacity-60 relative">
@@ -463,7 +473,8 @@ export function ExplorePlayer({
         className="absolute inset-0"
         style={{
           transform: `translateY(${dragOffset}px)`,
-          transition: touchStartY === null ? 'transform 0.4s cubic-bezier(0.32, 0.72, 0, 1)' : 'none',
+          transition: touchStartY === null ? 'transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)' : 'none',
+          willChange: 'transform',
         }}
       >
         {/* Background - blurred album art */}
@@ -653,7 +664,8 @@ export function ExplorePlayer({
             height: '100dvh',
             transform: `translateY(calc(100% + ${dragOffset}px))`,
             opacity: dragOffset < 0 ? Math.min(1, Math.abs(dragOffset) / 100) : 0,
-            transition: touchStartY === null ? 'transform 0.4s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.3s ease-out' : 'none',
+            transition: touchStartY === null ? 'transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.4s ease-out' : 'none',
+            willChange: 'transform, opacity',
           }}
         >
           <div className="w-full max-w-[280px] aspect-square rounded-2xl overflow-hidden shadow-2xl opacity-60 relative">
@@ -726,6 +738,22 @@ export function ExplorePlayer({
           preload="auto"
         />
       )}
+
+      {/* Hidden Image Preloader - preload nearby images for fluid swiping */}
+      <div className="hidden">
+        {samplesToPreload.map((sample) => (
+          sample.pack.cover_image_url && (
+            <Image
+              key={sample.id}
+              src={sample.pack.cover_image_url}
+              alt=""
+              width={340}
+              height={340}
+              priority={sample.id === currentSample?.id}
+            />
+          )
+        ))}
+      </div>
     </div>
   );
 }
