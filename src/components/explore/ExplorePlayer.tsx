@@ -45,6 +45,197 @@ function formatDuration(seconds: number): string {
   return `${mins}:${secs.toString().padStart(2, "0")}`;
 }
 
+// Single Slide Component - renders one full sample view
+function SampleSlide({
+  sample,
+  isActive,
+  isPlaying,
+  isLoading,
+  progress,
+  currentTime,
+  packIsArchived,
+  hasVoted,
+  isLoggedIn,
+  hasSubscription,
+  onTogglePlay,
+  onVote,
+  onCTA,
+}: {
+  sample: SampleWithPack;
+  isActive: boolean;
+  isPlaying: boolean;
+  isLoading: boolean;
+  progress: number;
+  currentTime: number;
+  packIsArchived: boolean;
+  hasVoted: boolean;
+  isLoggedIn: boolean;
+  hasSubscription: boolean;
+  onTogglePlay: () => void;
+  onVote: () => void;
+  onCTA: () => void;
+}) {
+  return (
+    <div className="absolute inset-0 flex flex-col" style={{ height: '100dvh' }}>
+      {/* Background - blurred album art */}
+      <div className="absolute inset-0 pointer-events-none">
+        {sample.pack.cover_image_url && (
+          <Image
+            src={sample.pack.cover_image_url}
+            alt=""
+            fill
+            className="object-cover opacity-40 blur-3xl scale-125"
+            priority={isActive}
+          />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-b from-charcoal/50 via-charcoal/70 to-charcoal/90" />
+      </div>
+
+      {/* Main Content */}
+      <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 pt-16">
+        {/* Album Art with Loading/Playing indicator */}
+        <div className="relative w-full max-w-[280px] sm:max-w-[320px] aspect-square mb-5">
+          {/* Album art container */}
+          <div className="absolute inset-0 rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/10">
+            {sample.pack.cover_image_url ? (
+              <Image
+                src={sample.pack.cover_image_url}
+                alt={sample.pack.name}
+                fill
+                className="object-cover"
+                sizes="(max-width: 640px) 280px, 320px"
+                priority={isActive}
+              />
+            ) : (
+              <div className="absolute inset-0 bg-gradient-to-br from-grey-700 to-grey-800 flex items-center justify-center">
+                <Music className="w-20 h-20 text-grey-600" />
+              </div>
+            )}
+
+            {/* Archive Badge */}
+            {packIsArchived && (
+              <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-sm z-20">
+                <Archive className="w-3 h-3 text-amber-400" />
+                <span className="text-xs font-medium text-amber-400">Archived</span>
+              </div>
+            )}
+
+            {/* View Pack button */}
+            <Link
+              href={`/packs/${sample.pack.id}`}
+              className="absolute top-3 right-3 z-20"
+            >
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/90 text-charcoal text-sm font-medium shadow-lg hover:bg-white active:scale-95 active:bg-white/80 transition-all">
+                <ExternalLink className="w-4 h-4" />
+                View Pack
+              </div>
+            </Link>
+          </div>
+
+          {/* Loading/Playing indicator - centered on album art */}
+          {isActive && (
+            <div className="absolute inset-0 flex items-center justify-center z-10">
+              {isLoading ? (
+                <div className="w-16 h-16 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center shadow-inner">
+                  <div className="w-10 h-10 rounded-full border-2 border-white/20 border-t-white/60 animate-spin" />
+                </div>
+              ) : !isPlaying ? (
+                <button
+                  onClick={onTogglePlay}
+                  className="w-16 h-16 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center shadow-inner hover:bg-black/40 active:scale-90 active:bg-black/50 transition-all"
+                >
+                  <Play className="w-7 h-7 text-white/70 ml-1" fill="currentColor" />
+                </button>
+              ) : (
+                <button
+                  onClick={onTogglePlay}
+                  className="w-16 h-16 rounded-full bg-black/20 backdrop-blur-md flex items-center justify-center opacity-0 hover:opacity-100 active:scale-90 active:opacity-100 transition-all"
+                >
+                  <Pause className="w-7 h-7 text-white/70" fill="currentColor" />
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Track Info */}
+        <div className="w-full max-w-sm text-center mb-3">
+          <h1 className="text-xl font-bold text-white truncate mb-1">
+            {sample.name}
+          </h1>
+          <Link
+            href={`/packs/${sample.pack.id}`}
+            className="text-base text-white/70 hover:text-white transition-colors"
+          >
+            {sample.pack.name}
+          </Link>
+
+          {/* Sample metadata */}
+          <div className="flex items-center justify-center gap-3 mt-2 text-sm text-white/50">
+            {sample.bpm && <span>{sample.bpm} BPM</span>}
+            {sample.key && <span>•</span>}
+            {sample.key && <span>{sample.key}</span>}
+            <span>•</span>
+            <span>{formatDuration(sample.duration)}</span>
+          </div>
+        </div>
+
+        {/* Progress Bar - only show for active slide */}
+        {isActive && (
+          <div className="w-full max-w-sm mb-4">
+            <div className="h-1 bg-white/20 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-white rounded-full"
+                style={{ width: `${progress}%`, transition: isPlaying ? "width 0.1s linear" : "none" }}
+              />
+            </div>
+            <div className="flex justify-between mt-1.5 text-xs text-white/40">
+              <span>{formatDuration(currentTime)}</span>
+              <span>{formatDuration(sample.duration)}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Action Buttons Row */}
+        <div className="flex items-center gap-3 mb-3">
+          {packIsArchived && isActive && (
+            <button
+              onClick={onVote}
+              className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all active:scale-95 ${
+                hasVoted
+                  ? "bg-white text-charcoal"
+                  : "bg-white/10 text-white border border-white/20"
+              }`}
+            >
+              {hasVoted ? (
+                <>
+                  <Heart className="w-4 h-4" fill="currentColor" />
+                  <span className="text-sm font-medium">Voted</span>
+                </>
+              ) : (
+                <>
+                  <Vote className="w-4 h-4" />
+                  <span className="text-sm font-medium">Bring back</span>
+                </>
+              )}
+            </button>
+          )}
+        </div>
+
+        {/* CTA Button */}
+        {(!isLoggedIn || !hasSubscription) && isActive && (
+          <button
+            onClick={onCTA}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium bg-white text-charcoal hover:bg-white/90 active:scale-95 active:bg-white/80 transition-all"
+          >
+            Start Free Trial
+          </button>
+        )}
+      </main>
+    </div>
+  );
+}
+
 export function ExplorePlayer({
   samples,
   initialVotes,
@@ -64,7 +255,7 @@ export function ExplorePlayer({
   const [showSwipeHint, setShowSwipeHint] = useState(true);
   const [hasInteracted, setHasInteracted] = useState(false);
 
-  // Vertical swipe state (TikTok style)
+  // Vertical swipe state
   const [touchStartY, setTouchStartY] = useState<number | null>(null);
   const [touchDeltaY, setTouchDeltaY] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -77,24 +268,21 @@ export function ExplorePlayer({
   const [preloadedTracks, setPreloadedTracks] = useState<Set<string>>(new Set());
 
   const currentSample = samples[currentIndex];
-  const nextSample = samples[currentIndex + 1];
-  const prevSample = samples[currentIndex - 1];
-
-  // Get samples for preloading (prev, current, next few)
-  const samplesToPreload = samples.slice(
-    Math.max(0, currentIndex - 1),
-    Math.min(samples.length, currentIndex + 5)
-  );
-
   const packIsArchived = currentSample ? isArchived(currentSample.pack.release_date) : false;
   const hasVoted = currentSample ? votes.has(currentSample.pack.id) : false;
 
   // Audio URL for current sample
   const audioUrl = currentSample ? `/api/preview/${currentSample.id}?stream=true` : null;
 
+  // Get visible slides - render prev, current, and next for smooth swiping
+  const visibleSlides = [];
+  if (samples[currentIndex - 1]) visibleSlides.push({ sample: samples[currentIndex - 1], offset: -1 });
+  if (samples[currentIndex]) visibleSlides.push({ sample: samples[currentIndex], offset: 0 });
+  if (samples[currentIndex + 1]) visibleSlides.push({ sample: samples[currentIndex + 1], offset: 1 });
+
   // Background preload next 3 tracks for smoother experience
   useEffect(() => {
-    if (!hasInteracted) return; // Only preload after user has interacted
+    if (!hasInteracted) return;
 
     const preloadCount = 3;
     const startIdx = currentIndex + 1;
@@ -105,25 +293,19 @@ export function ExplorePlayer({
       if (!sample || preloadedTracks.has(sample.id)) continue;
 
       const audioUrl = `/api/preview/${sample.id}?stream=true`;
-
-      // Create a hidden audio element to preload
       const audio = new Audio();
       audio.preload = "auto";
       audio.src = audioUrl;
-
-      // Store in cache
       preloadedAudioRef.current.set(sample.id, audio);
 
-      // Mark as preloaded when enough data is loaded
       audio.addEventListener("canplaythrough", () => {
         setPreloadedTracks((prev) => new Set([...Array.from(prev), sample.id]));
       }, { once: true });
 
-      // Start loading
       audio.load();
     }
 
-    // Cleanup old preloaded audio that we've passed
+    // Cleanup old preloaded audio
     const keysToDelete: string[] = [];
     preloadedAudioRef.current.forEach((audio, id) => {
       const idx = samples.findIndex((s) => s.id === id);
@@ -133,7 +315,6 @@ export function ExplorePlayer({
       }
     });
     keysToDelete.forEach((key) => preloadedAudioRef.current.delete(key));
-
   }, [currentIndex, hasInteracted, samples, preloadedTracks]);
 
   // Autoplay on mount and when changing tracks
@@ -148,19 +329,17 @@ export function ExplorePlayer({
         setIsLoading(false);
         setHasInteracted(true);
       } catch (error) {
-        // Autoplay blocked - wait for user interaction
         console.log("Autoplay blocked, waiting for interaction");
         setIsLoading(false);
         setIsPlaying(false);
       }
     };
 
-    // Small delay to ensure audio element is ready
     const timer = setTimeout(playAudio, 100);
     return () => clearTimeout(timer);
   }, [audioUrl, currentIndex]);
 
-  // Handle user tap to start playback (for when autoplay is blocked)
+  // Handle user tap to start playback
   const handleTapToPlay = useCallback(async () => {
     if (!audioRef.current || isPlaying) return;
 
@@ -202,8 +381,7 @@ export function ExplorePlayer({
       setCurrentTime(0);
       setIsPlaying(false);
       setIsLoading(true);
-      // Match the CSS transition duration (500ms)
-      setTimeout(() => setIsTransitioning(false), 500);
+      setTimeout(() => setIsTransitioning(false), 400);
     }
   }, [currentIndex, samples.length, isTransitioning]);
 
@@ -219,8 +397,7 @@ export function ExplorePlayer({
       setCurrentTime(0);
       setIsPlaying(false);
       setIsLoading(true);
-      // Match the CSS transition duration (500ms)
-      setTimeout(() => setIsTransitioning(false), 500);
+      setTimeout(() => setIsTransitioning(false), 400);
     }
   }, [currentIndex, isTransitioning]);
 
@@ -288,12 +465,11 @@ export function ExplorePlayer({
     setTimeout(() => setShowVoteToast(false), 2000);
   };
 
-  // Vertical touch handlers (TikTok style)
+  // Touch handlers
   const handleTouchStart = (e: React.TouchEvent) => {
     if (isTransitioning) return;
     setTouchStartY(e.touches[0].clientY);
 
-    // If not playing yet, start on first touch
     if (!hasInteracted && !isPlaying) {
       handleTapToPlay();
     }
@@ -303,28 +479,23 @@ export function ExplorePlayer({
     if (touchStartY === null || isTransitioning) return;
     const deltaY = e.touches[0].clientY - touchStartY;
 
-    // Apply resistance when dragging in a direction with no content
     let adjustedDelta = deltaY;
 
-    // At first item, add resistance when pulling down
+    // Add resistance at edges
     if (currentIndex === 0 && deltaY > 0) {
-      adjustedDelta = deltaY * 0.3; // More resistance
+      adjustedDelta = deltaY * 0.3;
     }
-    // At last item, add resistance when pulling up
     if (currentIndex === samples.length - 1 && deltaY < 0) {
-      adjustedDelta = deltaY * 0.3; // More resistance
+      adjustedDelta = deltaY * 0.3;
     }
 
-    const maxDrag = 200;
-    const limitedDelta = Math.max(-maxDrag, Math.min(maxDrag, adjustedDelta));
-    setTouchDeltaY(limitedDelta);
+    setTouchDeltaY(adjustedDelta);
   };
 
   const handleTouchEnd = () => {
     if (isTransitioning) return;
 
-    // Lower threshold for more responsive swiping
-    const threshold = 50;
+    const threshold = 60;
     if (touchDeltaY < -threshold && currentIndex < samples.length - 1) {
       goToNext();
     } else if (touchDeltaY > threshold && currentIndex > 0) {
@@ -353,9 +524,6 @@ export function ExplorePlayer({
     container.addEventListener("wheel", handleWheel, { passive: true });
     return () => container.removeEventListener("wheel", handleWheel);
   }, [handleWheel]);
-
-  // Hide swipe hint after first interaction (swipe or navigation)
-  // No longer auto-hide - hint stays until user actually swipes
 
   // Audio progress tracking
   useEffect(() => {
@@ -426,8 +594,6 @@ export function ExplorePlayer({
     );
   }
 
-  const dragOffset = touchDeltaY;
-
   return (
     <div
       ref={containerRef}
@@ -438,271 +604,80 @@ export function ExplorePlayer({
       onTouchEnd={handleTouchEnd}
       onClick={!hasInteracted ? handleTapToPlay : undefined}
     >
-      {/* Previous sample (above - peek) */}
-      {prevSample && (
-        <div
-          className="absolute inset-x-0 flex items-center justify-center pointer-events-none"
-          style={{
-            height: '100dvh',
-            transform: `translateY(calc(-100% + ${dragOffset}px))`,
-            opacity: dragOffset > 0 ? Math.min(1, dragOffset / 100) : 0,
-            transition: touchStartY === null ? 'transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.4s ease-out' : 'none',
-            willChange: 'transform, opacity',
-          }}
-        >
-          <div className="w-full max-w-[280px] aspect-square rounded-2xl overflow-hidden shadow-2xl opacity-60 relative">
-            {prevSample.pack.cover_image_url ? (
-              <Image
-                src={prevSample.pack.cover_image_url}
-                alt={prevSample.pack.name}
-                fill
-                className="object-cover"
-                sizes="280px"
-              />
-            ) : (
-              <div className="w-full h-full bg-gradient-to-br from-grey-700 to-grey-800 flex items-center justify-center">
-                <Music className="w-16 h-16 text-grey-600" />
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Current sample */}
+      {/* Slides Container - all slides move together */}
       <div
         className="absolute inset-0"
         style={{
-          transform: `translateY(${dragOffset}px)`,
-          transition: touchStartY === null ? 'transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)' : 'none',
+          transform: `translateY(${touchDeltaY}px)`,
+          transition: touchStartY === null ? 'transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)' : 'none',
           willChange: 'transform',
         }}
       >
-        {/* Background - blurred album art */}
-        <div className="absolute inset-0 pointer-events-none">
-          {currentSample.pack.cover_image_url && (
-            <Image
-              src={currentSample.pack.cover_image_url}
-              alt=""
-              fill
-              className="object-cover opacity-40 blur-3xl scale-125"
-              priority
-            />
-          )}
-          <div className="absolute inset-0 bg-gradient-to-b from-charcoal/50 via-charcoal/70 to-charcoal/90" />
-        </div>
-
-        {/* Header */}
-        <header className="relative z-20 px-4 pt-4 pb-2 flex items-center justify-between">
-          <Link
-            href="/"
-            className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center transition-all active:scale-90 active:bg-black/60"
+        {/* Render visible slides */}
+        {visibleSlides.map(({ sample, offset }) => (
+          <div
+            key={sample.id}
+            className="absolute inset-0"
+            style={{
+              transform: `translateY(${offset * 100}%)`,
+            }}
           >
-            <X className="w-5 h-5 text-white" />
-          </Link>
-
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/40 backdrop-blur-sm">
-            <Shuffle className="w-4 h-4 text-white/80" />
-            <span className="text-sm text-white/80 font-medium">Explore</span>
+            <SampleSlide
+              sample={sample}
+              isActive={offset === 0}
+              isPlaying={offset === 0 && isPlaying}
+              isLoading={offset === 0 && isLoading}
+              progress={offset === 0 ? progress : 0}
+              currentTime={offset === 0 ? currentTime : 0}
+              packIsArchived={isArchived(sample.pack.release_date)}
+              hasVoted={votes.has(sample.pack.id)}
+              isLoggedIn={isLoggedIn}
+              hasSubscription={hasSubscription}
+              onTogglePlay={togglePlay}
+              onVote={handleVote}
+              onCTA={handleCTA}
+            />
           </div>
-
-          <div className="w-10 h-10" />
-        </header>
-
-        {/* Main Content */}
-        <main className="relative z-10 flex flex-col items-center justify-center px-6" style={{ height: 'calc(100dvh - 64px)' }}>
-          {/* Album Art with Loading/Playing indicator */}
-          <div className="relative w-full max-w-[300px] sm:max-w-[340px] aspect-square mb-6">
-            {/* Album art container - NOT clickable by default */}
-            <div className="absolute inset-0 rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/10">
-              {currentSample.pack.cover_image_url ? (
-                <Image
-                  src={currentSample.pack.cover_image_url}
-                  alt={currentSample.pack.name}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 640px) 300px, 340px"
-                  priority
-                />
-              ) : (
-                <div className="absolute inset-0 bg-gradient-to-br from-grey-700 to-grey-800 flex items-center justify-center">
-                  <Music className="w-24 h-24 text-grey-600" />
-                </div>
-              )}
-
-              {/* Archive Badge */}
-              {packIsArchived && (
-                <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-sm z-20">
-                  <Archive className="w-3 h-3 text-amber-400" />
-                  <span className="text-xs font-medium text-amber-400">Archived</span>
-                </div>
-              )}
-
-              {/* View Pack button - at top on mobile, this IS the link */}
-              <Link
-                href={`/packs/${currentSample.pack.id}`}
-                className="absolute top-3 right-3 z-20"
-              >
-                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/90 text-charcoal text-sm font-medium shadow-lg hover:bg-white active:scale-95 active:bg-white/80 transition-all">
-                  <ExternalLink className="w-4 h-4" />
-                  View Pack
-                </div>
-              </Link>
-            </div>
-
-            {/* Embossed Loading/Playing indicator - centered on album art */}
-            <div className="absolute inset-0 flex items-center justify-center z-10">
-              {isLoading ? (
-                // Sleek embossed loading spinner
-                <div className="w-16 h-16 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center shadow-inner">
-                  <div className="w-10 h-10 rounded-full border-2 border-white/20 border-t-white/60 animate-spin" />
-                </div>
-              ) : !isPlaying ? (
-                // Tap to play button (when autoplay blocked)
-                <button
-                  onClick={handleTapToPlay}
-                  className="w-16 h-16 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center shadow-inner hover:bg-black/40 active:scale-90 active:bg-black/50 transition-all"
-                >
-                  <Play className="w-7 h-7 text-white/70 ml-1" fill="currentColor" />
-                </button>
-              ) : (
-                // Playing - show pause on tap
-                <button
-                  onClick={togglePlay}
-                  className="w-16 h-16 rounded-full bg-black/20 backdrop-blur-md flex items-center justify-center opacity-0 hover:opacity-100 active:scale-90 active:opacity-100 transition-all"
-                >
-                  <Pause className="w-7 h-7 text-white/70" fill="currentColor" />
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Track Info */}
-          <div className="w-full max-w-sm text-center mb-4">
-            <h1 className="text-2xl font-bold text-white truncate mb-1">
-              {currentSample.name}
-            </h1>
-            <Link
-              href={`/packs/${currentSample.pack.id}`}
-              className="text-base text-white/70 hover:text-white transition-colors"
-            >
-              {currentSample.pack.name}
-            </Link>
-
-            {/* Sample metadata */}
-            <div className="flex items-center justify-center gap-3 mt-2 text-sm text-white/50">
-              {currentSample.bpm && <span>{currentSample.bpm} BPM</span>}
-              {currentSample.key && <span>•</span>}
-              {currentSample.key && <span>{currentSample.key}</span>}
-              <span>•</span>
-              <span>{formatDuration(currentSample.duration)}</span>
-            </div>
-          </div>
-
-          {/* Progress Bar */}
-          <div className="w-full max-w-sm mb-5">
-            <div className="h-1 bg-white/20 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-white rounded-full"
-                style={{ width: `${progress}%`, transition: isPlaying ? "width 0.1s linear" : "none" }}
-              />
-            </div>
-            <div className="flex justify-between mt-1.5 text-xs text-white/40">
-              <span>{formatDuration(currentTime)}</span>
-              <span>{formatDuration(currentSample.duration)}</span>
-            </div>
-          </div>
-
-          {/* Action Buttons Row */}
-          <div className="flex items-center gap-3 mb-4">
-            {/* Vote Button (for archived packs) */}
-            {packIsArchived && (
-              <button
-                onClick={handleVote}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all active:scale-95 ${
-                  hasVoted
-                    ? "bg-white text-charcoal"
-                    : "bg-white/10 text-white border border-white/20"
-                }`}
-              >
-                {hasVoted ? (
-                  <>
-                    <Heart className="w-4 h-4" fill="currentColor" />
-                    <span className="text-sm font-medium">Voted</span>
-                  </>
-                ) : (
-                  <>
-                    <Vote className="w-4 h-4" />
-                    <span className="text-sm font-medium">Bring back</span>
-                  </>
-                )}
-              </button>
-            )}
-          </div>
-
-          {/* CTA Button - Always visible for non-subscribers */}
-          {(!isLoggedIn || !hasSubscription) && (
-            <button
-              onClick={handleCTA}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium bg-white text-charcoal hover:bg-white/90 active:scale-95 active:bg-white/80 transition-all"
-            >
-              Start Free Trial
-            </button>
-          )}
-
-          {/* Counter */}
-          <div className="mt-4 text-sm text-white/40">
-            {currentIndex + 1} / {samples.length}
-          </div>
-        </main>
+        ))}
       </div>
 
-      {/* Next sample (below - peek) */}
-      {nextSample && (
-        <div
-          className="absolute inset-x-0 flex items-center justify-center pointer-events-none"
-          style={{
-            height: '100dvh',
-            transform: `translateY(calc(100% + ${dragOffset}px))`,
-            opacity: dragOffset < 0 ? Math.min(1, Math.abs(dragOffset) / 100) : 0,
-            transition: touchStartY === null ? 'transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.4s ease-out' : 'none',
-            willChange: 'transform, opacity',
-          }}
+      {/* Fixed Header - stays on top */}
+      <header className="fixed top-0 left-0 right-0 z-50 px-4 pt-4 pb-2 flex items-center justify-between">
+        <Link
+          href="/"
+          className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center transition-all active:scale-90 active:bg-black/60"
         >
-          <div className="w-full max-w-[280px] aspect-square rounded-2xl overflow-hidden shadow-2xl opacity-60 relative">
-            {nextSample.pack.cover_image_url ? (
-              <Image
-                src={nextSample.pack.cover_image_url}
-                alt={nextSample.pack.name}
-                fill
-                className="object-cover"
-                sizes="280px"
-              />
-            ) : (
-              <div className="w-full h-full bg-gradient-to-br from-grey-700 to-grey-800 flex items-center justify-center">
-                <Music className="w-16 h-16 text-grey-600" />
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+          <X className="w-5 h-5 text-white" />
+        </Link>
 
-      {/* Swipe Hint - At top, always visible on mobile until user swipes */}
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/40 backdrop-blur-sm">
+          <Shuffle className="w-4 h-4 text-white/80" />
+          <span className="text-sm text-white/80 font-medium">Explore</span>
+        </div>
+
+        <div className="w-10 h-10" />
+      </header>
+
+      {/* Counter - fixed at bottom */}
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 text-sm text-white/40">
+        {currentIndex + 1} / {samples.length}
+      </div>
+
+      {/* Swipe Hint */}
       {showSwipeHint && currentIndex < samples.length - 1 && (
-        <div className="absolute top-20 left-1/2 -translate-x-1/2 z-40 sm:hidden">
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-40 sm:hidden">
           <div className="flex flex-col items-center gap-1 text-white/60">
             <div className="flex flex-col items-center animate-bounce">
               <ChevronUp className="w-5 h-5 -mb-2" />
               <ChevronUp className="w-5 h-5 opacity-40" />
             </div>
-            <span className="text-xs font-medium">
-              Swipe up
-            </span>
+            <span className="text-xs font-medium">Swipe up</span>
           </div>
         </div>
       )}
 
       {/* Side navigation buttons */}
-      <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col items-center gap-2 z-30">
+      <div className="fixed right-4 top-1/2 -translate-y-1/2 flex flex-col items-center gap-2 z-40">
         {currentIndex > 0 && (
           <button
             onClick={goToPrev}
@@ -723,7 +698,7 @@ export function ExplorePlayer({
 
       {/* Vote Toast */}
       {showVoteToast && (
-        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-4 duration-200">
+        <div className="fixed bottom-16 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-4 duration-200">
           <div className="px-4 py-2 rounded-full bg-white text-charcoal text-sm font-medium shadow-lg">
             {voteMessage}
           </div>
@@ -738,22 +713,6 @@ export function ExplorePlayer({
           preload="auto"
         />
       )}
-
-      {/* Hidden Image Preloader - preload nearby images for fluid swiping */}
-      <div className="hidden">
-        {samplesToPreload.map((sample) => (
-          sample.pack.cover_image_url && (
-            <Image
-              key={sample.id}
-              src={sample.pack.cover_image_url}
-              alt=""
-              width={340}
-              height={340}
-              priority={sample.id === currentSample?.id}
-            />
-          )
-        ))}
-      </div>
     </div>
   );
 }
