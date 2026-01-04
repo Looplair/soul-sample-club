@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -85,7 +85,7 @@ function SampleSlide({
             alt=""
             fill
             className="object-cover opacity-40 blur-3xl scale-125"
-            priority={isActive}
+            priority
           />
         )}
         <div className="absolute inset-0 bg-gradient-to-b from-charcoal/50 via-charcoal/70 to-charcoal/90" />
@@ -104,7 +104,7 @@ function SampleSlide({
                 fill
                 className="object-cover"
                 sizes="(max-width: 640px) 280px, 320px"
-                priority={isActive}
+                priority
               />
             ) : (
               <div className="absolute inset-0 bg-gradient-to-br from-grey-700 to-grey-800 flex items-center justify-center">
@@ -255,13 +255,24 @@ export function ExplorePlayer({
   const [showSwipeHint, setShowSwipeHint] = useState(true);
   const [hasInteracted, setHasInteracted] = useState(false);
 
-  // Vertical swipe state
+  // Swipe state - dragOffset is the pixel offset while dragging
   const [touchStartY, setTouchStartY] = useState<number | null>(null);
-  const [touchDeltaY, setTouchDeltaY] = useState(0);
-  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [dragOffset, setDragOffset] = useState(0);
+  const [isAnimating, setIsAnimating] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const containerHeightRef = useRef(0);
+
+  // Track container height for percentage calculations
+  useEffect(() => {
+    const updateHeight = () => {
+      containerHeightRef.current = window.innerHeight;
+    };
+    updateHeight();
+    window.addEventListener('resize', updateHeight);
+    return () => window.removeEventListener('resize', updateHeight);
+  }, []);
 
   // Preload cache for upcoming tracks
   const preloadedAudioRef = useRef<Map<string, HTMLAudioElement>>(new Map());
@@ -274,50 +285,39 @@ export function ExplorePlayer({
   // Audio URL for current sample
   const audioUrl = currentSample ? `/api/preview/${currentSample.id}?stream=true` : null;
 
-  // Get visible slides - render prev, current, and next for smooth swiping
-  const visibleSlides = [];
-  if (samples[currentIndex - 1]) visibleSlides.push({ sample: samples[currentIndex - 1], offset: -1 });
-  if (samples[currentIndex]) visibleSlides.push({ sample: samples[currentIndex], offset: 0 });
-  if (samples[currentIndex + 1]) visibleSlides.push({ sample: samples[currentIndex + 1], offset: 1 });
+  // Render more slides for smoother preloading
+  const visibleSlides = useMemo(() => {
+    const slides = [];
+    for (let i = -1; i <= 2; i++) {
+      const idx = currentIndex + i;
+      if (samples[idx]) {
+        slides.push({ sample: samples[idx], index: idx });
+      }
+    }
+    return slides;
+  }, [currentIndex, samples]);
 
-  // Background preload next 3 tracks for smoother experience
+  // Background preload audio
   useEffect(() => {
     if (!hasInteracted) return;
 
     const preloadCount = 3;
-    const startIdx = currentIndex + 1;
-    const endIdx = Math.min(currentIndex + preloadCount + 1, samples.length);
-
-    for (let i = startIdx; i < endIdx; i++) {
+    for (let i = currentIndex + 1; i <= currentIndex + preloadCount && i < samples.length; i++) {
       const sample = samples[i];
       if (!sample || preloadedTracks.has(sample.id)) continue;
 
-      const audioUrl = `/api/preview/${sample.id}?stream=true`;
       const audio = new Audio();
       audio.preload = "auto";
-      audio.src = audioUrl;
+      audio.src = `/api/preview/${sample.id}?stream=true`;
       preloadedAudioRef.current.set(sample.id, audio);
-
       audio.addEventListener("canplaythrough", () => {
         setPreloadedTracks((prev) => new Set([...Array.from(prev), sample.id]));
       }, { once: true });
-
       audio.load();
     }
-
-    // Cleanup old preloaded audio
-    const keysToDelete: string[] = [];
-    preloadedAudioRef.current.forEach((audio, id) => {
-      const idx = samples.findIndex((s) => s.id === id);
-      if (idx < currentIndex - 1) {
-        audio.src = "";
-        keysToDelete.push(id);
-      }
-    });
-    keysToDelete.forEach((key) => preloadedAudioRef.current.delete(key));
   }, [currentIndex, hasInteracted, samples, preloadedTracks]);
 
-  // Autoplay on mount and when changing tracks
+  // Autoplay on track change
   useEffect(() => {
     if (!audioRef.current || !audioUrl) return;
 
@@ -328,8 +328,7 @@ export function ExplorePlayer({
         setIsPlaying(true);
         setIsLoading(false);
         setHasInteracted(true);
-      } catch (error) {
-        console.log("Autoplay blocked, waiting for interaction");
+      } catch {
         setIsLoading(false);
         setIsPlaying(false);
       }
@@ -339,10 +338,8 @@ export function ExplorePlayer({
     return () => clearTimeout(timer);
   }, [audioUrl, currentIndex]);
 
-  // Handle user tap to start playback
   const handleTapToPlay = useCallback(async () => {
     if (!audioRef.current || isPlaying) return;
-
     try {
       setIsLoading(true);
       await audioRef.current.play();
@@ -350,16 +347,13 @@ export function ExplorePlayer({
       setIsLoading(false);
       setHasInteracted(true);
       setShowSwipeHint(false);
-    } catch (error) {
-      console.error("Playback error:", error);
+    } catch {
       setIsLoading(false);
     }
   }, [isPlaying]);
 
-  // Toggle play/pause
   const togglePlay = useCallback(() => {
     if (!audioRef.current) return;
-
     if (isPlaying) {
       audioRef.current.pause();
       setIsPlaying(false);
@@ -368,53 +362,53 @@ export function ExplorePlayer({
     }
   }, [isPlaying, handleTapToPlay]);
 
-  // Navigation handlers
-  const goToNext = useCallback(() => {
-    if (currentIndex < samples.length - 1 && !isTransitioning) {
-      setIsTransitioning(true);
-      setShowSwipeHint(false);
-      if (audioRef.current) {
-        audioRef.current.pause();
-      }
-      setCurrentIndex((prev) => prev + 1);
+  // Animate to a new index
+  const animateToIndex = useCallback((newIndex: number) => {
+    if (newIndex < 0 || newIndex >= samples.length || isAnimating) return;
+
+    const height = containerHeightRef.current || window.innerHeight;
+    const targetOffset = (currentIndex - newIndex) * height;
+
+    setIsAnimating(true);
+    setDragOffset(targetOffset);
+
+    // After animation completes, update index and reset offset
+    setTimeout(() => {
+      setCurrentIndex(newIndex);
+      setDragOffset(0);
+      setIsAnimating(false);
       setProgress(0);
       setCurrentTime(0);
       setIsPlaying(false);
       setIsLoading(true);
-      setTimeout(() => setIsTransitioning(false), 400);
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+    }, 350);
+  }, [currentIndex, samples.length, isAnimating]);
+
+  const goToNext = useCallback(() => {
+    if (currentIndex < samples.length - 1) {
+      setShowSwipeHint(false);
+      animateToIndex(currentIndex + 1);
     }
-  }, [currentIndex, samples.length, isTransitioning]);
+  }, [currentIndex, samples.length, animateToIndex]);
 
   const goToPrev = useCallback(() => {
-    if (currentIndex > 0 && !isTransitioning) {
-      setIsTransitioning(true);
+    if (currentIndex > 0) {
       setShowSwipeHint(false);
-      if (audioRef.current) {
-        audioRef.current.pause();
-      }
-      setCurrentIndex((prev) => prev - 1);
-      setProgress(0);
-      setCurrentTime(0);
-      setIsPlaying(false);
-      setIsLoading(true);
-      setTimeout(() => setIsTransitioning(false), 400);
+      animateToIndex(currentIndex - 1);
     }
-  }, [currentIndex, isTransitioning]);
+  }, [currentIndex, animateToIndex]);
 
   // CTA handler
   const handleCTA = () => {
     if (!isLoggedIn) {
       router.push("/signup");
     } else if (!hasSubscription) {
-      fetch("/api/create-checkout-session", {
-        method: "POST",
-      })
+      fetch("/api/create-checkout-session", { method: "POST" })
         .then((res) => res.json())
-        .then((data) => {
-          if (data.url) {
-            window.location.href = data.url;
-          }
-        })
+        .then((data) => { if (data.url) window.location.href = data.url; })
         .catch(console.error);
     }
   };
@@ -427,7 +421,6 @@ export function ExplorePlayer({
       setTimeout(() => setShowVoteToast(false), 2000);
       return;
     }
-
     if (!packIsArchived) {
       setVoteMessage("Only archived packs can be voted on");
       setShowVoteToast(true);
@@ -436,19 +429,13 @@ export function ExplorePlayer({
     }
 
     const packId = currentSample.pack.id;
-
     if (hasVoted) {
       await fetch("/api/vote", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ packId }),
       });
-
-      setVotes((prev) => {
-        const next = new Set(prev);
-        next.delete(packId);
-        return next;
-      });
+      setVotes((prev) => { const next = new Set(prev); next.delete(packId); return next; });
       setVoteMessage("Vote removed");
     } else {
       await fetch("/api/vote", {
@@ -456,76 +443,98 @@ export function ExplorePlayer({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ packId }),
       });
-
       setVotes((prev) => new Set([...Array.from(prev), packId]));
       setVoteMessage("Voted! This pack may return");
     }
-
     setShowVoteToast(true);
     setTimeout(() => setShowVoteToast(false), 2000);
   };
 
   // Touch handlers
   const handleTouchStart = (e: React.TouchEvent) => {
-    if (isTransitioning) return;
+    if (isAnimating) return;
     setTouchStartY(e.touches[0].clientY);
-
     if (!hasInteracted && !isPlaying) {
       handleTapToPlay();
     }
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (touchStartY === null || isTransitioning) return;
-    const deltaY = e.touches[0].clientY - touchStartY;
-
-    let adjustedDelta = deltaY;
+    if (touchStartY === null || isAnimating) return;
+    let delta = e.touches[0].clientY - touchStartY;
 
     // Add resistance at edges
-    if (currentIndex === 0 && deltaY > 0) {
-      adjustedDelta = deltaY * 0.3;
+    if (currentIndex === 0 && delta > 0) {
+      delta = delta * 0.3;
     }
-    if (currentIndex === samples.length - 1 && deltaY < 0) {
-      adjustedDelta = deltaY * 0.3;
+    if (currentIndex === samples.length - 1 && delta < 0) {
+      delta = delta * 0.3;
     }
 
-    setTouchDeltaY(adjustedDelta);
+    setDragOffset(delta);
   };
 
   const handleTouchEnd = () => {
-    if (isTransitioning) return;
+    if (isAnimating || touchStartY === null) return;
 
     const threshold = 60;
-    if (touchDeltaY < -threshold && currentIndex < samples.length - 1) {
-      goToNext();
-    } else if (touchDeltaY > threshold && currentIndex > 0) {
-      goToPrev();
+    const height = containerHeightRef.current || window.innerHeight;
+
+    if (dragOffset < -threshold && currentIndex < samples.length - 1) {
+      // Swipe up - go to next
+      setIsAnimating(true);
+      setDragOffset(-height);
+      setTimeout(() => {
+        setCurrentIndex(currentIndex + 1);
+        setDragOffset(0);
+        setIsAnimating(false);
+        setProgress(0);
+        setCurrentTime(0);
+        setIsPlaying(false);
+        setIsLoading(true);
+        setShowSwipeHint(false);
+        if (audioRef.current) audioRef.current.pause();
+      }, 350);
+    } else if (dragOffset > threshold && currentIndex > 0) {
+      // Swipe down - go to prev
+      setIsAnimating(true);
+      setDragOffset(height);
+      setTimeout(() => {
+        setCurrentIndex(currentIndex - 1);
+        setDragOffset(0);
+        setIsAnimating(false);
+        setProgress(0);
+        setCurrentTime(0);
+        setIsPlaying(false);
+        setIsLoading(true);
+        setShowSwipeHint(false);
+        if (audioRef.current) audioRef.current.pause();
+      }, 350);
+    } else {
+      // Snap back
+      setIsAnimating(true);
+      setDragOffset(0);
+      setTimeout(() => setIsAnimating(false), 350);
     }
 
     setTouchStartY(null);
-    setTouchDeltaY(0);
   };
 
-  // Mouse wheel for desktop
+  // Mouse wheel
   const handleWheel = useCallback((e: WheelEvent) => {
-    if (isTransitioning) return;
-
-    if (e.deltaY > 50) {
-      goToNext();
-    } else if (e.deltaY < -50) {
-      goToPrev();
-    }
-  }, [goToNext, goToPrev, isTransitioning]);
+    if (isAnimating) return;
+    if (e.deltaY > 50) goToNext();
+    else if (e.deltaY < -50) goToPrev();
+  }, [goToNext, goToPrev, isAnimating]);
 
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
-
     container.addEventListener("wheel", handleWheel, { passive: true });
     return () => container.removeEventListener("wheel", handleWheel);
   }, [handleWheel]);
 
-  // Audio progress tracking
+  // Audio progress
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -536,22 +545,15 @@ export function ExplorePlayer({
         setCurrentTime(audio.currentTime);
       }
     };
-
     const handleEnded = () => {
       setIsPlaying(false);
       setProgress(0);
       setCurrentTime(0);
-      if (currentIndex < samples.length - 1) {
-        setTimeout(goToNext, 500);
-      }
+      if (currentIndex < samples.length - 1) setTimeout(goToNext, 500);
     };
-
     const handleCanPlay = () => setIsLoading(false);
     const handleWaiting = () => setIsLoading(true);
-    const handlePlaying = () => {
-      setIsLoading(false);
-      setIsPlaying(true);
-    };
+    const handlePlaying = () => { setIsLoading(false); setIsPlaying(true); };
 
     audio.addEventListener("timeupdate", updateProgress);
     audio.addEventListener("ended", handleEnded);
@@ -568,17 +570,13 @@ export function ExplorePlayer({
     };
   }, [currentIndex, samples.length, goToNext]);
 
-  // Keyboard navigation
+  // Keyboard
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "ArrowDown") goToNext();
       if (e.key === "ArrowUp") goToPrev();
-      if (e.key === " ") {
-        e.preventDefault();
-        togglePlay();
-      }
+      if (e.key === " ") { e.preventDefault(); togglePlay(); }
     };
-
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [goToNext, goToPrev, togglePlay]);
@@ -594,6 +592,9 @@ export function ExplorePlayer({
     );
   }
 
+  // Calculate transform - slides move relative to current index
+  const isDragging = touchStartY !== null;
+
   return (
     <div
       ref={containerRef}
@@ -604,31 +605,26 @@ export function ExplorePlayer({
       onTouchEnd={handleTouchEnd}
       onClick={!hasInteracted ? handleTapToPlay : undefined}
     >
-      {/* Slides Container - all slides move together */}
-      <div
-        className="absolute inset-0"
-        style={{
-          transform: `translateY(${touchDeltaY}px)`,
-          transition: touchStartY === null ? 'transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)' : 'none',
-          willChange: 'transform',
-        }}
-      >
-        {/* Render visible slides */}
-        {visibleSlides.map(({ sample, offset }) => (
+      {/* Slides - each positioned relative to current index, all move with dragOffset */}
+      {visibleSlides.map(({ sample, index }) => {
+        const offset = index - currentIndex;
+        return (
           <div
             key={sample.id}
             className="absolute inset-0"
             style={{
-              transform: `translateY(${offset * 100}%)`,
+              transform: `translateY(calc(${offset * 100}% + ${dragOffset}px))`,
+              transition: isDragging ? 'none' : 'transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+              willChange: 'transform',
             }}
           >
             <SampleSlide
               sample={sample}
-              isActive={offset === 0}
-              isPlaying={offset === 0 && isPlaying}
-              isLoading={offset === 0 && isLoading}
-              progress={offset === 0 ? progress : 0}
-              currentTime={offset === 0 ? currentTime : 0}
+              isActive={index === currentIndex}
+              isPlaying={index === currentIndex && isPlaying}
+              isLoading={index === currentIndex && isLoading}
+              progress={index === currentIndex ? progress : 0}
+              currentTime={index === currentIndex ? currentTime : 0}
               packIsArchived={isArchived(sample.pack.release_date)}
               hasVoted={votes.has(sample.pack.id)}
               isLoggedIn={isLoggedIn}
@@ -638,10 +634,10 @@ export function ExplorePlayer({
               onCTA={handleCTA}
             />
           </div>
-        ))}
-      </div>
+        );
+      })}
 
-      {/* Fixed Header - stays on top */}
+      {/* Fixed Header */}
       <header className="fixed top-0 left-0 right-0 z-50 px-4 pt-4 pb-2 flex items-center justify-between">
         <Link
           href="/"
@@ -649,16 +645,14 @@ export function ExplorePlayer({
         >
           <X className="w-5 h-5 text-white" />
         </Link>
-
         <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/40 backdrop-blur-sm">
           <Shuffle className="w-4 h-4 text-white/80" />
           <span className="text-sm text-white/80 font-medium">Explore</span>
         </div>
-
         <div className="w-10 h-10" />
       </header>
 
-      {/* Counter - fixed at bottom */}
+      {/* Counter */}
       <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 text-sm text-white/40">
         {currentIndex + 1} / {samples.length}
       </div>
@@ -676,7 +670,7 @@ export function ExplorePlayer({
         </div>
       )}
 
-      {/* Side navigation buttons */}
+      {/* Side nav */}
       <div className="fixed right-4 top-1/2 -translate-y-1/2 flex flex-col items-center gap-2 z-40">
         {currentIndex > 0 && (
           <button
@@ -705,14 +699,8 @@ export function ExplorePlayer({
         </div>
       )}
 
-      {/* Hidden Audio Element */}
-      {audioUrl && (
-        <audio
-          ref={audioRef}
-          src={audioUrl}
-          preload="auto"
-        />
-      )}
+      {/* Audio */}
+      {audioUrl && <audio ref={audioRef} src={audioUrl} preload="auto" />}
     </div>
   );
 }
