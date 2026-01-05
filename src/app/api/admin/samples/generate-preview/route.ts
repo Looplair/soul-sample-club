@@ -1,4 +1,4 @@
-import { ffmpegPath } from "ffmpeg-static";
+import ffmpegPath from "ffmpeg-static";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
