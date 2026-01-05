@@ -64,8 +64,17 @@ export async function POST(request: Request) {
     await writeFile(inputPath, buffer);
 
     // Run FFmpeg using spawn (more reliable in serverless than exec)
+    console.log("FFmpeg path:", ffmpegPath);
+    console.log("Input path:", inputPath);
+    console.log("Output path:", outputPath);
+
     await new Promise<void>((resolve, reject) => {
-      const ffmpeg = spawn(ffmpegPath as string, [
+      if (!ffmpegPath) {
+        reject(new Error("ffmpeg-static path is null or undefined"));
+        return;
+      }
+
+      const ffmpeg = spawn(ffmpegPath, [
         "-y",
         "-i", inputPath,
         "-vn",
@@ -75,11 +84,24 @@ export async function POST(request: Request) {
         outputPath,
       ]);
 
-      ffmpeg.on("error", reject);
+      let stderrOutput = "";
+
+      ffmpeg.stderr?.on("data", (data) => {
+        stderrOutput += data.toString();
+      });
+
+      ffmpeg.on("error", (err) => {
+        console.error("FFmpeg spawn error:", err);
+        reject(err);
+      });
 
       ffmpeg.on("close", (code) => {
-        if (code === 0) resolve();
-        else reject(new Error(`FFmpeg exited with code ${code}`));
+        if (code === 0) {
+          resolve();
+        } else {
+          console.error("FFmpeg stderr:", stderrOutput);
+          reject(new Error(`FFmpeg exited with code ${code}: ${stderrOutput.slice(-500)}`));
+        }
       });
     });
 
@@ -114,9 +136,10 @@ export async function POST(request: Request) {
       preview_path: previewPath,
     });
   } catch (err) {
-    console.error("Preview generation failed:", err);
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    console.error("Preview generation failed:", errorMessage);
     return NextResponse.json(
-      { success: false, error: "Failed to convert to MP3" },
+      { success: false, error: `Failed to convert to MP3: ${errorMessage}` },
       { status: 500 }
     );
   }
