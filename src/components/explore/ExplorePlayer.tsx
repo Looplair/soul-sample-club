@@ -282,8 +282,30 @@ export function ExplorePlayer({
   const packIsArchived = currentSample ? isArchived(currentSample.pack.release_date) : false;
   const hasVoted = currentSample ? votes.has(currentSample.pack.id) : false;
 
-  // Audio URL for current sample
-  const audioUrl = currentSample ? `/api/preview/${currentSample.id}?stream=true` : null;
+  // Audio URL state - fetched from API
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+
+  // Fetch signed URL for current sample
+  useEffect(() => {
+    if (!currentSample) {
+      setAudioUrl(null);
+      return;
+    }
+
+    const fetchUrl = async () => {
+      try {
+        const response = await fetch(`/api/preview/${currentSample.id}`);
+        if (response.ok) {
+          const data = await response.json();
+          setAudioUrl(data.url);
+        }
+      } catch (err) {
+        console.error('Error fetching preview URL:', err);
+      }
+    };
+
+    fetchUrl();
+  }, [currentSample?.id]);
 
   // Render more slides for smoother preloading
   const visibleSlides = useMemo(() => {
@@ -297,23 +319,35 @@ export function ExplorePlayer({
     return slides;
   }, [currentIndex, samples]);
 
-  // Background preload audio
+  // Background preload audio with direct CDN URLs
   useEffect(() => {
     if (!hasInteracted) return;
 
     const preloadCount = 3;
+    const preloadSample = async (sample: SampleWithPack) => {
+      if (preloadedTracks.has(sample.id)) return;
+
+      try {
+        const response = await fetch(`/api/preview/${sample.id}`);
+        if (!response.ok) return;
+        const data = await response.json();
+
+        const audio = new Audio();
+        audio.preload = "auto";
+        audio.src = data.url;
+        preloadedAudioRef.current.set(sample.id, audio);
+        audio.addEventListener("canplaythrough", () => {
+          setPreloadedTracks((prev) => new Set([...Array.from(prev), sample.id]));
+        }, { once: true });
+        audio.load();
+      } catch (err) {
+        console.error('Error preloading audio:', err);
+      }
+    };
+
     for (let i = currentIndex + 1; i <= currentIndex + preloadCount && i < samples.length; i++) {
       const sample = samples[i];
-      if (!sample || preloadedTracks.has(sample.id)) continue;
-
-      const audio = new Audio();
-      audio.preload = "auto";
-      audio.src = `/api/preview/${sample.id}?stream=true`;
-      preloadedAudioRef.current.set(sample.id, audio);
-      audio.addEventListener("canplaythrough", () => {
-        setPreloadedTracks((prev) => new Set([...Array.from(prev), sample.id]));
-      }, { once: true });
-      audio.load();
+      if (sample) preloadSample(sample);
     }
   }, [currentIndex, hasInteracted, samples, preloadedTracks]);
 

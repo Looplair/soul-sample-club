@@ -142,10 +142,25 @@ export function SampleRowWithLoop({
     return markers;
   }, [sample.bpm, audioDuration, barCount, isLooping]);
 
-  // Set preview URL
+  // Fetch signed URL for direct CDN access
   useEffect(() => {
-    setPreviewUrl(`/api/preview/${sample.id}?stream=true`);
-    setIsLoadingPreview(false);
+    const fetchPreviewUrl = async () => {
+      try {
+        setIsLoadingPreview(true);
+        const response = await fetch(`/api/preview/${sample.id}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch preview URL');
+        }
+        const data = await response.json();
+        setPreviewUrl(data.url);
+        setIsLoadingPreview(false);
+      } catch (err) {
+        console.error('Error fetching preview URL:', err);
+        setPreviewError('Failed to load audio');
+        setIsLoadingPreview(false);
+      }
+    };
+    fetchPreviewUrl();
   }, [sample.id]);
 
   // Get or create AudioContext

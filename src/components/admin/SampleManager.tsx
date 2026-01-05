@@ -94,7 +94,7 @@ export function SampleManager({ packId, initialSamples }: SampleManagerProps) {
           pack_id: packId,
           name: upload.name,
           file_path: fileName,
-          preview_path: fileName, // Use same file for preview initially
+          preview_path: null, // Will be set after MP3 generation
           file_size: upload.file.size,
           duration: duration,
           order_index: nextIndex,
@@ -110,8 +110,9 @@ export function SampleManager({ packId, initialSamples }: SampleManagerProps) {
         )
       );
 
-      // Generate waveform peaks in background
+      // Generate waveform peaks and MP3 preview in background
       try {
+        // Generate peaks first
         await fetch("/api/admin/samples/generate-peaks", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -120,6 +121,32 @@ export function SampleManager({ packId, initialSamples }: SampleManagerProps) {
       } catch (peakError) {
         console.warn("Failed to generate peaks:", peakError);
         // Non-fatal - continue without peaks
+      }
+
+      setUploadQueue((prev) =>
+        prev.map((u) =>
+          u.id === upload.id ? { ...u, progress: 90, status: "processing" } : u
+        )
+      );
+
+      // Generate MP3 preview for faster streaming
+      try {
+        const previewResponse = await fetch("/api/admin/samples/generate-preview", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sampleId: newSample.id }),
+        });
+
+        if (previewResponse.ok) {
+          const previewResult = await previewResponse.json();
+          if (previewResult.preview_path) {
+            // Update local state with the new preview path
+            newSample.preview_path = previewResult.preview_path;
+          }
+        }
+      } catch (previewError) {
+        console.warn("Failed to generate MP3 preview:", previewError);
+        // Non-fatal - WAV will be used as fallback
       }
 
       setUploadQueue((prev) =>
