@@ -9,6 +9,7 @@ import { CommunityProof } from "@/components/sections/CommunityProof";
 import { FAQSection } from "@/components/sections/FAQSection";
 import { HowItWorksSection } from "@/components/sections/HowItWorksSection";
 import { Button } from "@/components/ui";
+import { SubscribeCTA } from "@/components/ui/SubscribeCTA";
 import {
   Music,
   Sparkles,
@@ -557,12 +558,17 @@ export default async function HomePage() {
                   ))}
                 </ul>
 
-                <Link href="/signup">
-                  <Button className="w-full" size="lg">
-                    Start free trial
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
-                </Link>
+                <SubscribeCTA
+                  isLoggedIn={isLoggedIn}
+                  hasSubscription={hasSubscription}
+                  className="w-full"
+                  size="lg"
+                />
+                {hasSubscription && (
+                  <p className="text-center text-sm text-success mt-4">
+                    You&apos;re already subscribed!
+                  </p>
+                )}
               </div>
 
               {/* Patreon Alternative */}
@@ -666,12 +672,13 @@ export default async function HomePage() {
                   <h3 className="text-lg font-semibold text-white mb-1">Ready to download?</h3>
                   <p className="text-text-muted">Start your 7-day free trial to download all samples.</p>
                 </div>
-                <Link href="/account?tab=billing">
-                  <Button>
-                    Subscribe now
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
-                </Link>
+                <SubscribeCTA
+                  isLoggedIn={isLoggedIn}
+                  hasSubscription={hasSubscription}
+                  size="md"
+                >
+                  Subscribe now
+                </SubscribeCTA>
               </div>
             </div>
           </section>

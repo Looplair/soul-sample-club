@@ -11,6 +11,7 @@ import {
   ArrowUpRight,
   Eye,
   Gift,
+  Heart,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent, Badge } from "@/components/ui";
 import { formatDate, getDaysUntilEndDate, getExpiryBadgeText } from "@/lib/utils";
@@ -58,6 +59,14 @@ interface ExpiringPack {
   release_date: string;
   end_date: string | null;
   is_bonus: boolean;
+}
+
+interface ArchivedPackWithVotes {
+  id: string;
+  name: string;
+  release_date: string;
+  cover_image_url: string | null;
+  vote_count: number;
 }
 
 interface SubscriptionBreakdown {
@@ -225,14 +234,71 @@ async function getExpiringPacks(): Promise<ExpiringPack[]> {
   });
 }
 
+async function getArchivedPacksWithVotes(): Promise<ArchivedPackWithVotes[]> {
+  const supabase = await createClient();
+
+  // Get all published packs
+  const packsResult = await supabase
+    .from("packs")
+    .select("id, name, release_date, cover_image_url, end_date")
+    .eq("is_published", true)
+    .order("release_date", { ascending: false });
+
+  const packs = packsResult.data || [];
+
+  // Filter to archived packs (older than 90 days)
+  const threeMonthsAgo = new Date();
+  threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+
+  const archivedPacks = packs.filter((pack) => {
+    const releaseDate = new Date(pack.release_date);
+    return releaseDate < threeMonthsAgo;
+  });
+
+  // Get vote counts for archived packs
+  const packIds = archivedPacks.map((p) => p.id);
+
+  if (packIds.length === 0) {
+    return [];
+  }
+
+  // Get all votes for these packs
+  const votesResult = await supabase
+    .from("pack_votes")
+    .select("pack_id")
+    .in("pack_id", packIds);
+
+  const votes = votesResult.data || [];
+
+  // Count votes per pack
+  const voteCountMap = new Map<string, number>();
+  votes.forEach((vote: { pack_id: string }) => {
+    const count = voteCountMap.get(vote.pack_id) || 0;
+    voteCountMap.set(vote.pack_id, count + 1);
+  });
+
+  // Combine packs with vote counts and sort by votes
+  const packsWithVotes: ArchivedPackWithVotes[] = archivedPacks.map((pack) => ({
+    id: pack.id,
+    name: pack.name,
+    release_date: pack.release_date,
+    cover_image_url: pack.cover_image_url,
+    vote_count: voteCountMap.get(pack.id) || 0,
+  }));
+
+  // Sort by vote count (highest first)
+  return packsWithVotes.sort((a, b) => b.vote_count - a.vote_count).slice(0, 10);
+}
+
 export default async function AdminDashboardPage() {
-  const [stats, subscriptionBreakdown, recentDownloads, recentUsers, expiringPacks] =
+  const [stats, subscriptionBreakdown, recentDownloads, recentUsers, expiringPacks, archivedPacksWithVotes] =
     await Promise.all([
       getStats(),
       getSubscriptionBreakdown(),
       getRecentDownloads(),
       getRecentUsers(),
       getExpiringPacks(),
+      getArchivedPacksWithVotes(),
     ]);
 
   return (
@@ -550,6 +616,51 @@ export default async function AdminDashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Archived Packs with Votes */}
+      {archivedPacksWithVotes.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Heart className="w-5 h-5 text-rose-400" />
+              Archived Pack Votes
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-snow/50 mb-4">
+              Votes from the Explore feature for archived packs to come back
+            </p>
+            <div className="space-y-3">
+              {archivedPacksWithVotes.map((pack, index) => (
+                <div
+                  key={pack.id}
+                  className="flex items-center justify-between py-3 border-b border-grey-700 last:border-0"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-snow/40 text-sm w-6">{index + 1}.</span>
+                    <div>
+                      <p className="text-snow font-medium">{pack.name}</p>
+                      <p className="text-snow/40 text-xs">
+                        Released {formatDate(pack.release_date)}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Heart className="w-4 h-4 text-rose-400" fill="currentColor" />
+                    <span className="text-snow font-semibold">{pack.vote_count}</span>
+                    <span className="text-snow/40 text-sm">votes</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {archivedPacksWithVotes.every((p) => p.vote_count === 0) && (
+              <p className="text-center text-snow/50 py-4">
+                No votes yet for archived packs
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

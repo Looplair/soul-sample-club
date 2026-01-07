@@ -240,8 +240,27 @@ function BillingTab({ subscription, patreonLink }: { subscription: Subscription 
     }
   };
 
+  const hasNoAccess = !isStripeActive && !hasPatreonAccess;
+
   return (
     <div className="space-y-6">
+      {/* No subscription info nudge */}
+      {hasNoAccess && (
+        <div className="bg-grey-800/50 border border-grey-700 rounded-xl p-4">
+          <div className="flex items-start gap-3">
+            <CreditCard className="w-5 h-5 text-white/70 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-white font-medium mb-1">Choose how to subscribe</p>
+              <p className="text-sm text-text-muted">
+                You only need <span className="text-white">one</span> subscription method to access downloads.
+                Either subscribe directly below, or connect your existing Patreon membership.
+                No need to do both.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Dual Subscription Warning */}
       {hasDualSubscription && (
         <div className="bg-warning/10 border border-warning/30 rounded-xl p-4">

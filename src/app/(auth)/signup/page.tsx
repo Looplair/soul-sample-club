@@ -11,7 +11,7 @@ export default function SignupPage() {
       <div className="text-center mb-8">
         <h1 className="text-h2 text-white">Create your account</h1>
         <p className="text-body text-text-muted mt-2">
-          Join the community for free
+          Sign up first, then start your 7-day free trial
         </p>
       </div>
       <Suspense fallback={<div className="h-96 animate-pulse bg-grey-800 rounded-lg" />}>
