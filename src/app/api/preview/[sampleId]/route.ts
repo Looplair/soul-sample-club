@@ -59,24 +59,7 @@ export async function GET(
     // Normalize the path - remove leading slash if present
     audioPath = audioPath.replace(/^\/+/, "");
 
-    // Verify file exists before generating signed URL
-    const { data: fileList, error: listError } = await adminSupabase.storage
-      .from("samples")
-      .list(audioPath.split('/').slice(0, -1).join('/'), {
-        limit: 1,
-        search: audioPath.split('/').pop()
-      });
-
-    if (listError || !fileList?.length) {
-      console.error("File not found in storage:", audioPath);
-      // File doesn't exist - return 404 instead of a broken signed URL
-      return NextResponse.json(
-        { error: "Audio file not found in storage", path: audioPath },
-        { status: 404 }
-      );
-    }
-
-    // Always return signed URL for direct CDN access (much faster)
+    // Generate signed URL for direct CDN access (much faster)
     const { data: signedUrlData, error: signedError } = await adminSupabase.storage
       .from("samples")
       .createSignedUrl(audioPath, 3600); // 1 hour

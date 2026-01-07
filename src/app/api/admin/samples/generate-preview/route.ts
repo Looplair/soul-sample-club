@@ -72,8 +72,10 @@ export async function POST(request: Request) {
       throw new Error("ffmpeg-static path is null or undefined");
     }
 
+    const ffmpegBinary = ffmpegPath; // TypeScript narrowing
+
     await new Promise<void>((resolve, reject) => {
-      const ffmpeg = spawn(ffmpegPath, [
+      const ffmpeg = spawn(ffmpegBinary, [
         "-y",
         "-i", inputPath,
         "-vn",
