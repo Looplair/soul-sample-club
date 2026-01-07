@@ -234,6 +234,14 @@ async function getExpiringPacks(): Promise<ExpiringPack[]> {
   });
 }
 
+interface PackForVotes {
+  id: string;
+  name: string;
+  release_date: string;
+  cover_image_url: string | null;
+  end_date: string | null;
+}
+
 async function getArchivedPacksWithVotes(): Promise<ArchivedPackWithVotes[]> {
   const supabase = await createClient();
 
@@ -244,7 +252,7 @@ async function getArchivedPacksWithVotes(): Promise<ArchivedPackWithVotes[]> {
     .eq("is_published", true)
     .order("release_date", { ascending: false });
 
-  const packs = packsResult.data || [];
+  const packs = (packsResult.data as PackForVotes[]) || [];
 
   // Filter to archived packs (older than 90 days)
   const threeMonthsAgo = new Date();
