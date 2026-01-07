@@ -54,6 +54,11 @@ const faqs = [
       "You keep the rights to anything you used and downloaded while you were a member.\n\nAccess to download new material stops if you cancel, but your existing releases remain fully cleared.",
   },
   {
+    question: "Why do packs expire after 90 days",
+    answer:
+      "Packs are archived after 90 days to keep the library fresh and reward active members.\n\nThis rotation ensures that those who stay subscribed get continuous value, rather than someone paying once and accessing everything forever.\n\nOnce you download a sample, it is yours to keep and use permanently, even if the pack is later archived.",
+  },
+  {
     question: "Are the samples exclusive to members",
     answer:
       "The Soul Sample Club is the only place these compositions live.\n\nSome material rotates or expires over time, but anything available inside the club is exclusive to the membership while active.",

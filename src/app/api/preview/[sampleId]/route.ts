@@ -59,7 +59,27 @@ export async function GET(
     // Normalize the path - remove leading slash if present
     audioPath = audioPath.replace(/^\/+/, "");
 
-    // Generate signed URL for direct CDN access (much faster)
+    // If preview_path is set (MP3), verify the file actually exists
+    // by checking the storage. If it doesn't exist, fall back to WAV
+    if (sample.preview_path && audioPath.toLowerCase().endsWith('.mp3')) {
+      // Check if MP3 file exists by trying to get its metadata
+      const folderPath = audioPath.split('/').slice(0, -1).join('/');
+      const fileName = audioPath.split('/').pop();
+
+      const { data: files } = await adminSupabase.storage
+        .from("samples")
+        .list(folderPath, { search: fileName });
+
+      const mp3Exists = files && files.some(f => f.name === fileName);
+
+      if (!mp3Exists) {
+        // MP3 doesn't exist, fall back to WAV
+        console.log("MP3 preview not found, falling back to WAV:", audioPath);
+        audioPath = sample.file_path.replace(/^\/+/, "");
+      }
+    }
+
+    // Generate signed URL
     const { data: signedUrlData, error: signedError } = await adminSupabase.storage
       .from("samples")
       .createSignedUrl(audioPath, 3600); // 1 hour

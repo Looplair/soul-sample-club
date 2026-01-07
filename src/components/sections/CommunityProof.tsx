@@ -26,6 +26,9 @@ const TRUST_BADGES = [
   "Trusted by working producers",
 ];
 
+// Expiration notice
+const EXPIRATION_BADGE = "Packs expire after 90 days";
+
 // Animation settings
 const ANIMATION_DURATION = 1200; // ms
 
@@ -182,6 +185,25 @@ export function CommunityProof() {
                 {badge}
               </span>
             ))}
+          </div>
+
+          {/* Expiration notice badge */}
+          <div className="mt-6">
+            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-500/10 border border-amber-500/20 text-sm text-amber-400/90">
+              <svg
+                viewBox="0 0 24 24"
+                className="w-3.5 h-3.5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12 6 12 12 16 14" />
+              </svg>
+              {EXPIRATION_BADGE}
+            </span>
           </div>
         </div>
       </div>

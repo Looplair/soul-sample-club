@@ -458,8 +458,12 @@ export default async function HomePage() {
             {/* Section header */}
             <div className="mb-8">
               <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">Catalog</h2>
-              <p className="text-text-muted">
+              <p className="text-text-muted mb-3">
                 Preview any composition. Subscribe to save and download.
+              </p>
+              <p className="text-sm text-amber-400/80 flex items-center gap-2">
+                <Clock className="w-4 h-4" />
+                Packs are archived after 90 days. Grab them while they&apos;re live.
               </p>
             </div>
 
