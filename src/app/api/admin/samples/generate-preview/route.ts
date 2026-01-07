@@ -68,12 +68,11 @@ export async function POST(request: Request) {
     console.log("Input path:", inputPath);
     console.log("Output path:", outputPath);
 
-    await new Promise<void>((resolve, reject) => {
-      if (!ffmpegPath) {
-        reject(new Error("ffmpeg-static path is null or undefined"));
-        return;
-      }
+    if (!ffmpegPath) {
+      throw new Error("ffmpeg-static path is null or undefined");
+    }
 
+    await new Promise<void>((resolve, reject) => {
       const ffmpeg = spawn(ffmpegPath, [
         "-y",
         "-i", inputPath,
