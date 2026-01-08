@@ -57,74 +57,28 @@ export async function GET(
     }
 
     // Normalize the path - remove leading slash if present
+    // Do NOT include bucket name in path - just folder/filename
     audioPath = audioPath.replace(/^\/+/, "");
 
-    // If MP3 preview path is set, verify the file exists before returning it
-    if (sample.preview_path && audioPath.toLowerCase().endsWith('.mp3')) {
-      // Generate signed URL for MP3 and do a HEAD request to verify it exists
-      const { data: mp3Url } = await adminSupabase.storage
-        .from("samples")
-        .createSignedUrl(audioPath, 60); // Short-lived URL just for checking
-
-      if (mp3Url?.signedUrl) {
-        try {
-          const headResponse = await fetch(mp3Url.signedUrl, { method: 'HEAD' });
-          if (headResponse.ok) {
-            // MP3 exists, return its signed URL (generate fresh one with longer expiry)
-            const { data: finalMp3Url } = await adminSupabase.storage
-              .from("samples")
-              .createSignedUrl(audioPath, 3600);
-
-            if (finalMp3Url?.signedUrl) {
-              return NextResponse.json({
-                url: finalMp3Url.signedUrl,
-                format: 'mp3'
-              });
-            }
-          }
-        } catch {
-          // HEAD request failed, fall through to WAV
-        }
-      }
-
-      // MP3 doesn't exist or check failed, fall back to WAV
-      console.log("MP3 not available, falling back to WAV:", audioPath);
-      audioPath = sample.file_path.replace(/^\/+/, "");
-    }
-
-    // Generate signed URL
-    const { data: signedUrlData, error: signedError } = await adminSupabase.storage
+    // Use PUBLIC URL for previews - signed URLs cause issues with waveform libraries
+    // that make multiple fetches, range requests, and retries
+    const { data: publicUrlData } = adminSupabase.storage
       .from("samples")
-      .createSignedUrl(audioPath, 3600); // 1 hour
+      .getPublicUrl(audioPath);
 
-    if (signedError) {
-      console.error("Signed URL error:", signedError.message, "path:", audioPath);
+    if (!publicUrlData?.publicUrl) {
+      console.error("Failed to get public URL for:", audioPath);
       return NextResponse.json(
-        { error: "Failed to generate audio URL", details: signedError.message, path: audioPath },
+        { error: "Failed to generate audio URL", path: audioPath },
         { status: 500 }
       );
-    }
-
-    // Verify the file actually exists with a HEAD request
-    try {
-      const headResponse = await fetch(signedUrlData.signedUrl, { method: 'HEAD' });
-      if (!headResponse.ok) {
-        console.error("File not found in storage:", audioPath, "status:", headResponse.status);
-        return NextResponse.json(
-          { error: "Audio file not found in storage", path: audioPath },
-          { status: 404 }
-        );
-      }
-    } catch (headError) {
-      console.error("HEAD request failed:", audioPath, headError);
-      // Don't fail - the file might still work, let client try
     }
 
     // Determine content type based on file extension
     const isMP3 = audioPath.toLowerCase().endsWith('.mp3');
 
     return NextResponse.json({
-      url: signedUrlData.signedUrl,
+      url: publicUrlData.publicUrl,
       format: isMP3 ? 'mp3' : 'wav'
     });
   } catch (error) {
