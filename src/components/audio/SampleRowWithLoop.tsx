@@ -147,21 +147,25 @@ export function SampleRowWithLoop({
     const fetchPreviewUrl = async () => {
       try {
         setIsLoadingPreview(true);
+        setPreviewError(null);
         const response = await fetch(`/api/preview/${sample.id}`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch preview URL');
-        }
         const data = await response.json();
+
+        if (!response.ok) {
+          console.error(`Preview API error for ${sample.name}:`, data);
+          throw new Error(data.error || 'Failed to fetch preview URL');
+        }
+
         setPreviewUrl(data.url);
         setIsLoadingPreview(false);
       } catch (err) {
-        console.error('Error fetching preview URL:', err);
-        setPreviewError('Failed to load audio');
+        console.error(`Error fetching preview URL for ${sample.name} (${sample.id}):`, err);
+        setPreviewError('Audio unavailable');
         setIsLoadingPreview(false);
       }
     };
     fetchPreviewUrl();
-  }, [sample.id]);
+  }, [sample.id, sample.name]);
 
   // Get or create AudioContext
   const getAudioContext = useCallback(() => {

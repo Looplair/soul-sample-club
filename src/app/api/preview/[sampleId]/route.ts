@@ -100,9 +100,24 @@ export async function GET(
     if (signedError) {
       console.error("Signed URL error:", signedError.message, "path:", audioPath);
       return NextResponse.json(
-        { error: "Failed to generate audio URL", details: signedError.message },
+        { error: "Failed to generate audio URL", details: signedError.message, path: audioPath },
         { status: 500 }
       );
+    }
+
+    // Verify the file actually exists with a HEAD request
+    try {
+      const headResponse = await fetch(signedUrlData.signedUrl, { method: 'HEAD' });
+      if (!headResponse.ok) {
+        console.error("File not found in storage:", audioPath, "status:", headResponse.status);
+        return NextResponse.json(
+          { error: "Audio file not found in storage", path: audioPath },
+          { status: 404 }
+        );
+      }
+    } catch (headError) {
+      console.error("HEAD request failed:", audioPath, headError);
+      // Don't fail - the file might still work, let client try
     }
 
     // Determine content type based on file extension
