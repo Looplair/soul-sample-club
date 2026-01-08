@@ -1,0 +1,7 @@
+# Supabase configuration for Soul Sample Club
+
+[project]
+id = "rtuioxpyxuxoqbeeltsl"
+
+[functions.generate-preview]
+verify_jwt = false
