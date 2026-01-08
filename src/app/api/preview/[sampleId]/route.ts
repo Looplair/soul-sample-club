@@ -59,24 +59,37 @@ export async function GET(
     // Normalize the path - remove leading slash if present
     audioPath = audioPath.replace(/^\/+/, "");
 
-    // If preview_path is set (MP3), verify the file actually exists
-    // by checking the storage. If it doesn't exist, fall back to WAV
+    // If MP3 preview path is set, verify the file exists before returning it
     if (sample.preview_path && audioPath.toLowerCase().endsWith('.mp3')) {
-      // Check if MP3 file exists by trying to get its metadata
-      const folderPath = audioPath.split('/').slice(0, -1).join('/');
-      const fileName = audioPath.split('/').pop();
-
-      const { data: files } = await adminSupabase.storage
+      // Generate signed URL for MP3 and do a HEAD request to verify it exists
+      const { data: mp3Url } = await adminSupabase.storage
         .from("samples")
-        .list(folderPath, { search: fileName });
+        .createSignedUrl(audioPath, 60); // Short-lived URL just for checking
 
-      const mp3Exists = files && files.some(f => f.name === fileName);
+      if (mp3Url?.signedUrl) {
+        try {
+          const headResponse = await fetch(mp3Url.signedUrl, { method: 'HEAD' });
+          if (headResponse.ok) {
+            // MP3 exists, return its signed URL (generate fresh one with longer expiry)
+            const { data: finalMp3Url } = await adminSupabase.storage
+              .from("samples")
+              .createSignedUrl(audioPath, 3600);
 
-      if (!mp3Exists) {
-        // MP3 doesn't exist, fall back to WAV
-        console.log("MP3 preview not found, falling back to WAV:", audioPath);
-        audioPath = sample.file_path.replace(/^\/+/, "");
+            if (finalMp3Url?.signedUrl) {
+              return NextResponse.json({
+                url: finalMp3Url.signedUrl,
+                format: 'mp3'
+              });
+            }
+          }
+        } catch {
+          // HEAD request failed, fall through to WAV
+        }
       }
+
+      // MP3 doesn't exist or check failed, fall back to WAV
+      console.log("MP3 not available, falling back to WAV:", audioPath);
+      audioPath = sample.file_path.replace(/^\/+/, "");
     }
 
     // Generate signed URL
