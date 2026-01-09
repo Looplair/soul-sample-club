@@ -42,8 +42,6 @@ export function SampleManager({ packId, initialSamples }: SampleManagerProps) {
   const [samples, setSamples] = useState<Sample[]>(initialSamples);
   const [uploadQueue, setUploadQueue] = useState<UploadingSample[]>([]);
   const [editingSampleId, setEditingSampleId] = useState<string | null>(null);
-  const [isGeneratingPreviews, setIsGeneratingPreviews] = useState(false);
-  const [previewProgress, setPreviewProgress] = useState({ current: 0, total: 0 });
 
   const onDrop = useCallback(
     async (acceptedFiles: File[]) => {
@@ -87,7 +85,7 @@ export function SampleManager({ packId, initialSamples }: SampleManagerProps) {
         )
       );
 
-      const duration = estimateWavDuration(upload.file);
+      const duration = await getWavDuration(upload.file);
       const nextIndex = samples.length + uploadQueue.filter(u => u.status === "done").length;
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -127,36 +125,6 @@ export function SampleManager({ packId, initialSamples }: SampleManagerProps) {
 
       setUploadQueue((prev) =>
         prev.map((u) =>
-          u.id === upload.id ? { ...u, progress: 90, status: "processing" } : u
-        )
-      );
-
-      // Generate MP3 preview for faster streaming
-      try {
-        console.log("Starting MP3 preview generation for sample:", newSample.id);
-        const previewResponse = await fetch("/api/admin/samples/generate-preview", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ sampleId: newSample.id }),
-        });
-
-        const previewResult = await previewResponse.json();
-        console.log("MP3 preview response:", previewResponse.status, previewResult);
-
-        if (previewResponse.ok && previewResult.preview_path) {
-          // Update local state with the new preview path
-          newSample.preview_path = previewResult.preview_path;
-          console.log("MP3 preview generated successfully:", previewResult.preview_path);
-        } else {
-          console.warn("MP3 preview generation failed:", previewResult.error || "Unknown error");
-        }
-      } catch (previewError) {
-        console.error("Failed to generate MP3 preview:", previewError);
-        // Non-fatal - WAV will be used as fallback
-      }
-
-      setUploadQueue((prev) =>
-        prev.map((u) =>
           u.id === upload.id ? { ...u, progress: 100, status: "done" } : u
         )
       );
@@ -179,10 +147,58 @@ export function SampleManager({ packId, initialSamples }: SampleManagerProps) {
     }
   };
 
-  const estimateWavDuration = (file: File): number => {
-    const bytesPerSecond = 44100 * 2 * 2;
-    const headerSize = 44;
-    return (file.size - headerSize) / bytesPerSecond;
+  const getWavDuration = async (file: File): Promise<number> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const buffer = e.target?.result as ArrayBuffer;
+          const view = new DataView(buffer);
+
+          // Read WAV header values
+          // Bytes 24-27: Sample rate (little-endian)
+          const sampleRate = view.getUint32(24, true);
+          // Bytes 22-23: Number of channels (little-endian)
+          const numChannels = view.getUint16(22, true);
+          // Bytes 34-35: Bits per sample (little-endian)
+          const bitsPerSample = view.getUint16(34, true);
+
+          // Calculate bytes per second
+          const bytesPerSecond = sampleRate * numChannels * (bitsPerSample / 8);
+
+          // Find data chunk size (search for "data" marker)
+          let dataSize = 0;
+          for (let i = 36; i < Math.min(buffer.byteLength, 100); i++) {
+            if (
+              view.getUint8(i) === 0x64 && // 'd'
+              view.getUint8(i + 1) === 0x61 && // 'a'
+              view.getUint8(i + 2) === 0x74 && // 't'
+              view.getUint8(i + 3) === 0x61 // 'a'
+            ) {
+              dataSize = view.getUint32(i + 4, true);
+              break;
+            }
+          }
+
+          // If we couldn't find data chunk, estimate from file size
+          if (dataSize === 0) {
+            dataSize = file.size - 44; // Assume standard 44-byte header
+          }
+
+          const duration = dataSize / bytesPerSecond;
+          resolve(duration > 0 ? duration : 0);
+        } catch {
+          // Fallback: rough estimate assuming 44.1kHz stereo 16-bit
+          resolve((file.size - 44) / (44100 * 2 * 2));
+        }
+      };
+      reader.onerror = () => {
+        // Fallback estimate
+        resolve((file.size - 44) / (44100 * 2 * 2));
+      };
+      // Only read first 100 bytes for header
+      reader.readAsArrayBuffer(file.slice(0, 100));
+    });
   };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -364,60 +380,6 @@ export function SampleManager({ packId, initialSamples }: SampleManagerProps) {
     }
   };
 
-  // Generate MP3 previews for all samples without preview_path
-  const handleGeneratePreviews = async () => {
-    const samplesNeedingPreviews = samples.filter(s => !s.preview_path || s.preview_path === s.file_path);
-
-    if (samplesNeedingPreviews.length === 0) {
-      alert("All samples already have MP3 previews!");
-      return;
-    }
-
-    setIsGeneratingPreviews(true);
-    setPreviewProgress({ current: 0, total: samplesNeedingPreviews.length });
-
-    let successCount = 0;
-    let failCount = 0;
-
-    for (let i = 0; i < samplesNeedingPreviews.length; i++) {
-      const sample = samplesNeedingPreviews[i];
-      setPreviewProgress({ current: i + 1, total: samplesNeedingPreviews.length });
-
-      try {
-        const response = await fetch("/api/admin/samples/generate-preview", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ sampleId: sample.id }),
-        });
-
-        const result = await response.json();
-
-        if (response.ok && result.preview_path) {
-          successCount++;
-          // Update local state
-          setSamples(prev =>
-            prev.map(s => s.id === sample.id ? { ...s, preview_path: result.preview_path } : s)
-          );
-        } else {
-          failCount++;
-          console.error(`Failed to generate preview for ${sample.name}:`, result.error);
-        }
-      } catch (error) {
-        failCount++;
-        console.error(`Error generating preview for ${sample.name}:`, error);
-      }
-    }
-
-    setIsGeneratingPreviews(false);
-    router.refresh();
-
-    if (failCount === 0) {
-      alert(`Successfully generated ${successCount} MP3 previews!`);
-    } else {
-      alert(`Generated ${successCount} previews. ${failCount} failed - check console for details.`);
-    }
-  };
-
   return (
     <div className="space-y-6">
       {/* Upload Zone */}
@@ -444,25 +406,6 @@ export function SampleManager({ packId, initialSamples }: SampleManagerProps) {
           Only WAV files are accepted
         </p>
       </div>
-
-      {/* Generate MP3 Previews Button */}
-      {samples.length > 0 && (
-        <div className="flex items-center gap-4">
-          <Button
-            onClick={handleGeneratePreviews}
-            disabled={isGeneratingPreviews}
-            variant="secondary"
-            leftIcon={isGeneratingPreviews ? <Loader2 className="w-4 h-4 animate-spin" /> : <Music className="w-4 h-4" />}
-          >
-            {isGeneratingPreviews
-              ? `Generating MP3s (${previewProgress.current}/${previewProgress.total})...`
-              : "Generate MP3 Previews"}
-          </Button>
-          <span className="text-caption text-text-muted">
-            {samples.filter(s => s.preview_path && s.preview_path !== s.file_path).length}/{samples.length} samples have MP3 previews
-          </span>
-        </div>
-      )}
 
       {/* Upload Progress */}
       {uploadQueue.length > 0 && (
