@@ -575,6 +575,7 @@ function SampleRow({
   const [stemsProgress, setStemsProgress] = useState(0);
   const previewInputRef = useRef<HTMLInputElement>(null);
   const stemsInputRef = useRef<HTMLInputElement>(null);
+  const quickPreviewInputRef = useRef<HTMLInputElement>(null);
 
   const handleSave = () => {
     onSave({
@@ -733,6 +734,18 @@ function SampleRow({
     );
   }
 
+  const handleQuickPreviewUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setIsUploadingPreview(true);
+      try {
+        await onUploadPreview(file);
+      } finally {
+        setIsUploadingPreview(false);
+      }
+    }
+  };
+
   return (
     <div className="flex items-center gap-4 p-4 group">
       <GripVertical className="w-4 h-4 text-text-subtle cursor-grab" />
@@ -747,10 +760,15 @@ function SampleRow({
           <span>{formatDuration(sample.duration)}</span>
           {sample.bpm && <span>{sample.bpm} BPM</span>}
           {sample.key && <span>{sample.key}</span>}
-          {sample.preview_path && (
+          {sample.preview_path ? (
             <span className="text-success flex items-center gap-1">
               <Play className="w-3 h-3" />
-              Preview
+              MP3
+            </span>
+          ) : (
+            <span className="text-warning flex items-center gap-1">
+              <AlertCircle className="w-3 h-3" />
+              No MP3
             </span>
           )}
           {sample.stems_path && (
@@ -761,6 +779,25 @@ function SampleRow({
           )}
         </div>
       </div>
+      {/* Quick MP3 Upload Button */}
+      <input
+        ref={quickPreviewInputRef}
+        type="file"
+        accept="audio/mpeg,.mp3"
+        onChange={handleQuickPreviewUpload}
+        className="hidden"
+        disabled={isUploadingPreview}
+      />
+      <Button
+        variant={sample.preview_path ? "ghost" : "secondary"}
+        size="sm"
+        onClick={() => quickPreviewInputRef.current?.click()}
+        disabled={isUploadingPreview}
+        leftIcon={isUploadingPreview ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileAudio className="w-4 h-4" />}
+        className={!sample.preview_path ? "border-warning/50 text-warning hover:bg-warning/10" : ""}
+      >
+        {isUploadingPreview ? "..." : sample.preview_path ? "MP3" : "Add MP3"}
+      </Button>
       <Button
         variant="secondary"
         size="sm"
