@@ -7,26 +7,34 @@ import { spawn } from "child_process";
 
 export async function POST(request: Request) {
   try {
-    const supabase = await createClient();
     const adminSupabase = createAdminClient();
 
-    // Auth check
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    // Check for service key (from Supabase Edge Function) or admin auth
+    const serviceKey = request.headers.get("x-service-key");
+    const expectedServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const isServiceCall = serviceKey && expectedServiceKey && serviceKey === expectedServiceKey;
 
-    const { data: profile } = await (supabase as any)
-      .from("profiles")
-      .select("is_admin")
-      .eq("id", user.id)
-      .single();
+    if (!isServiceCall) {
+      // Regular admin auth check
+      const supabase = await createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
-    if (!profile?.is_admin) {
-      return NextResponse.json({ error: "Admin access required" }, { status: 403 });
+      if (!user) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+
+      const { data: profile } = await (supabase as any)
+        .from("profiles")
+        .select("is_admin")
+        .eq("id", user.id)
+        .single();
+
+      if (!profile?.is_admin) {
+        return NextResponse.json({ error: "Admin access required" }, { status: 403 });
+      }
     }
 
     const { sampleId } = await request.json();
