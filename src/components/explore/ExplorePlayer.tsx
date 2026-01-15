@@ -60,6 +60,7 @@ function SampleSlide({
   onTogglePlay,
   onVote,
   onCTA,
+  onSeek,
 }: {
   sample: SampleWithPack;
   isActive: boolean;
