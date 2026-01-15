@@ -479,29 +479,31 @@ export default async function HomePage() {
         <section className="py-16 sm:py-24 border-y border-grey-800 bg-gradient-to-b from-charcoal via-grey-900/20 to-charcoal overflow-hidden">
           <div className="container-app">
             <div className="flex flex-col items-center text-center">
-              {/* Decorative line */}
-              <div className="w-16 h-[1px] bg-gradient-to-r from-transparent via-white/40 to-transparent mb-8" />
+              {/* Decorative elements */}
+              <div className="flex items-center gap-4 mb-10">
+                <div className="w-12 h-[1px] bg-gradient-to-r from-transparent to-white/30" />
+                <div className="w-1.5 h-1.5 rounded-full bg-white/40" />
+                <div className="w-12 h-[1px] bg-gradient-to-l from-transparent to-white/30" />
+              </div>
 
               {/* Main text with premium styling */}
               <div className="relative">
                 {/* Background glow effect */}
-                <div className="absolute inset-0 blur-3xl bg-white/5 rounded-full scale-150" />
+                <div className="absolute inset-0 blur-[100px] bg-white/10 rounded-full scale-150" />
 
-                <h2 className="relative text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold tracking-tight">
-                  <span className="text-white/90">MADE IN HOUSE.</span>
-                  <br className="sm:hidden" />
-                  <span className="sm:ml-3 text-white">MADE BY HUMANS</span>
-                  <span className="text-white">.</span>
+                <h2 className="relative text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight leading-none">
+                  <span className="text-white">MADE IN HOUSE.</span>
+                  <br />
+                  <span className="text-white/70">MADE BY HUMANS.</span>
                 </h2>
               </div>
 
-              {/* Subtext */}
-              <p className="mt-6 text-sm sm:text-base text-text-muted max-w-md tracking-wide">
-                Every composition crafted by real musicians. No AI. No loops from a library. Just authentic soul.
-              </p>
-
-              {/* Decorative line */}
-              <div className="w-16 h-[1px] bg-gradient-to-r from-transparent via-white/40 to-transparent mt-8" />
+              {/* Decorative elements */}
+              <div className="flex items-center gap-4 mt-10">
+                <div className="w-12 h-[1px] bg-gradient-to-r from-transparent to-white/30" />
+                <div className="w-1.5 h-1.5 rounded-full bg-white/40" />
+                <div className="w-12 h-[1px] bg-gradient-to-l from-transparent to-white/30" />
+              </div>
             </div>
           </div>
         </section>
@@ -605,22 +607,22 @@ export default async function HomePage() {
                 <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mx-auto mb-4">
                   <Shield className="w-5 h-5 text-white" />
                 </div>
-                <h3 className="text-base font-semibold text-white mb-1">Commercial License</h3>
-                <p className="text-sm text-text-muted">Use samples in your commercial releases</p>
+                <h3 className="text-base font-semibold text-white mb-1">Pre-Cleared for Release</h3>
+                <p className="text-sm text-text-muted">Every sound is original and safe to use in real releases. No sample clearance stress.</p>
               </div>
               <div>
                 <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mx-auto mb-4">
                   <Zap className="w-5 h-5 text-white" />
                 </div>
-                <h3 className="text-base font-semibold text-white mb-1">Instant Downloads</h3>
-                <p className="text-sm text-text-muted">No waiting, download immediately</p>
+                <h3 className="text-base font-semibold text-white mb-1">Instant Access</h3>
+                <p className="text-sm text-text-muted">Download everything immediately. No waiting, no unlocks.</p>
               </div>
               <div>
                 <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mx-auto mb-4">
                   <Clock className="w-5 h-5 text-white" />
                 </div>
                 <h3 className="text-base font-semibold text-white mb-1">Cancel Anytime</h3>
-                <p className="text-sm text-text-muted">No contracts or commitments</p>
+                <p className="text-sm text-text-muted">Month to month. Stay because it&apos;s useful, not because you&apos;re locked in.</p>
               </div>
             </div>
           </div>
