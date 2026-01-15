@@ -74,9 +74,10 @@ function SampleSlide({
   onTogglePlay: () => void;
   onVote: () => void;
   onCTA: () => void;
+  onSeek: (percent: number) => void;
 }) {
   return (
-    <div className="absolute inset-0 flex flex-col" style={{ height: '100dvh' }}>
+    <div className="absolute inset-0 flex flex-col overflow-hidden" style={{ height: '100dvh' }}>
       {/* Background - blurred album art */}
       <div className="absolute inset-0 pointer-events-none">
         {sample.pack.cover_image_url && (
@@ -92,7 +93,7 @@ function SampleSlide({
       </div>
 
       {/* Main Content */}
-      <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 pt-16">
+      <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 sm:px-6 pt-16 pb-safe overflow-hidden">
         {/* Album Art with Loading/Playing indicator */}
         <div className="relative w-full max-w-[280px] sm:max-w-[320px] aspect-square mb-5">
           {/* Album art container */}
@@ -183,13 +184,31 @@ function SampleSlide({
         {/* Progress Bar - only show for active slide */}
         {isActive && (
           <div className="w-full max-w-sm mb-4">
-            <div className="h-1 bg-white/20 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-white rounded-full"
-                style={{ width: `${progress}%`, transition: isPlaying ? "width 0.1s linear" : "none" }}
-              />
+            <div
+              className="h-6 flex items-center cursor-pointer touch-none"
+              onClick={(e) => {
+                e.stopPropagation();
+                const rect = e.currentTarget.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const percent = x / rect.width;
+                onSeek(percent);
+              }}
+              onTouchStart={(e) => {
+                e.stopPropagation();
+                const rect = e.currentTarget.getBoundingClientRect();
+                const x = e.touches[0].clientX - rect.left;
+                const percent = x / rect.width;
+                onSeek(percent);
+              }}
+            >
+              <div className="w-full h-1 bg-white/20 rounded-full overflow-hidden relative">
+                <div
+                  className="h-full bg-white rounded-full"
+                  style={{ width: `${progress}%`, transition: isPlaying ? "width 0.1s linear" : "none" }}
+                />
+              </div>
             </div>
-            <div className="flex justify-between mt-1.5 text-xs text-white/40">
+            <div className="flex justify-between text-xs text-white/40">
               <span>{formatDuration(currentTime)}</span>
               <span>{formatDuration(sample.duration)}</span>
             </div>
@@ -666,6 +685,11 @@ export function ExplorePlayer({
               onTogglePlay={togglePlay}
               onVote={handleVote}
               onCTA={handleCTA}
+              onSeek={(percent) => {
+                if (audioRef.current && audioRef.current.duration) {
+                  audioRef.current.currentTime = percent * audioRef.current.duration;
+                }
+              }}
             />
           </div>
         );

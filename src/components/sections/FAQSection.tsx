@@ -36,7 +36,7 @@ const faqs = [
   {
     question: "How often is new content added",
     answer:
-      "New content is currently added monthly.\n\nWe are in the process of moving to a weekly release schedule, with smaller but more frequent drops to keep the library fresh and focused.",
+      "There will never be less than 1 pack (5 compositions) per month, plus a bonus pack.\n\nWe are in the process of making these weekly drops. The focus is quality over quantity, each composition is crafted to be sample worthy, not filler.",
   },
   {
     question: "Can I use the sounds in commercial releases",

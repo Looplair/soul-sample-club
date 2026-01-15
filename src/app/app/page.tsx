@@ -133,6 +133,15 @@ export default async function AppPage() {
       </header>
 
       <main>
+        {/* Coming Soon Banner */}
+        <div className="bg-gradient-to-r from-amber-500/20 via-amber-500/10 to-amber-500/20 border-b border-amber-500/20">
+          <div className="container-app py-3 sm:py-4">
+            <p className="text-center text-sm sm:text-base text-amber-200">
+              <span className="font-semibold">Coming Soon</span> — The desktop app is currently in development. Stay tuned!
+            </p>
+          </div>
+        </div>
+
         {/* Hero Section */}
         <section className="py-16 sm:py-24 lg:py-32">
           <div className="container-app">

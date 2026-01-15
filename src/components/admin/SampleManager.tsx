@@ -35,70 +35,34 @@ interface UploadingSample {
   error?: string;
 }
 
-// Parse WAV header to get accurate duration
+// Get accurate audio duration using Web Audio API
 async function getWavDuration(file: File): Promise<number> {
   return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const buffer = e.target?.result as ArrayBuffer;
-        if (!buffer || buffer.byteLength < 44) {
-          // File too small, use fallback
-          resolve(Math.max(0, (file.size - 44) / (44100 * 2 * 2)));
-          return;
-        }
-        const view = new DataView(buffer);
+    const audio = new Audio();
+    audio.preload = "metadata";
 
-        // Read WAV header values
-        // Bytes 24-27: Sample rate (little-endian)
-        const sampleRate = view.getUint32(24, true);
-        // Bytes 22-23: Number of channels (little-endian)
-        const numChannels = view.getUint16(22, true);
-        // Bytes 34-35: Bits per sample (little-endian)
-        const bitsPerSample = view.getUint16(34, true);
+    const objectUrl = URL.createObjectURL(file);
 
-        // Validate header values
-        if (sampleRate === 0 || numChannels === 0 || bitsPerSample === 0) {
-          // Invalid header, use fallback
-          resolve(Math.max(0, (file.size - 44) / (44100 * 2 * 2)));
-          return;
-        }
-
-        // Calculate bytes per second
-        const bytesPerSecond = sampleRate * numChannels * (bitsPerSample / 8);
-
-        // Find data chunk size (search for "data" marker)
-        let dataSize = 0;
-        for (let i = 36; i < Math.min(buffer.byteLength - 4, 100); i++) {
-          if (
-            view.getUint8(i) === 0x64 && // 'd'
-            view.getUint8(i + 1) === 0x61 && // 'a'
-            view.getUint8(i + 2) === 0x74 && // 't'
-            view.getUint8(i + 3) === 0x61 // 'a'
-          ) {
-            dataSize = view.getUint32(i + 4, true);
-            break;
-          }
-        }
-
-        // If we couldn't find data chunk, estimate from file size
-        if (dataSize === 0) {
-          dataSize = file.size - 44; // Assume standard 44-byte header
-        }
-
-        const duration = dataSize / bytesPerSecond;
-        resolve(duration > 0 ? duration : 1); // Return at least 1 second
-      } catch {
-        // Fallback: rough estimate assuming 44.1kHz stereo 16-bit
-        resolve(Math.max(1, (file.size - 44) / (44100 * 2 * 2)));
-      }
+    audio.onloadedmetadata = () => {
+      URL.revokeObjectURL(objectUrl);
+      const duration = audio.duration;
+      // Return duration, minimum 1 second
+      resolve(duration > 0 && isFinite(duration) ? duration : 1);
     };
-    reader.onerror = () => {
-      // Fallback estimate
+
+    audio.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      // Fallback: estimate assuming 44.1kHz stereo 16-bit
       resolve(Math.max(1, (file.size - 44) / (44100 * 2 * 2)));
     };
-    // Only read first 100 bytes for header
-    reader.readAsArrayBuffer(file.slice(0, 100));
+
+    // Timeout fallback in case metadata never loads
+    setTimeout(() => {
+      URL.revokeObjectURL(objectUrl);
+      resolve(Math.max(1, (file.size - 44) / (44100 * 2 * 2)));
+    }, 5000);
+
+    audio.src = objectUrl;
   });
 }
 
