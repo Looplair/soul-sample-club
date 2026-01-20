@@ -34,6 +34,11 @@ const faqs = [
       "The focus is soul in all its forms. Gospel, slow jams, dusty grooves, live instrumentation, and emotional textures designed to be flipped, chopped, and reworked.\n\nThese are not generic loops. They are compositions made with sampling in mind.",
   },
   {
+    question: "How many samples do I get",
+    answer:
+      "This is not a credits based platform. It is not about volume.\n\nEach pack contains around 5 original compositions, crafted by hand and delivered in their own world with artwork, context, and intention. You also get bonus packs from Looplair's library including drums, textures, and additional material.\n\nThe goal is not to overwhelm you with content. It is to give you something worth using.",
+  },
+  {
     question: "How often is new content added",
     answer:
       "There will never be less than 1 pack (5 compositions) per month, plus a bonus pack.\n\nWe are in the process of making these weekly drops. The focus is quality over quantity, each composition is crafted to be sample worthy, not filler.",
