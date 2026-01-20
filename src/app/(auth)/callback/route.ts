@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { createServerClient, type CookieOptions } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import { createServerClient } from "@supabase/ssr";
 import type { Database } from "@/types/database";
 import { syncUserToKlaviyo } from "@/lib/klaviyo";
 
@@ -10,8 +9,14 @@ export async function GET(request: Request) {
   const type = searchParams.get("type");
   const next = searchParams.get("next") ?? "/feed";
 
+  // Create a response that we'll modify with cookies
+  let redirectUrl = `${origin}/login?error=auth_callback_error`;
+
   if (code) {
-    const cookieStore = await cookies();
+    // Create response to collect cookies
+    const response = NextResponse.redirect(`${origin}${next}`, {
+      status: 302,
+    });
 
     const supabase = createServerClient<Database>(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -19,23 +24,33 @@ export async function GET(request: Request) {
       {
         cookies: {
           getAll() {
-            return cookieStore.getAll();
+            return request.headers.get("cookie")?.split("; ").map((c) => {
+              const [name, ...rest] = c.split("=");
+              return { name, value: rest.join("=") };
+            }) || [];
           },
-          setAll(cookiesToSet: { name: string; value: string; options?: CookieOptions }[]) {
+          setAll(cookiesToSet) {
             cookiesToSet.forEach(({ name, value, options }) => {
-              cookieStore.set(name, value, options);
+              response.cookies.set(name, value, options);
             });
           },
         },
       }
     );
 
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
-    if (!error) {
+    if (!error && data.session) {
       // Handle password recovery
       if (type === "recovery") {
-        return NextResponse.redirect(`${origin}/account?tab=password`);
+        const recoveryResponse = NextResponse.redirect(`${origin}/account?tab=password`, {
+          status: 302,
+        });
+        // Copy cookies from the original response
+        response.cookies.getAll().forEach((cookie) => {
+          recoveryResponse.cookies.set(cookie.name, cookie.value);
+        });
+        return recoveryResponse;
       }
 
       // Check if user has an active subscription (Stripe or Patreon)
@@ -82,16 +97,25 @@ export async function GET(request: Request) {
 
         // If no subscription or Patreon, redirect to feed with subscribe prompt
         if (!hasStripeSubscription && !hasPatreonAccess) {
-          return NextResponse.redirect(`${origin}/feed?subscribe=true`);
+          redirectUrl = `${origin}/feed?subscribe=true`;
+        } else {
+          redirectUrl = `${origin}${next}`;
         }
+      } else {
+        redirectUrl = `${origin}${next}`;
       }
 
-      return NextResponse.redirect(`${origin}${next}`);
+      // Create final response with proper redirect and cookies
+      const finalResponse = NextResponse.redirect(redirectUrl, { status: 302 });
+      response.cookies.getAll().forEach((cookie) => {
+        finalResponse.cookies.set(cookie.name, cookie.value);
+      });
+      return finalResponse;
     } else {
-      console.error("OAuth callback error:", error.message);
+      console.error("OAuth callback error:", error?.message);
     }
   }
 
   // Return the user to an error page with instructions
-  return NextResponse.redirect(`${origin}/login?error=auth_callback_error`);
+  return NextResponse.redirect(redirectUrl, { status: 302 });
 }
