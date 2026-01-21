@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { syncUserToKlaviyo } from "@/lib/klaviyo";
 
 // Patreon OAuth callback for login/signup
 export async function GET(request: NextRequest) {
@@ -217,6 +218,14 @@ export async function GET(request: NextRequest) {
       console.error("Failed to save Patreon link:", insertError);
       // Continue anyway - the user is still logged in
     }
+
+    // Sync user to Klaviyo (async, don't wait)
+    syncUserToKlaviyo({
+      email: patreonEmail,
+      fullName: patreonName,
+      subscriptionType: isActivePatron ? "patreon" : "free",
+      joinedAt: new Date().toISOString(),
+    }).catch((err) => console.error("Klaviyo sync error:", err));
 
     // Create a magic link to sign the user in
     const { data: magicLink, error: magicError } = await adminSupabase.auth.admin.generateLink({

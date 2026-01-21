@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { syncUserToKlaviyo } from "@/lib/klaviyo";
 
 // Patreon OAuth callback
 export async function GET(request: NextRequest) {
@@ -152,6 +153,12 @@ export async function GET(request: NextRequest) {
       console.error("Database error:", insertError);
       return NextResponse.redirect(`${appUrl}/account?patreon_error=db_failed`);
     }
+
+    // Sync user to Klaviyo to update their subscription type (async, don't wait)
+    syncUserToKlaviyo({
+      email: patreonEmail,
+      subscriptionType: isActivePatron ? "patreon" : "free",
+    }).catch((err) => console.error("Klaviyo sync error:", err));
 
     const successParam = isActivePatron ? "patreon_connected" : "patreon_not_patron";
     return NextResponse.redirect(`${appUrl}/account?${successParam}=true`);
