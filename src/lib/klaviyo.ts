@@ -46,6 +46,49 @@ function getHeaders(): HeadersInit {
 }
 
 /**
+ * Update an existing profile in Klaviyo by ID
+ */
+async function updateProfile(
+  profileId: string,
+  profile: KlaviyoProfile
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const response = await fetch(`${KLAVIYO_API_URL}/profiles/${profileId}`, {
+      method: "PATCH",
+      headers: getHeaders(),
+      body: JSON.stringify({
+        data: {
+          type: "profile",
+          id: profileId,
+          attributes: {
+            first_name: profile.first_name || undefined,
+            last_name: profile.last_name || undefined,
+            properties: profile.properties || {},
+          },
+        },
+      }),
+    });
+
+    if (!response.ok) {
+      const data: KlaviyoResponse = await response.json();
+      console.error("Klaviyo updateProfile error:", data.errors);
+      return {
+        success: false,
+        error: data.errors?.[0]?.detail || "Failed to update profile",
+      };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Klaviyo updateProfile exception:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+}
+
+/**
  * Create or update a profile in Klaviyo
  */
 export async function upsertProfile(profile: KlaviyoProfile): Promise<{ success: boolean; profileId?: string; error?: string }> {
@@ -71,10 +114,15 @@ export async function upsertProfile(profile: KlaviyoProfile): Promise<{ success:
     if (!response.ok) {
       // Check if it's a duplicate profile error (profile already exists)
       if (data.errors?.[0]?.code === "duplicate_profile") {
-        // Profile exists, try to get the existing profile ID
-        const existingProfile = await getProfileByEmail(profile.email);
-        if (existingProfile) {
-          return { success: true, profileId: existingProfile };
+        // Profile exists - get the ID and UPDATE the profile with new properties
+        const existingProfileId = await getProfileByEmail(profile.email);
+        if (existingProfileId) {
+          // Actually update the existing profile with the new properties
+          const updateResult = await updateProfile(existingProfileId, profile);
+          if (updateResult.success) {
+            return { success: true, profileId: existingProfileId };
+          }
+          return { success: false, error: updateResult.error };
         }
       }
 
