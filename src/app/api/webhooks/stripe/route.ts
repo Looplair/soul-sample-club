@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import Stripe from "stripe";
 import { stripe } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { syncUserToKlaviyo } from "@/lib/klaviyo";
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
@@ -102,6 +103,23 @@ export async function POST(request: Request) {
         if (error) {
           console.error("Error upserting subscription:", error);
         }
+
+        // Sync to Klaviyo with updated subscription type
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("email, full_name")
+          .eq("id", userId)
+          .single();
+
+        if (profile) {
+          const profileData = profile as { email: string; full_name: string | null };
+          const subType = subscription.status === "trialing" ? "stripe_trialing" : "stripe_active";
+          syncUserToKlaviyo({
+            email: profileData.email,
+            fullName: profileData.full_name,
+            subscriptionType: subType,
+          }).catch((err) => console.error("Klaviyo sync error:", err));
+        }
         break;
       }
 
@@ -156,6 +174,17 @@ export async function POST(request: Request) {
       case "customer.subscription.deleted": {
         const subscription = event.data.object as Stripe.Subscription;
 
+        // Get user ID before updating
+        let canceledUserId = getUserIdFromMetadata(subscription);
+        if (!canceledUserId) {
+          const customer = await stripe.customers.retrieve(
+            subscription.customer as string
+          );
+          if (!("deleted" in customer)) {
+            canceledUserId = getUserIdFromMetadata(customer);
+          }
+        }
+
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { error } = await (supabase.from("subscriptions") as any)
           .update({
@@ -166,6 +195,24 @@ export async function POST(request: Request) {
 
         if (error) {
           console.error("Error updating canceled subscription:", error);
+        }
+
+        // Sync to Klaviyo with canceled status
+        if (canceledUserId) {
+          const { data: canceledProfile } = await supabase
+            .from("profiles")
+            .select("email, full_name")
+            .eq("id", canceledUserId)
+            .single();
+
+          if (canceledProfile) {
+            const profileData = canceledProfile as { email: string; full_name: string | null };
+            syncUserToKlaviyo({
+              email: profileData.email,
+              fullName: profileData.full_name,
+              subscriptionType: "canceled",
+            }).catch((err) => console.error("Klaviyo sync error:", err));
+          }
         }
         break;
       }
