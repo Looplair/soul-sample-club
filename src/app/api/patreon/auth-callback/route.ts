@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
       // Fetch user identity with email + memberships + campaign (for creators)
       const identityResponse = await fetch(
         "https://www.patreon.com/api/oauth2/v2/identity" +
-          "?include=memberships,memberships.currently_entitled_tiers,campaign" +
+          "?include=memberships,memberships.campaign,memberships.currently_entitled_tiers,campaign" +
           "&fields[user]=email,full_name,image_url" +
           "&fields[member]=patron_status,campaign_lifetime_support_cents,currently_entitled_amount_cents" +
           "&fields[tier]=title" +
