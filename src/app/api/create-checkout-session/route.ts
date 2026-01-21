@@ -64,11 +64,19 @@ export async function POST(request: Request) {
         metadata: {
           supabase_user_id: user.id,
         },
+        description: "Soul Sample Club Membership",
       },
       success_url: `${process.env.NEXT_PUBLIC_APP_URL}/feed?success=true`,
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/feed?canceled=true`,
       metadata: {
         supabase_user_id: user.id,
+      },
+      allow_promotion_codes: true,
+      billing_address_collection: "auto",
+      custom_text: {
+        submit: {
+          message: "Start your 7-day free trial. Cancel anytime.",
+        },
       },
     });
 
