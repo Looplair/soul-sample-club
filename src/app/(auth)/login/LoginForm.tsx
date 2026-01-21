@@ -17,12 +17,6 @@ const GoogleIcon = () => (
   </svg>
 );
 
-const FacebookIcon = () => (
-  <svg viewBox="0 0 24 24" className="w-5 h-5" fill="#1877F2">
-    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-  </svg>
-);
-
 const PatreonIcon = () => (
   <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
     <path d="M14.82 2.41C18.78 2.41 22 5.65 22 9.62C22 13.58 18.78 16.8 14.82 16.8C10.85 16.8 7.61 13.58 7.61 9.62C7.61 5.65 10.85 2.41 14.82 2.41M2 21.6H5.5V2.41H2V21.6Z" />
@@ -78,13 +72,13 @@ export function LoginForm() {
     }
   };
 
-  const handleOAuthLogin = async (provider: "google" | "facebook") => {
-    setOauthLoading(provider);
+  const handleGoogleLogin = async () => {
+    setOauthLoading("google");
     setError(null);
 
     try {
       const { error } = await supabase.auth.signInWithOAuth({
-        provider,
+        provider: "google",
         options: {
           redirectTo: `${window.location.origin}/callback?redirect=${encodeURIComponent(redirect)}`,
         },
@@ -122,31 +116,17 @@ export function LoginForm() {
       {/* Account Login Section */}
       <div>
         <p className="text-label text-text-muted mb-3">Sign in to your account</p>
-        <div className="space-y-3">
-          <Button
-            type="button"
-            variant="secondary"
-            className="w-full !bg-white hover:!bg-grey-100 !border-grey-300 !text-charcoal"
-            onClick={() => handleOAuthLogin("google")}
-            disabled={oauthLoading !== null}
-            isLoading={oauthLoading === "google"}
-            leftIcon={<GoogleIcon />}
-          >
-            Continue with Google
-          </Button>
-
-          <Button
-            type="button"
-            variant="secondary"
-            className="w-full !bg-[#1877F2] hover:!bg-[#166FE5] !border-[#1877F2] !text-white"
-            onClick={() => handleOAuthLogin("facebook")}
-            disabled={oauthLoading !== null}
-            isLoading={oauthLoading === "facebook"}
-            leftIcon={<FacebookIcon />}
-          >
-            Continue with Facebook
-          </Button>
-        </div>
+        <Button
+          type="button"
+          variant="secondary"
+          className="w-full !bg-white hover:!bg-grey-100 !border-grey-300 !text-charcoal"
+          onClick={handleGoogleLogin}
+          disabled={oauthLoading !== null}
+          isLoading={oauthLoading === "google"}
+          leftIcon={<GoogleIcon />}
+        >
+          Continue with Google
+        </Button>
       </div>
 
       {/* Divider */}
