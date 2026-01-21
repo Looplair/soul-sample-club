@@ -69,6 +69,11 @@ const faqs = [
       "The Soul Sample Club is the only place these compositions live.\n\nSome material rotates or expires over time, but anything available inside the club is exclusive to the membership while active.",
   },
   {
+    question: "Why is membership capped at 3,000",
+    answer:
+      "At scale, overlap becomes the default.\n\nA YouTube sample can be downloaded 10,000 times in a day. On major platforms, millions of producers scroll the same sounds every month. That's how those systems are built.\n\nThere are roughly 75 million music producers worldwide. Even at full capacity, Soul Sample Club exists well under 0.01% of that ecosystem.\n\nSoul Sample Club isn't built for infinite reach. It's built for a fixed number of producers who want source material before it turns into noise.\n\nThat's why membership is currently capped at 3,000. Not to create hype, but to keep the work usable. If growth ever demands it, we'd segment libraries rather than broadcast the same material at mass scale.\n\nAnd because every composition inside the club is written and owned in-house, the royalty free promise is absolute. No grey areas. No downstream questions. Just music you can actually use.",
+  },
+  {
     question: "Can I download and keep the files",
     answer:
       "Yes. Files download as high quality WAVs and are yours to work with.\n\nThere is no watermarking, no locked formats, and no streaming only restrictions.",
