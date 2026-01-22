@@ -152,8 +152,8 @@ async function getSubscriptionBreakdown(): Promise<SubscriptionBreakdown> {
     adminSupabase.from("patreon_links").select("user_id, is_active"),
   ]);
 
-  const subscriptions = subscriptionsResult.data || [];
-  const patreonLinks = patreonResult.data || [];
+  const subscriptions = (subscriptionsResult.data || []) as Array<{ user_id: string; status: string }>;
+  const patreonLinks = (patreonResult.data || []) as Array<{ user_id: string; is_active: boolean }>;
 
   // Build maps for unique users (in case of duplicates, take the "best" status)
   const userStripeStatus = new Map<string, string>();
