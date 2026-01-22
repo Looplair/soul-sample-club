@@ -236,7 +236,20 @@ export async function subscribeToList(
       }),
     });
 
-    const data: KlaviyoResponse = await response.json();
+    // Handle empty response body (202 Accepted returns empty body)
+    const responseText = await response.text();
+    let data: KlaviyoResponse = {};
+    if (responseText) {
+      try {
+        data = JSON.parse(responseText);
+      } catch {
+        // If response is not JSON and status is OK, treat as success
+        if (response.ok) {
+          return { success: true };
+        }
+        return { success: false, error: `HTTP ${response.status}: ${responseText}` };
+      }
+    }
 
     if (!response.ok) {
       console.error("Klaviyo subscribeToList error:", data.errors);
