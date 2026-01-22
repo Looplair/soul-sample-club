@@ -154,11 +154,20 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(`${appUrl}/account?patreon_error=db_failed`);
     }
 
-    // Sync user to Klaviyo to update their subscription type (async, don't wait)
-    syncUserToKlaviyo({
+    // Sync user to Klaviyo to update their subscription type
+    const klaviyoSubscriptionType = isActivePatron ? "patreon" : "free";
+    console.log("Syncing to Klaviyo:", { email: patreonEmail, subscriptionType: klaviyoSubscriptionType, isActivePatron });
+
+    const klaviyoResult = await syncUserToKlaviyo({
       email: patreonEmail,
-      subscriptionType: isActivePatron ? "patreon" : "free",
-    }).catch((err) => console.error("Klaviyo sync error:", err));
+      subscriptionType: klaviyoSubscriptionType,
+    });
+
+    if (!klaviyoResult.success) {
+      console.error("Klaviyo sync failed:", klaviyoResult.error);
+    } else {
+      console.log("Klaviyo sync successful for:", patreonEmail);
+    }
 
     const successParam = isActivePatron ? "patreon_connected" : "patreon_not_patron";
     return NextResponse.redirect(`${appUrl}/account?${successParam}=true`);
