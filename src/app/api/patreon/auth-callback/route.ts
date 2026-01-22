@@ -219,13 +219,22 @@ export async function GET(request: NextRequest) {
       // Continue anyway - the user is still logged in
     }
 
-    // Sync user to Klaviyo (async, don't wait)
-    syncUserToKlaviyo({
+    // Sync user to Klaviyo
+    const klaviyoSubscriptionType = isActivePatron ? "patreon" : "free";
+    console.log("Syncing to Klaviyo:", { email: patreonEmail, subscriptionType: klaviyoSubscriptionType, isActivePatron });
+
+    const klaviyoResult = await syncUserToKlaviyo({
       email: patreonEmail,
       fullName: patreonName,
-      subscriptionType: isActivePatron ? "patreon" : "free",
+      subscriptionType: klaviyoSubscriptionType,
       joinedAt: new Date().toISOString(),
-    }).catch((err) => console.error("Klaviyo sync error:", err));
+    });
+
+    if (!klaviyoResult.success) {
+      console.error("Klaviyo sync failed:", klaviyoResult.error);
+    } else {
+      console.log("Klaviyo sync successful for:", patreonEmail);
+    }
 
     // Create a magic link to sign the user in
     const { data: magicLink, error: magicError } = await adminSupabase.auth.admin.generateLink({

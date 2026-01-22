@@ -53,24 +53,38 @@ async function updateProfile(
   profile: KlaviyoProfile
 ): Promise<{ success: boolean; error?: string }> {
   try {
+    const requestBody = {
+      data: {
+        type: "profile",
+        id: profileId,
+        attributes: {
+          first_name: profile.first_name || undefined,
+          last_name: profile.last_name || undefined,
+          properties: profile.properties || {},
+        },
+      },
+    };
+
+    console.log("Klaviyo updateProfile - profileId:", profileId);
+    console.log("Klaviyo updateProfile - properties:", JSON.stringify(profile.properties));
+
     const response = await fetch(`${KLAVIYO_API_URL}/profiles/${profileId}`, {
       method: "PATCH",
       headers: getHeaders(),
-      body: JSON.stringify({
-        data: {
-          type: "profile",
-          id: profileId,
-          attributes: {
-            first_name: profile.first_name || undefined,
-            last_name: profile.last_name || undefined,
-            properties: profile.properties || {},
-          },
-        },
-      }),
+      body: JSON.stringify(requestBody),
     });
 
+    const responseText = await response.text();
+    console.log("Klaviyo updateProfile response status:", response.status);
+    console.log("Klaviyo updateProfile response:", responseText);
+
     if (!response.ok) {
-      const data: KlaviyoResponse = await response.json();
+      let data: KlaviyoResponse;
+      try {
+        data = JSON.parse(responseText);
+      } catch {
+        return { success: false, error: `HTTP ${response.status}: ${responseText}` };
+      }
       console.error("Klaviyo updateProfile error:", data.errors);
       return {
         success: false,
@@ -78,6 +92,7 @@ async function updateProfile(
       };
     }
 
+    console.log("Klaviyo updateProfile SUCCESS for profileId:", profileId);
     return { success: true };
   } catch (error) {
     console.error("Klaviyo updateProfile exception:", error);
