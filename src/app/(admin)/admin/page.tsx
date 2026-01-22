@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import {
   Package,
   Users,
@@ -142,26 +143,27 @@ async function getStats() {
 }
 
 async function getSubscriptionBreakdown(): Promise<SubscriptionBreakdown> {
-  const supabase = await createClient();
+  // Use admin client to bypass RLS for accurate counts
+  const adminSupabase = createAdminClient();
 
   const [stripeActive, stripTrialing, stripeCanceled, stripePastDue, patreonActive] = await Promise.all([
-    supabase
+    adminSupabase
       .from("subscriptions")
       .select("id", { count: "exact", head: true })
       .eq("status", "active"),
-    supabase
+    adminSupabase
       .from("subscriptions")
       .select("id", { count: "exact", head: true })
       .eq("status", "trialing"),
-    supabase
+    adminSupabase
       .from("subscriptions")
       .select("id", { count: "exact", head: true })
       .eq("status", "canceled"),
-    supabase
+    adminSupabase
       .from("subscriptions")
       .select("id", { count: "exact", head: true })
       .eq("status", "past_due"),
-    supabase
+    adminSupabase
       .from("patreon_links")
       .select("id", { count: "exact", head: true })
       .eq("is_active", true),
