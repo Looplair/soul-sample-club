@@ -113,27 +113,28 @@ async function getPack(id: string): Promise<PackWithSamples | null> {
 // -----------------------------------------
 // FETCH ACCESS (subscription OR patreon)
 // -----------------------------------------
+// Uses admin client to bypass RLS for subscription checks
 async function getUserAccess(): Promise<{ hasAccess: boolean; isLoggedIn: boolean }> {
   const supabase = await createClient();
+  const adminSupabase = createAdminClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (!user) return { hasAccess: false, isLoggedIn: false };
 
-  // Check subscription
-  const subResult = await supabase
+  // Check subscription using admin client to bypass RLS
+  const subResult = await adminSupabase
     .from("subscriptions")
-    .select("*")
+    .select("status")
     .eq("user_id", user.id)
     .in("status", ["active", "trialing"])
     .single();
 
   const hasSubscription = !!subResult.data;
 
-  // Check Patreon
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const patreonResult = await (supabase as any)
+  // Check Patreon using admin client to bypass RLS
+  const patreonResult = await adminSupabase
     .from("patreon_links")
     .select("is_active")
     .eq("user_id", user.id)

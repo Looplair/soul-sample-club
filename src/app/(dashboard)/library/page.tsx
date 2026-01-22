@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { CollapsibleSampleList } from "@/components/audio/CollapsibleSampleList";
 import { Heart, Download, Clock } from "lucide-react";
 import type { Sample, Pack } from "@/types/database";
@@ -118,11 +119,12 @@ async function getLikedSampleIds(userId: string): Promise<Set<string>> {
 }
 
 // Check if user has access (Stripe subscription OR active Patreon)
+// Uses admin client to bypass RLS
 async function checkUserAccess(userId: string): Promise<boolean> {
-  const supabase = await createClient();
+  const adminSupabase = createAdminClient();
 
   // Check Stripe subscription
-  const stripeResult = await supabase
+  const stripeResult = await adminSupabase
     .from("subscriptions")
     .select("status")
     .eq("user_id", userId)
@@ -134,8 +136,7 @@ async function checkUserAccess(userId: string): Promise<boolean> {
   }
 
   // Check Patreon
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const patreonResult = await (supabase as any)
+  const patreonResult = await adminSupabase
     .from("patreon_links")
     .select("is_active")
     .eq("user_id", userId)

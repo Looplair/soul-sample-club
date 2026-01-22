@@ -54,8 +54,8 @@ export async function GET(
       );
     }
 
-    // Check subscription status
-    const subscriptionResult = await supabase
+    // Check subscription status using admin client to bypass RLS
+    const subscriptionResult = await adminSupabase
       .from("subscriptions")
       .select("status, current_period_end")
       .eq("user_id", user.id)
@@ -64,9 +64,8 @@ export async function GET(
 
     const subscription = subscriptionResult.data as { status: string; current_period_end: string } | null;
 
-    // Check Patreon link status
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const patreonResult = await (supabase as any)
+    // Check Patreon link status using admin client to bypass RLS
+    const patreonResult = await adminSupabase
       .from("patreon_links")
       .select("is_active")
       .eq("user_id", user.id)
