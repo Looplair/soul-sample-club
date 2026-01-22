@@ -117,18 +117,32 @@ async function getLikedSampleIds(userId: string): Promise<Set<string>> {
   return new Set((result.data || []).map((like: { sample_id: string }) => like.sample_id));
 }
 
-// Check subscription status
-async function hasActiveSubscription(userId: string): Promise<boolean> {
+// Check if user has access (Stripe subscription OR active Patreon)
+async function checkUserAccess(userId: string): Promise<boolean> {
   const supabase = await createClient();
 
-  const result = await supabase
+  // Check Stripe subscription
+  const stripeResult = await supabase
     .from("subscriptions")
     .select("status")
     .eq("user_id", userId)
     .in("status", ["active", "trialing"])
     .single();
 
-  return !!result.data;
+  if (stripeResult.data) {
+    return true;
+  }
+
+  // Check Patreon
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const patreonResult = await (supabase as any)
+    .from("patreon_links")
+    .select("is_active")
+    .eq("user_id", userId)
+    .eq("is_active", true)
+    .single();
+
+  return !!patreonResult.data;
 }
 
 function SampleListSkeleton() {
@@ -186,7 +200,7 @@ export default async function LibraryPage() {
     getLikedSamples(user.id),
     getDownloadHistory(user.id),
     getLikedSampleIds(user.id),
-    hasActiveSubscription(user.id),
+    checkUserAccess(user.id),
   ]);
 
   return (
