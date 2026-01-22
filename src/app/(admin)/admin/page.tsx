@@ -146,35 +146,64 @@ async function getSubscriptionBreakdown(): Promise<SubscriptionBreakdown> {
   // Use admin client to bypass RLS for accurate counts
   const adminSupabase = createAdminClient();
 
-  const [stripeActive, stripTrialing, stripeCanceled, stripePastDue, patreonActive] = await Promise.all([
-    adminSupabase
-      .from("subscriptions")
-      .select("id", { count: "exact", head: true })
-      .eq("status", "active"),
-    adminSupabase
-      .from("subscriptions")
-      .select("id", { count: "exact", head: true })
-      .eq("status", "trialing"),
-    adminSupabase
-      .from("subscriptions")
-      .select("id", { count: "exact", head: true })
-      .eq("status", "canceled"),
-    adminSupabase
-      .from("subscriptions")
-      .select("id", { count: "exact", head: true })
-      .eq("status", "past_due"),
-    adminSupabase
-      .from("patreon_links")
-      .select("id", { count: "exact", head: true })
-      .eq("is_active", true),
+  // Fetch all data and compute accurate counts per unique user
+  const [subscriptionsResult, patreonResult] = await Promise.all([
+    adminSupabase.from("subscriptions").select("user_id, status"),
+    adminSupabase.from("patreon_links").select("user_id, is_active"),
   ]);
 
+  const subscriptions = subscriptionsResult.data || [];
+  const patreonLinks = patreonResult.data || [];
+
+  // Build maps for unique users (in case of duplicates, take the "best" status)
+  const userStripeStatus = new Map<string, string>();
+  for (const sub of subscriptions) {
+    const existing = userStripeStatus.get(sub.user_id);
+    // Priority: active > trialing > past_due > canceled
+    if (!existing ||
+        (sub.status === "active") ||
+        (sub.status === "trialing" && existing !== "active") ||
+        (sub.status === "past_due" && existing !== "active" && existing !== "trialing")) {
+      userStripeStatus.set(sub.user_id, sub.status);
+    }
+  }
+
+  const userPatreonActive = new Map<string, boolean>();
+  for (const link of patreonLinks) {
+    userPatreonActive.set(link.user_id, link.is_active);
+  }
+
+  // Count unique users per status
+  let stripeActiveCount = 0;
+  let stripeTrialingCount = 0;
+  let stripeCanceledCount = 0;
+  let stripePastDueCount = 0;
+
+  for (const [, status] of userStripeStatus) {
+    if (status === "active") stripeActiveCount++;
+    else if (status === "trialing") stripeTrialingCount++;
+    else if (status === "canceled") stripeCanceledCount++;
+    else if (status === "past_due") stripePastDueCount++;
+  }
+
+  // Count Patreon active (only those who don't already have Stripe active/trialing)
+  let patreonActiveCount = 0;
+  for (const [userId, isActive] of userPatreonActive) {
+    if (isActive) {
+      const stripeStatus = userStripeStatus.get(userId);
+      // Only count as Patreon if they don't have active Stripe access
+      if (stripeStatus !== "active" && stripeStatus !== "trialing") {
+        patreonActiveCount++;
+      }
+    }
+  }
+
   return {
-    stripeActive: stripeActive.count || 0,
-    stripTrialing: stripTrialing.count || 0,
-    stripeCanceled: stripeCanceled.count || 0,
-    stripePastDue: stripePastDue.count || 0,
-    patreonActive: patreonActive.count || 0,
+    stripeActive: stripeActiveCount,
+    stripTrialing: stripeTrialingCount,
+    stripeCanceled: stripeCanceledCount,
+    stripePastDue: stripePastDueCount,
+    patreonActive: patreonActiveCount,
   };
 }
 
