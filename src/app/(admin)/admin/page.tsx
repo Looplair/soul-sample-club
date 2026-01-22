@@ -179,16 +179,16 @@ async function getSubscriptionBreakdown(): Promise<SubscriptionBreakdown> {
   let stripeCanceledCount = 0;
   let stripePastDueCount = 0;
 
-  for (const [, status] of userStripeStatus) {
+  userStripeStatus.forEach((status) => {
     if (status === "active") stripeActiveCount++;
     else if (status === "trialing") stripeTrialingCount++;
     else if (status === "canceled") stripeCanceledCount++;
     else if (status === "past_due") stripePastDueCount++;
-  }
+  });
 
   // Count Patreon active (only those who don't already have Stripe active/trialing)
   let patreonActiveCount = 0;
-  for (const [userId, isActive] of userPatreonActive) {
+  userPatreonActive.forEach((isActive, userId) => {
     if (isActive) {
       const stripeStatus = userStripeStatus.get(userId);
       // Only count as Patreon if they don't have active Stripe access
@@ -196,7 +196,7 @@ async function getSubscriptionBreakdown(): Promise<SubscriptionBreakdown> {
         patreonActiveCount++;
       }
     }
-  }
+  });
 
   return {
     stripeActive: stripeActiveCount,
