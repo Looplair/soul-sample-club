@@ -455,10 +455,19 @@ export default async function AdminDashboardPage() {
       {/* Subscription Breakdown */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CreditCard className="w-5 h-5" />
-            Subscription Status
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <CreditCard className="w-5 h-5" />
+              Subscription Status
+            </CardTitle>
+            <Link
+              href="/admin/subscriptions"
+              className="text-sm text-velvet hover:text-velvet/80 flex items-center gap-1"
+            >
+              View Details
+              <ArrowUpRight className="w-4 h-4" />
+            </Link>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -506,9 +515,14 @@ export default async function AdminDashboardPage() {
                   color="bg-[#FF424D]"
                 />
               </div>
-              <p className="text-caption text-snow/40 mt-3">
-                Total active subscribers: {subscriptionBreakdown.stripeActive + subscriptionBreakdown.stripTrialing + subscriptionBreakdown.patreonActive}
-              </p>
+              <div className="mt-4 pt-4 border-t border-grey-700">
+                <p className="text-body text-snow font-medium">
+                  Total with access: {subscriptionBreakdown.stripeActive + subscriptionBreakdown.stripTrialing + subscriptionBreakdown.patreonActive}
+                </p>
+                <p className="text-caption text-snow/40 mt-1">
+                  {subscriptionBreakdown.stripeActive} Stripe active + {subscriptionBreakdown.stripTrialing} Stripe trial + {subscriptionBreakdown.patreonActive} Patreon
+                </p>
+              </div>
             </div>
           </div>
         </CardContent>
