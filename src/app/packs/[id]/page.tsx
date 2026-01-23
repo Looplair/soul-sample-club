@@ -124,14 +124,15 @@ async function getUserAccess(): Promise<{ hasAccess: boolean; isLoggedIn: boolea
   if (!user) return { hasAccess: false, isLoggedIn: false };
 
   // Check subscription using admin client to bypass RLS
+  // Use limit(1) instead of single() because user may have multiple subscription rows
   const subResult = await adminSupabase
     .from("subscriptions")
     .select("status")
     .eq("user_id", user.id)
     .in("status", ["active", "trialing"])
-    .single();
+    .limit(1);
 
-  const hasSubscription = !!subResult.data;
+  const hasSubscription = (subResult.data?.length ?? 0) > 0;
 
   // Check Patreon using admin client to bypass RLS
   const patreonResult = await adminSupabase

@@ -60,12 +60,13 @@ async function getUserState(): Promise<{ isLoggedIn: boolean; hasSubscription: b
       return { isLoggedIn: false, hasSubscription: false, hasPatreon: false };
     }
 
+    // Use limit(1) instead of single() because user may have multiple subscription rows
     const subResult = await adminSupabase
       .from("subscriptions")
       .select("status")
       .eq("user_id", user.id)
       .in("status", ["active", "trialing"])
-      .single();
+      .limit(1);
 
     let hasPatreon = false;
     try {
@@ -74,15 +75,15 @@ async function getUserState(): Promise<{ isLoggedIn: boolean; hasSubscription: b
         .select("is_active")
         .eq("user_id", user.id)
         .eq("is_active", true)
-        .single();
-      hasPatreon = !!patreonResult.data;
+        .limit(1);
+      hasPatreon = (patreonResult.data?.length ?? 0) > 0;
     } catch {
       // Table might not exist yet
     }
 
     return {
       isLoggedIn: true,
-      hasSubscription: !!(subResult.data as Subscription | null),
+      hasSubscription: (subResult.data?.length ?? 0) > 0,
       hasPatreon,
     };
   } catch {

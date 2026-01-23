@@ -124,14 +124,15 @@ async function checkUserAccess(userId: string): Promise<boolean> {
   const adminSupabase = createAdminClient();
 
   // Check Stripe subscription
+  // Use limit(1) instead of single() because user may have multiple subscription rows
   const stripeResult = await adminSupabase
     .from("subscriptions")
     .select("status")
     .eq("user_id", userId)
     .in("status", ["active", "trialing"])
-    .single();
+    .limit(1);
 
-  if (stripeResult.data) {
+  if ((stripeResult.data?.length ?? 0) > 0) {
     return true;
   }
 

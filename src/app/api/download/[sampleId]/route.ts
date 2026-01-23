@@ -55,17 +55,18 @@ export async function GET(
     }
 
     // Check subscription status using admin client to bypass RLS
+    // Use limit(1) instead of single() because user may have multiple subscription rows
     const subscriptionResult = await adminSupabase
       .from("subscriptions")
       .select("status, current_period_end, user_id")
       .eq("user_id", user.id)
       .in("status", ["active", "trialing"])
-      .single();
+      .limit(1);
 
     console.log("Download access check for user:", user.id, user.email);
     console.log("Subscription query result:", JSON.stringify(subscriptionResult));
 
-    const subscription = subscriptionResult.data as { status: string; current_period_end: string } | null;
+    const subscription = subscriptionResult.data?.[0] as { status: string; current_period_end: string } | undefined;
 
     // Check Patreon link status using admin client to bypass RLS
     const patreonResult = await adminSupabase
