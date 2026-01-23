@@ -57,10 +57,13 @@ export async function GET(
     // Check subscription status using admin client to bypass RLS
     const subscriptionResult = await adminSupabase
       .from("subscriptions")
-      .select("status, current_period_end")
+      .select("status, current_period_end, user_id")
       .eq("user_id", user.id)
       .in("status", ["active", "trialing"])
       .single();
+
+    console.log("Download access check for user:", user.id, user.email);
+    console.log("Subscription query result:", JSON.stringify(subscriptionResult));
 
     const subscription = subscriptionResult.data as { status: string; current_period_end: string } | null;
 
@@ -72,9 +75,18 @@ export async function GET(
       .eq("is_active", true)
       .single();
 
+    console.log("Patreon query result:", JSON.stringify(patreonResult));
+
     const hasPatreon = !!patreonResult.data;
 
     if (!subscription && !hasPatreon) {
+      // Also check if there's ANY subscription for this user (for debugging)
+      const allSubs = await adminSupabase
+        .from("subscriptions")
+        .select("*")
+        .eq("user_id", user.id);
+      console.log("All subscriptions for user:", JSON.stringify(allSubs));
+
       return NextResponse.json(
         { error: "Active subscription or Patreon membership required" },
         { status: 403 }
