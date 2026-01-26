@@ -45,17 +45,19 @@ export async function POST() {
       .limit(1);
 
     // Join with profiles to check by email
-    const profilesWithSameEmail = await adminSupabase
+    const profilesWithSameEmailResult = await adminSupabase
       .from("profiles")
       .select("id")
       .eq("email", profile.email)
       .neq("id", user.id);
 
+    const profilesWithSameEmail = (profilesWithSameEmailResult.data || []) as Array<{ id: string }>;
+
     let hasUsedTrialBefore = !!existingSubscription;
 
     // Check if any other account with same email has a subscription
-    if (!hasUsedTrialBefore && profilesWithSameEmail.data && profilesWithSameEmail.data.length > 0) {
-      const otherUserIds = profilesWithSameEmail.data.map(p => p.id);
+    if (!hasUsedTrialBefore && profilesWithSameEmail.length > 0) {
+      const otherUserIds = profilesWithSameEmail.map(p => p.id);
       const otherSubs = await adminSupabase
         .from("subscriptions")
         .select("id")
