@@ -33,7 +33,6 @@ export async function POST() {
     }
 
     if (!subscription?.stripe_customer_id) {
-      console.log("No subscription found for user:", user.id);
       return NextResponse.json(
         { error: "No Stripe subscription found. If you subscribed through Patreon, manage your subscription there." },
         { status: 404 }

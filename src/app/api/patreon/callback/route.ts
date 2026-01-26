@@ -85,16 +85,11 @@ export async function GET(request: NextRequest) {
     let tierId: string | null = null;
     let tierTitle: string | null = null;
 
-    console.log("Looking for campaign ID:", campaignId);
-    console.log("Patreon identity data:", JSON.stringify(identityData, null, 2));
-
     if (identityData.included) {
       for (const item of identityData.included) {
         if (item.type === "member") {
           const patronStatus = item.attributes?.patron_status;
           const memberCampaignId = item.relationships?.campaign?.data?.id;
-
-          console.log("Found member:", { patronStatus, memberCampaignId, targetCampaignId: campaignId });
 
           // Check if this membership is for our campaign (if campaignId is set)
           // If no campaignId is configured, accept any active patron status
@@ -119,8 +114,6 @@ export async function GET(request: NextRequest) {
         }
       }
     }
-
-    console.log("Final patron status:", { isActivePatron, tierId, tierTitle });
 
     // Save to database
     const adminSupabase = createAdminClient();
@@ -156,7 +149,6 @@ export async function GET(request: NextRequest) {
 
     // Sync user to Klaviyo to update their subscription type
     const klaviyoSubscriptionType = isActivePatron ? "patreon" : "free";
-    console.log("Syncing to Klaviyo:", { email: patreonEmail, subscriptionType: klaviyoSubscriptionType, isActivePatron });
 
     const klaviyoResult = await syncUserToKlaviyo({
       email: patreonEmail,
@@ -165,8 +157,6 @@ export async function GET(request: NextRequest) {
 
     if (!klaviyoResult.success) {
       console.error("Klaviyo sync failed:", klaviyoResult.error);
-    } else {
-      console.log("Klaviyo sync successful for:", patreonEmail);
     }
 
     const successParam = isActivePatron ? "patreon_connected" : "patreon_not_patron";

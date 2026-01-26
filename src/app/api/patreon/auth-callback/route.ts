@@ -92,17 +92,11 @@ export async function GET(request: NextRequest) {
     let tierId: string | null = null;
     let tierTitle: string | null = null;
 
-    // Log the full response for debugging
-    console.log("Looking for campaign ID:", campaignId);
-    console.log("Patreon identity data:", JSON.stringify(identityData, null, 2));
-
     if (identityData.included) {
       for (const item of identityData.included) {
         if (item.type === "member") {
           const patronStatus = item.attributes?.patron_status;
           const memberCampaignId = item.relationships?.campaign?.data?.id;
-
-          console.log("Found member:", { patronStatus, memberCampaignId, targetCampaignId: campaignId });
 
           // Check if this membership is for our campaign (if campaignId is set)
           // If no campaignId is configured, accept any active patron status
@@ -130,21 +124,16 @@ export async function GET(request: NextRequest) {
     // If user is the creator (has campaigns), treat them as active
     // Creators don't have patron_status but should have full access
     if (!isActivePatron && identityData.data?.relationships?.campaign?.data) {
-      console.log("User is a campaign creator, granting access");
       isActivePatron = true;
       tierTitle = "Creator";
     }
 
-    // TEMPORARY: For testing, also check if this is a specific whitelisted email
-    // You can remove this later or make it configurable
+    // Check if this is a specific whitelisted email (for special access)
     const whitelistedEmails = process.env.PATREON_WHITELIST_EMAILS?.split(",") || [];
     if (!isActivePatron && whitelistedEmails.includes(patreonEmail.toLowerCase())) {
-      console.log("User email is whitelisted, granting access");
       isActivePatron = true;
       tierTitle = "Whitelisted";
     }
-
-    console.log("Final isActivePatron:", isActivePatron);
 
     const adminSupabase = createAdminClient();
 
@@ -221,7 +210,6 @@ export async function GET(request: NextRequest) {
 
     // Sync user to Klaviyo
     const klaviyoSubscriptionType = isActivePatron ? "patreon" : "free";
-    console.log("Syncing to Klaviyo:", { email: patreonEmail, subscriptionType: klaviyoSubscriptionType, isActivePatron });
 
     const klaviyoResult = await syncUserToKlaviyo({
       email: patreonEmail,
@@ -232,8 +220,6 @@ export async function GET(request: NextRequest) {
 
     if (!klaviyoResult.success) {
       console.error("Klaviyo sync failed:", klaviyoResult.error);
-    } else {
-      console.log("Klaviyo sync successful for:", patreonEmail);
     }
 
     // Create a magic link to sign the user in

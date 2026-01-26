@@ -65,9 +65,6 @@ async function updateProfile(
       },
     };
 
-    console.log("Klaviyo updateProfile - profileId:", profileId);
-    console.log("Klaviyo updateProfile - properties:", JSON.stringify(profile.properties));
-
     const response = await fetch(`${KLAVIYO_API_URL}/profiles/${profileId}`, {
       method: "PATCH",
       headers: getHeaders(),
@@ -75,8 +72,6 @@ async function updateProfile(
     });
 
     const responseText = await response.text();
-    console.log("Klaviyo updateProfile response status:", response.status);
-    console.log("Klaviyo updateProfile response:", responseText);
 
     if (!response.ok) {
       let data: KlaviyoResponse;
@@ -92,7 +87,6 @@ async function updateProfile(
       };
     }
 
-    console.log("Klaviyo updateProfile SUCCESS for profileId:", profileId);
     return { success: true };
   } catch (error) {
     console.error("Klaviyo updateProfile exception:", error);
