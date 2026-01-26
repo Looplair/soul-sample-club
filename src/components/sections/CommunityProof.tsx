@@ -14,7 +14,7 @@ const BADGE_TEXT = "ACTIVE COMMUNITY";
 const TARGET_COUNT = 1000;
 
 // Membership cap
-const MEMBERSHIP_CAP = 3000;
+const MEMBERSHIP_CAP = 5000;
 
 // Headline beneath the number
 const HEADLINE = "Producers already inside the club";
@@ -39,7 +39,7 @@ const MEMBERSHIP_CAP_PARAGRAPHS = [
   "A YouTube sample can be downloaded 10,000 times in a day. On major platforms, millions of producers scroll the same sounds every month. That's how those systems are built.",
   "There are roughly 75 million music producers worldwide. Even at full capacity, Soul Sample Club exists well under 0.01% of that ecosystem.",
   "Soul Sample Club isn't built for infinite reach. It's built for a fixed number of producers who want source material before it turns into noise.",
-  "That's why membership is currently capped at 3,000. Not to create hype, but to keep the work usable. If growth ever demands it, we'd segment libraries rather than broadcast the same material at mass scale.",
+  "That's why membership is currently capped at 5,000. Not to create hype, but to keep the work usable. If growth ever demands it, we'd segment libraries rather than broadcast the same material at mass scale.",
   "And because every composition inside the club is written and owned in-house, the royalty free promise is absolute. No grey areas. No downstream questions. Just music you can actually use.",
 ];
 
