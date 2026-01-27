@@ -358,14 +358,14 @@ export default async function AnalyticsPage() {
                   <div className="absolute inset-0 bg-grey-800/30 opacity-0 group-hover:opacity-100 transition-opacity" />
                   {/* Actual data bar */}
                   <div
-                    className="w-full bg-velvet hover:bg-velvet-light transition-colors rounded-t relative z-10"
+                    className="w-full bg-info hover:bg-info/80 transition-colors rounded-t relative z-10"
                     style={{
-                      height: day.count > 0 ? `${Math.max((day.count / maxDownloads) * 100, 2)}%` : "2px",
-                      opacity: day.count > 0 ? 1 : 0.3,
+                      height: day.count > 0 ? `${Math.max((day.count / maxDownloads) * 100, 4)}%` : "2px",
+                      minHeight: day.count > 0 ? "4px" : "2px",
                     }}
                   />
                   {/* Tooltip */}
-                  <div className="opacity-0 group-hover:opacity-100 absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-grey-800 border border-grey-700 rounded text-xs text-snow whitespace-nowrap z-20 shadow-lg">
+                  <div className="opacity-0 group-hover:opacity-100 absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-grey-800 border border-grey-700 rounded text-xs text-snow whitespace-nowrap z-20 shadow-lg pointer-events-none">
                     <span className="font-medium">{day.count}</span> downloads
                     <br />
                     <span className="text-snow/60">{formatDate(day.date)}</span>
@@ -405,14 +405,14 @@ export default async function AnalyticsPage() {
                   <div className="absolute inset-0 bg-grey-800/30 opacity-0 group-hover:opacity-100 transition-opacity" />
                   {/* Actual data bar */}
                   <div
-                    className="w-full bg-mint hover:bg-mint/80 transition-colors rounded-t relative z-10"
+                    className="w-full bg-success hover:bg-success/80 transition-colors rounded-t relative z-10"
                     style={{
-                      height: day.count > 0 ? `${Math.max((day.count / maxSignups) * 100, 2)}%` : "2px",
-                      opacity: day.count > 0 ? 1 : 0.3,
+                      height: day.count > 0 ? `${Math.max((day.count / maxSignups) * 100, 4)}%` : "2px",
+                      minHeight: day.count > 0 ? "4px" : "2px",
                     }}
                   />
                   {/* Tooltip */}
-                  <div className="opacity-0 group-hover:opacity-100 absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-grey-800 border border-grey-700 rounded text-xs text-snow whitespace-nowrap z-20 shadow-lg">
+                  <div className="opacity-0 group-hover:opacity-100 absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-grey-800 border border-grey-700 rounded text-xs text-snow whitespace-nowrap z-20 shadow-lg pointer-events-none">
                     <span className="font-medium">{day.count}</span> signups
                     <br />
                     <span className="text-snow/60">{formatDate(day.date)}</span>
@@ -542,7 +542,7 @@ function ComparisonCard({
     <Card>
       <CardContent className="p-6">
         <div className="flex items-start justify-between mb-4">
-          <div className="w-10 h-10 rounded-lg bg-velvet/20 flex items-center justify-center text-velvet">
+          <div className="w-10 h-10 rounded-lg bg-info/20 flex items-center justify-center text-info">
             {icon}
           </div>
           <div
@@ -550,7 +550,7 @@ function ComparisonCard({
               isNeutral
                 ? "text-snow/50"
                 : isPositive
-                ? "text-mint"
+                ? "text-success"
                 : "text-error"
             }`}
           >

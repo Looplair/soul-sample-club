@@ -54,6 +54,13 @@ const config: Config = {
         warning: "#EAB308",
         error: "#EF4444",
         info: "#3B82F6",
+
+        // Brand Colors (used in admin)
+        velvet: "#8B5CF6",
+        "velvet-light": "#A78BFA",
+        mint: "#22C55E",
+        peach: "#FB923C",
+        snow: "#FFFFFF",
       },
       fontFamily: {
         sans: [

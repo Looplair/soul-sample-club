@@ -8,6 +8,11 @@ import {
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui";
 import { SubscriptionTable } from "@/components/admin/SubscriptionTable";
+import { KlaviyoAutoSync } from "@/components/admin/KlaviyoAutoSync";
+
+// Force dynamic rendering - no caching
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 // Patreon Icon
 const PatreonIcon = () => (
@@ -194,6 +199,9 @@ export default async function AdminSubscriptionsPage() {
         </CardContent>
       </Card>
 
+      {/* Klaviyo Auto-Sync */}
+      <KlaviyoAutoSync />
+
       {/* Interactive Subscriptions Table */}
       <SubscriptionTable subscriptions={unified} />
     </div>
@@ -213,10 +221,10 @@ function QuickStat({
 }) {
   const colorClasses = {
     default: "bg-grey-700 text-snow/60",
-    mint: "bg-mint/20 text-mint",
+    mint: "bg-success/20 text-success",
     warning: "bg-amber-500/20 text-amber-500",
     patreon: "bg-[#FF424D]/20 text-[#FF424D]",
-    primary: "bg-velvet/20 text-velvet",
+    primary: "bg-info/20 text-info",
   };
 
   return (
