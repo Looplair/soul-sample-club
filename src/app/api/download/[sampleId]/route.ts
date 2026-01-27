@@ -97,8 +97,18 @@ export async function GET(
     const sample = sampleResult.data as SampleWithPack | null;
 
     if (sampleResult.error || !sample) {
+      console.error("Sample not found:", { sampleId, error: sampleResult.error });
       return NextResponse.json({ error: "Sample not found" }, { status: 404 });
     }
+
+    // Log sample info for debugging
+    console.log("Download request:", {
+      sampleId,
+      sampleName: sample.name,
+      filePath: sample.file_path,
+      packId: sample.pack?.id,
+      isPublished: sample.pack?.is_published,
+    });
 
     // Check if pack is published
     if (!sample.pack?.is_published) {
@@ -125,19 +135,30 @@ export async function GET(
       });
 
     if (urlError || !signedUrl) {
-      console.error("Error generating signed URL:", urlError);
+      console.error("Error generating signed URL:", {
+        error: urlError,
+        filePath: sample.file_path,
+        sampleId,
+      });
       return NextResponse.json(
         { error: "Failed to generate download URL" },
         { status: 500 }
       );
     }
 
-    // Record download for analytics
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase.from("downloads") as any).insert({
-      user_id: user.id,
-      sample_id: sampleId,
-    });
+    console.log("Signed URL generated successfully for:", sample.name);
+
+    // Record download for analytics (ignore errors - don't block download)
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase.from("downloads") as any).insert({
+        user_id: user.id,
+        sample_id: sampleId,
+      });
+    } catch (insertErr) {
+      // Ignore insert errors (e.g., duplicate entry) - analytics shouldn't block downloads
+      console.warn("Download analytics insert warning:", insertErr);
+    }
 
     return NextResponse.json({ url: signedUrl.signedUrl });
   } catch (error) {
