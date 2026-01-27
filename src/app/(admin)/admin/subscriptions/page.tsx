@@ -6,8 +6,8 @@ import {
   Clock,
   XCircle,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, Badge } from "@/components/ui";
-import { formatDate } from "@/lib/utils";
+import { Card, CardContent } from "@/components/ui";
+import { SubscriptionTable } from "@/components/admin/SubscriptionTable";
 
 // Patreon Icon
 const PatreonIcon = () => (
@@ -130,19 +130,13 @@ async function getSubscriptionData() {
 export default async function AdminSubscriptionsPage() {
   const { unified, stats } = await getSubscriptionData();
 
-  // Sort: those with access first, then by join date
-  const sorted = [...unified].sort((a, b) => {
-    if (a.hasAccess !== b.hasAccess) return a.hasAccess ? -1 : 1;
-    return new Date(b.joinedAt).getTime() - new Date(a.joinedAt).getTime();
-  });
-
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-h1 text-snow mb-2">Subscriptions</h1>
         <p className="text-body-lg text-snow/60">
-          Unified view of all member access - data from Supabase admin
+          Unified view of all member access
         </p>
       </div>
 
@@ -200,100 +194,8 @@ export default async function AdminSubscriptionsPage() {
         </CardContent>
       </Card>
 
-      {/* Subscriptions Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>All Members ({sorted.length})</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-grey-800">
-                <tr>
-                  <th className="px-4 py-3 text-left text-label text-snow/60">Email</th>
-                  <th className="px-4 py-3 text-left text-label text-snow/60">Name</th>
-                  <th className="px-4 py-3 text-left text-label text-snow/60">Stripe</th>
-                  <th className="px-4 py-3 text-left text-label text-snow/60">Patreon</th>
-                  <th className="px-4 py-3 text-left text-label text-snow/60">Access</th>
-                  <th className="px-4 py-3 text-left text-label text-snow/60">Source</th>
-                  <th className="px-4 py-3 text-left text-label text-snow/60">Joined</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-grey-700">
-                {sorted.map((sub) => (
-                  <tr key={sub.userId} className="hover:bg-grey-800/50 transition-colors">
-                    <td className="px-4 py-3">
-                      <p className="text-snow text-sm">{sub.email}</p>
-                    </td>
-                    <td className="px-4 py-3">
-                      <p className="text-snow/70 text-sm">{sub.fullName || "—"}</p>
-                    </td>
-                    <td className="px-4 py-3">
-                      {sub.stripeStatus ? (
-                        <div>
-                          <Badge
-                            variant={
-                              sub.stripeStatus === "active"
-                                ? "success"
-                                : sub.stripeStatus === "trialing"
-                                ? "primary"
-                                : "warning"
-                            }
-                          >
-                            <CreditCard className="w-3 h-3 mr-1" />
-                            {sub.stripeStatus}
-                          </Badge>
-                          {sub.stripePeriodEnd && (
-                            <p className="text-caption text-snow/40 mt-1">
-                              Until {formatDate(sub.stripePeriodEnd)}
-                            </p>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-snow/40 text-sm">—</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      {sub.patreonActive ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-[#FF424D]/20 text-[#FF424D]">
-                          <PatreonIcon />
-                          {sub.patreonTier || "Active"}
-                        </span>
-                      ) : (
-                        <span className="text-snow/40 text-sm">—</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      {sub.hasAccess ? (
-                        <span className="inline-flex items-center gap-1 text-mint text-sm font-medium">
-                          <CheckCircle className="w-4 h-4" />
-                          Yes
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 text-snow/40 text-sm">
-                          <XCircle className="w-4 h-4" />
-                          No
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`text-sm ${sub.hasAccess ? "text-snow" : "text-snow/40"}`}>
-                        {sub.accessSource === "stripe_active" && "Stripe (paid)"}
-                        {sub.accessSource === "stripe_trialing" && "Stripe (trial)"}
-                        {sub.accessSource === "patreon" && "Patreon"}
-                        {sub.accessSource === "none" && "—"}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <p className="text-snow/50 text-sm">{formatDate(sub.joinedAt)}</p>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Interactive Subscriptions Table */}
+      <SubscriptionTable subscriptions={unified} />
     </div>
   );
 }

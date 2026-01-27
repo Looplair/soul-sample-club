@@ -1,10 +1,9 @@
-import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { CollapsibleSampleList } from "@/components/audio/CollapsibleSampleList";
-import { Heart, Download, Clock } from "lucide-react";
+import { Heart, Download, Clock, Music, Package } from "lucide-react";
 import type { Sample, Pack } from "@/types/database";
+import { LibraryTabs } from "@/components/library/LibraryTabs";
 
 export const metadata = {
   title: "My Library | Soul Sample Club",
@@ -80,7 +79,7 @@ async function getDownloadHistory(userId: string): Promise<SampleWithPack[]> {
     `)
     .eq("user_id", userId)
     .order("downloaded_at", { ascending: false })
-    .limit(50);
+    .limit(200);
 
   if (result.error) {
     console.error("Error fetching downloads:", result.error);
@@ -147,45 +146,19 @@ async function checkUserAccess(userId: string): Promise<boolean> {
   return !!patreonResult.data;
 }
 
-function SampleListSkeleton() {
-  return (
-    <div className="space-y-3">
-      {Array.from({ length: 4 }).map((_, i) => (
-        <div key={i} className="bg-grey-800/50 rounded-card p-4 animate-pulse">
-          <div className="flex gap-4 items-center mb-3">
-            <div className="w-8 h-4 bg-grey-700 rounded" />
-            <div className="w-5 h-5 bg-grey-700 rounded" />
-            <div className="flex-1 space-y-2">
-              <div className="h-4 bg-grey-700 rounded w-48" />
-              <div className="h-3 bg-grey-700 rounded w-32" />
-            </div>
-            <div className="w-24 h-8 bg-grey-700 rounded-full" />
-          </div>
-          <div className="h-12 bg-grey-800 rounded" />
-        </div>
-      ))}
-    </div>
-  );
-}
+// Group samples by pack
+function groupByPack(samples: SampleWithPack[]): Map<string, { pack: Pack; samples: SampleWithPack[] }> {
+  const groups = new Map<string, { pack: Pack; samples: SampleWithPack[] }>();
 
-function EmptyState({
-  icon: Icon,
-  title,
-  description
-}: {
-  icon: React.ElementType;
-  title: string;
-  description: string;
-}) {
-  return (
-    <div className="text-center py-12 bg-grey-800/30 rounded-card">
-      <div className="w-12 h-12 rounded-full bg-grey-700 flex items-center justify-center mx-auto mb-3">
-        <Icon className="w-6 h-6 text-text-subtle" />
-      </div>
-      <h3 className="text-body font-medium text-white mb-1">{title}</h3>
-      <p className="text-body-sm text-text-muted">{description}</p>
-    </div>
-  );
+  for (const sample of samples) {
+    const packId = sample.pack.id;
+    if (!groups.has(packId)) {
+      groups.set(packId, { pack: sample.pack, samples: [] });
+    }
+    groups.get(packId)!.samples.push(sample);
+  }
+
+  return groups;
 }
 
 export default async function LibraryPage() {
@@ -205,6 +178,14 @@ export default async function LibraryPage() {
     checkUserAccess(user.id),
   ]);
 
+  // Group by pack
+  const likedByPack = groupByPack(likedSamples);
+  const downloadsByPack = groupByPack(downloadHistory);
+
+  // Convert to arrays for serialization
+  const likedGroupsArray = Array.from(likedByPack.values());
+  const downloadsGroupsArray = Array.from(downloadsByPack.values());
+
   return (
     <div className="section">
       <div className="container-app">
@@ -216,65 +197,47 @@ export default async function LibraryPage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Liked Samples */}
-          <section>
-            <div className="flex items-center gap-2 mb-4">
-              <Heart className="w-5 h-5 text-error" />
-              <h2 className="text-h3 text-white">Liked Samples</h2>
-              <span className="text-caption text-text-muted ml-auto">
-                {likedSamples.length} {likedSamples.length === 1 ? "sample" : "samples"}
-              </span>
+        {/* Stats */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+          <div className="bg-grey-800/50 border border-grey-700 rounded-lg p-4">
+            <div className="flex items-center gap-2 text-error mb-1">
+              <Heart className="w-4 h-4" />
+              <span className="text-caption text-snow/60">Liked</span>
             </div>
-
-            <Suspense fallback={<SampleListSkeleton />}>
-              {likedSamples.length > 0 ? (
-                <CollapsibleSampleList
-                  samples={likedSamples}
-                  canDownload={canDownload}
-                  likedSampleIds={likedIds}
-                  showPackName
-                  initialCount={5}
-                />
-              ) : (
-                <EmptyState
-                  icon={Heart}
-                  title="No liked samples yet"
-                  description="Heart samples you love to save them here"
-                />
-              )}
-            </Suspense>
-          </section>
-
-          {/* Download History */}
-          <section>
-            <div className="flex items-center gap-2 mb-4">
-              <Download className="w-5 h-5 text-success" />
-              <h2 className="text-h3 text-white">Recent Downloads</h2>
-              <span className="text-caption text-text-muted ml-auto">
-                {downloadHistory.length} {downloadHistory.length === 1 ? "sample" : "samples"}
-              </span>
+            <p className="text-h3 text-snow">{likedSamples.length}</p>
+          </div>
+          <div className="bg-grey-800/50 border border-grey-700 rounded-lg p-4">
+            <div className="flex items-center gap-2 text-success mb-1">
+              <Download className="w-4 h-4" />
+              <span className="text-caption text-snow/60">Downloaded</span>
             </div>
-
-            <Suspense fallback={<SampleListSkeleton />}>
-              {downloadHistory.length > 0 ? (
-                <CollapsibleSampleList
-                  samples={downloadHistory}
-                  canDownload={canDownload}
-                  likedSampleIds={likedIds}
-                  showPackName
-                  initialCount={5}
-                />
-              ) : (
-                <EmptyState
-                  icon={Clock}
-                  title="No downloads yet"
-                  description="Samples you download will appear here"
-                />
-              )}
-            </Suspense>
-          </section>
+            <p className="text-h3 text-snow">{downloadHistory.length}</p>
+          </div>
+          <div className="bg-grey-800/50 border border-grey-700 rounded-lg p-4">
+            <div className="flex items-center gap-2 text-primary mb-1">
+              <Package className="w-4 h-4" />
+              <span className="text-caption text-snow/60">Packs</span>
+            </div>
+            <p className="text-h3 text-snow">{new Set([...Array.from(likedByPack.keys()), ...Array.from(downloadsByPack.keys())]).size}</p>
+          </div>
+          <div className="bg-grey-800/50 border border-grey-700 rounded-lg p-4">
+            <div className="flex items-center gap-2 text-warning mb-1">
+              <Music className="w-4 h-4" />
+              <span className="text-caption text-snow/60">Unique</span>
+            </div>
+            <p className="text-h3 text-snow">{new Set([...likedSamples.map(s => s.id), ...downloadHistory.map(s => s.id)]).size}</p>
+          </div>
         </div>
+
+        {/* Tabs with search and grouped content */}
+        <LibraryTabs
+          likedGroups={likedGroupsArray}
+          downloadGroups={downloadsGroupsArray}
+          likedSampleIds={Array.from(likedIds)}
+          canDownload={canDownload}
+          totalLiked={likedSamples.length}
+          totalDownloaded={downloadHistory.length}
+        />
       </div>
     </div>
   );
