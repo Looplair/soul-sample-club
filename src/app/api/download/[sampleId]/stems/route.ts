@@ -33,15 +33,25 @@ export async function GET(
     }
 
     // Check subscription status using admin client to bypass RLS
-    // Use limit(1) instead of single() because user may have multiple subscription rows
+    // Also filter by current_period_end being in the future to catch stale rows
+    const now = new Date().toISOString();
     const subscriptionResult = await adminSupabase
       .from("subscriptions")
       .select("status, current_period_end")
       .eq("user_id", user.id)
       .in("status", ["active", "trialing"])
+      .gte("current_period_end", now)
       .limit(1);
 
     const subscription = subscriptionResult.data?.[0] as { status: string; current_period_end: string } | undefined;
+
+    // Auto-cleanup stale rows
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (adminSupabase.from("subscriptions") as any)
+      .update({ status: "canceled" })
+      .eq("user_id", user.id)
+      .in("status", ["active", "trialing"])
+      .lt("current_period_end", now);
 
     // Check Patreon link status using admin client to bypass RLS
     const patreonResult = await adminSupabase

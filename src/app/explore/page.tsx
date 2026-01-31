@@ -83,13 +83,15 @@ async function getUserState(): Promise<{
     }
 
     // Check for active subscription (Stripe or Patreon)
+    const now = new Date().toISOString();
     const [subscriptionResult, patreonResult] = await Promise.all([
       supabase
         .from("subscriptions")
         .select("status")
         .eq("user_id", user.id)
         .in("status", ["active", "trialing"])
-        .single(),
+        .gte("current_period_end", now)
+        .limit(1),
       supabase
         .from("patreon_links")
         .select("is_active")
@@ -98,7 +100,7 @@ async function getUserState(): Promise<{
         .single(),
     ]);
 
-    const hasStripe = !!subscriptionResult.data;
+    const hasStripe = (subscriptionResult.data?.length ?? 0) > 0;
     const hasPatreon = !!patreonResult.data;
 
     return {

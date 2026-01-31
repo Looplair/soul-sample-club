@@ -127,12 +127,23 @@ async function checkUserAccess(userId: string): Promise<boolean> {
 
   // Check Stripe subscription
   // Use limit(1) instead of single() because user may have multiple subscription rows
+  // Filter by current_period_end to catch stale rows where webhook didn't fire
+  const now = new Date().toISOString();
   const stripeResult = await adminSupabase
     .from("subscriptions")
     .select("status")
     .eq("user_id", userId)
     .in("status", ["active", "trialing"])
+    .gte("current_period_end", now)
     .limit(1);
+
+  // Auto-cleanup: mark any expired active/trialing rows as canceled
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (adminSupabase.from("subscriptions") as any)
+    .update({ status: "canceled" })
+    .eq("user_id", userId)
+    .in("status", ["active", "trialing"])
+    .lt("current_period_end", now);
 
   if ((stripeResult.data?.length ?? 0) > 0) {
     return true;
