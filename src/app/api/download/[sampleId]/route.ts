@@ -56,10 +56,17 @@ export async function GET(
       );
     }
 
-    // Check subscription status using admin client to bypass RLS
-    // Use limit(1) instead of single() because user may have multiple subscription rows
-    // Also filter by current_period_end being in the future to catch stale rows
+    // Auto-cleanup first: mark any expired active/trialing rows as canceled
+    // This fixes stale rows where Stripe webhook didn't fire
     const now = new Date().toISOString();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (adminSupabase.from("subscriptions") as any)
+      .update({ status: "canceled" })
+      .eq("user_id", user.id)
+      .in("status", ["active", "trialing"])
+      .lt("current_period_end", now);
+
+    // Then check subscription status using admin client to bypass RLS
     const subscriptionResult = await adminSupabase
       .from("subscriptions")
       .select("status, current_period_end, user_id")
@@ -69,15 +76,6 @@ export async function GET(
       .limit(1);
 
     const subscription = subscriptionResult.data?.[0] as { status: string; current_period_end: string } | undefined;
-
-    // Auto-cleanup: mark any expired active/trialing rows as canceled
-    // This fixes stale rows where Stripe webhook didn't fire
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (adminSupabase.from("subscriptions") as any)
-      .update({ status: "canceled" })
-      .eq("user_id", user.id)
-      .in("status", ["active", "trialing"])
-      .lt("current_period_end", now);
 
     // Check Patreon link status using admin client to bypass RLS
     const patreonResult = await adminSupabase
@@ -161,7 +159,7 @@ export async function GET(
     // Record download for analytics (ignore errors - don't block download)
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supabase.from("downloads") as any).insert({
+      await (adminSupabase.from("downloads") as any).insert({
         user_id: user.id,
         sample_id: sampleId,
       });

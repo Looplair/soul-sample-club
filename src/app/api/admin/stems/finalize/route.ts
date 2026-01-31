@@ -17,16 +17,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user is admin using admin client (bypasses RLS)
-    const { data: profile, error: profileError } = await adminSupabase
+    const { data: profile } = await adminSupabase
       .from("profiles")
-      .select("role")
+      .select("is_admin")
       .eq("id", user.id)
       .single();
 
-    console.log("Finalize - Profile check:", { userId: user.id, profile, profileError });
-
-    const profileData = profile as { role: string } | null;
-    if (profileData?.role !== "admin") {
+    const profileData = profile as { is_admin: boolean } | null;
+    if (!profileData?.is_admin) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

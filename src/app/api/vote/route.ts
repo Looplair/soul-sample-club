@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export async function POST(request: Request) {
   try {
     const supabase = await createClient();
@@ -15,8 +17,8 @@ export async function POST(request: Request) {
 
     const { packId } = await request.json();
 
-    if (!packId) {
-      return NextResponse.json({ error: "Pack ID required" }, { status: 400 });
+    if (!packId || !UUID_REGEX.test(packId)) {
+      return NextResponse.json({ error: "Valid pack ID required" }, { status: 400 });
     }
 
     const adminSupabase = createAdminClient();
@@ -66,8 +68,8 @@ export async function DELETE(request: Request) {
 
     const { packId } = await request.json();
 
-    if (!packId) {
-      return NextResponse.json({ error: "Pack ID required" }, { status: 400 });
+    if (!packId || !UUID_REGEX.test(packId)) {
+      return NextResponse.json({ error: "Valid pack ID required" }, { status: 400 });
     }
 
     const adminSupabase = createAdminClient();
