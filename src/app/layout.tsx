@@ -4,6 +4,7 @@ import "./globals.css";
 import { AudioProvider } from "@/contexts/AudioContext";
 import { NowPlayingBar } from "@/components/audio/NowPlayingBar";
 import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
+import { KlaviyoTracking } from "@/components/analytics/KlaviyoTracking";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -61,6 +62,7 @@ export default function RootLayout({
     <html lang="en" className={`${inter.variable} ${bebasNeue.variable}`}>
       <body className="font-sans min-h-screen flex flex-col">
         {gaId && <GoogleAnalytics gaId={gaId} />}
+        <KlaviyoTracking />
         <AudioProvider>
           <div className="flex-1 pb-20">{children}</div>
           <NowPlayingBar />

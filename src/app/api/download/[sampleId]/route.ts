@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+import { isPackExpiredWithEndDate } from "@/lib/utils";
 import type { Sample } from "@/types/database";
 
 // UUID validation regex
@@ -12,6 +13,7 @@ interface SampleWithPack extends Sample {
   pack: {
     id: string;
     release_date: string;
+    end_date: string | null;
     is_published: boolean;
   } | null;
 }
@@ -88,7 +90,7 @@ export async function GET(
       .select(
         `
         *,
-        pack:packs(id, release_date, is_published)
+        pack:packs(id, release_date, end_date, is_published)
       `
       )
       .eq("id", sampleId)
@@ -115,14 +117,10 @@ export async function GET(
       return NextResponse.json({ error: "Pack not available" }, { status: 404 });
     }
 
-    // Check if pack is within 3-month window
-    const releaseDate = new Date(sample.pack.release_date);
-    const threeMonthsAgo = new Date();
-    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
-
-    if (releaseDate < threeMonthsAgo) {
+    // Check if pack is archived (expired based on end_date or default window)
+    if (isPackExpiredWithEndDate(sample.pack.release_date, sample.pack.end_date)) {
       return NextResponse.json(
-        { error: "Pack is outside access window" },
+        { error: "Pack has been archived and is no longer available for download" },
         { status: 403 }
       );
     }

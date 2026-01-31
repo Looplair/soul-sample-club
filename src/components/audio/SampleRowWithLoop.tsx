@@ -1122,7 +1122,7 @@ export function SampleRowWithLoop({
           )}
 
           <Button
-            variant="ghost"
+            variant={canDownload && sample.stems_path ? "secondary" : "ghost"}
             size="sm"
             onClick={handleDownloadStems}
             disabled={isDownloadingStems || !canDownload || !sample.stems_path}
@@ -1135,8 +1135,15 @@ export function SampleRowWithLoop({
               ) : !canDownload ? (
                 <Lock className="w-4 h-4" />
               ) : (
-                <Archive className="w-4 h-4" />
+                <Download className="w-4 h-4" />
               )
+            }
+            title={
+              !sample.stems_path
+                ? "No stems available"
+                : !canDownload
+                ? "Subscribe to download stems"
+                : "Download stems"
             }
           >
             <span className="hidden sm:inline">Stems</span>

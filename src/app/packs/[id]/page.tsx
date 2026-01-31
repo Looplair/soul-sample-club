@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import { SubscribeButton } from "@/components/subscription/SubscribeButton";
 import { ShareButtonsInline } from "@/components/social/ShareButtons";
+import { VoteBringBack } from "@/components/packs/VoteBringBack";
 import type { Pack, Sample } from "@/types/database";
 
 // -----------------------------------------
@@ -151,6 +152,40 @@ async function getUserAccess(): Promise<{ hasAccess: boolean; isLoggedIn: boolea
 }
 
 // -----------------------------------------
+// FETCH VOTE DATA
+// -----------------------------------------
+async function getVoteData(packId: string): Promise<{ hasVoted: boolean; voteCount: number }> {
+  const supabase = await createClient();
+  const adminSupabase = createAdminClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // Get total vote count
+  const countResult = await adminSupabase
+    .from("pack_votes")
+    .select("id", { count: "exact" })
+    .eq("pack_id", packId);
+
+  const voteCount = countResult.count ?? 0;
+
+  // Check if current user has voted
+  let hasVoted = false;
+  if (user) {
+    const voteResult = await adminSupabase
+      .from("pack_votes")
+      .select("id")
+      .eq("pack_id", packId)
+      .eq("user_id", user.id)
+      .limit(1);
+
+    hasVoted = (voteResult.data?.length ?? 0) > 0;
+  }
+
+  return { hasVoted, voteCount };
+}
+
+// -----------------------------------------
 // PAGE COMPONENT
 // -----------------------------------------
 export default async function PackDetailPage({
@@ -181,6 +216,9 @@ export default async function PackDetailPage({
   // Calculate expiry countdown for non-expired packs
   const daysRemaining = !isExpired ? getDaysUntilEndDate(pack.release_date, endDate, isBonus ? 1 : 3) : 0;
   const expiryBadgeText = !isExpired ? getExpiryBadgeText(daysRemaining) : null;
+
+  // Fetch vote data for expired packs
+  const voteData = isExpired ? await getVoteData(id) : { hasVoted: false, voteCount: 0 };
 
   // Expired packs: everyone can preview, no one can download
   // Active packs: subscribers/patrons can download, others can preview
@@ -407,16 +445,24 @@ export default async function PackDetailPage({
 
               {/* Status Messages */}
               {isExpired ? (
-                <div className="bg-grey-800/50 border border-grey-700 rounded-card p-4 flex items-start sm:items-center gap-3">
-                  <Archive className="w-5 h-5 text-text-muted flex-shrink-0 mt-0.5 sm:mt-0" />
-                  <div>
-                    <p className="text-body text-text-secondary font-medium">
-                      This release has been archived
-                    </p>
-                    <p className="text-body-sm text-text-muted mt-1">
-                      You can still preview all tracks. Downloads are no longer available.
-                    </p>
+                <div className="space-y-4">
+                  <div className="bg-grey-800/50 border border-grey-700 rounded-card p-4 flex items-start sm:items-center gap-3">
+                    <Archive className="w-5 h-5 text-text-muted flex-shrink-0 mt-0.5 sm:mt-0" />
+                    <div>
+                      <p className="text-body text-text-secondary font-medium">
+                        This release has been archived
+                      </p>
+                      <p className="text-body-sm text-text-muted mt-1">
+                        You can still preview all tracks. Downloads are no longer available.
+                      </p>
+                    </div>
                   </div>
+                  <VoteBringBack
+                    packId={pack.id}
+                    initialHasVoted={voteData.hasVoted}
+                    initialVoteCount={voteData.voteCount}
+                    isLoggedIn={isLoggedIn}
+                  />
                 </div>
               ) : !isLoggedIn ? (
                 <div className="bg-white/5 border border-white/10 rounded-card p-4 flex items-start sm:items-center gap-3">

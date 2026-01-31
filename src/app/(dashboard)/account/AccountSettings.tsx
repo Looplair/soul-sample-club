@@ -354,6 +354,14 @@ function BillingTab({ subscription, patreonLink }: { subscription: Subscription 
                     Cancel Subscription
                   </Button>
                 )}
+                {!isStripeActive && (
+                  <Button
+                    onClick={handleSubscribe}
+                    isLoading={isLoading}
+                  >
+                    Subscribe Again
+                  </Button>
+                )}
               </div>
               <p className="text-xs text-text-subtle mt-2">
                 Manage billing, update payment method, or cancel your subscription through Stripe.

@@ -413,9 +413,9 @@ const handleDownloadStems = async () => {
             </button>
           )}
 
-          {/* Stems Button - always visible, icon-only on mobile */}
+          {/* Stems Button - matches download button styling when available */}
           <Button
-            variant="ghost"
+            variant={canDownload && sample.stems_path ? "secondary" : "ghost"}
             size="sm"
             onClick={handleDownloadStems}
             disabled={isDownloadingStems || !canDownload || !sample.stems_path}
@@ -428,7 +428,7 @@ const handleDownloadStems = async () => {
               ) : !canDownload ? (
                 <Lock className="w-4 h-4" />
               ) : (
-                <Archive className="w-4 h-4" />
+                <Download className="w-4 h-4" />
               )
             }
             title={

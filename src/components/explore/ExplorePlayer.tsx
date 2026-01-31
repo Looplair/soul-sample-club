@@ -31,11 +31,16 @@ interface ExplorePlayerProps {
   hasSubscription?: boolean;
 }
 
-// Helper to check if pack is archived
-function isArchived(releaseDate: string): boolean {
-  const threeMonthsAgo = new Date();
-  threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
-  return new Date(releaseDate) < threeMonthsAgo;
+// Helper to check if pack is archived using end_date if available
+function isArchived(releaseDate: string, endDate?: string | null): boolean {
+  if (endDate) {
+    return new Date() > new Date(endDate);
+  }
+  // Default: 3 months from release
+  const release = new Date(releaseDate);
+  const expiryDate = new Date(release);
+  expiryDate.setMonth(expiryDate.getMonth() + 3);
+  return new Date() > expiryDate;
 }
 
 // Format duration from seconds to mm:ss
@@ -299,7 +304,7 @@ export function ExplorePlayer({
   const [preloadedTracks, setPreloadedTracks] = useState<Set<string>>(new Set());
 
   const currentSample = samples[currentIndex];
-  const packIsArchived = currentSample ? isArchived(currentSample.pack.release_date) : false;
+  const packIsArchived = currentSample ? isArchived(currentSample.pack.release_date, currentSample.pack.end_date) : false;
   const hasVoted = currentSample ? votes.has(currentSample.pack.id) : false;
 
   // Audio URL state - fetched from API
@@ -679,7 +684,7 @@ export function ExplorePlayer({
               isLoading={index === currentIndex && isLoading}
               progress={index === currentIndex ? progress : 0}
               currentTime={index === currentIndex ? currentTime : 0}
-              packIsArchived={isArchived(sample.pack.release_date)}
+              packIsArchived={isArchived(sample.pack.release_date, sample.pack.end_date)}
               hasVoted={votes.has(sample.pack.id)}
               isLoggedIn={isLoggedIn}
               hasSubscription={hasSubscription}

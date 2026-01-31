@@ -68,14 +68,17 @@ export async function POST() {
       let subscriptionType: "stripe_active" | "stripe_trialing" | "patreon" | "free" | "canceled" = "free";
 
       const stripeStatus = subscriptionMap[u.id];
+      const hasActivePatreon = patreonMap[u.id] === true;
+
       if (stripeStatus === "active") {
         subscriptionType = "stripe_active";
       } else if (stripeStatus === "trialing") {
         subscriptionType = "stripe_trialing";
+      } else if (hasActivePatreon) {
+        // Patreon takes priority over canceled Stripe status
+        subscriptionType = "patreon";
       } else if (stripeStatus === "canceled") {
         subscriptionType = "canceled";
-      } else if (patreonMap[u.id]) {
-        subscriptionType = "patreon";
       }
 
       return {
