@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { bulkSyncUsersToKlaviyo } from "@/lib/klaviyo";
 
 export async function POST() {
@@ -34,11 +35,14 @@ export async function POST() {
       );
     }
 
+    // Use admin client to bypass RLS and fetch ALL users' data
+    const adminSupabase = createAdminClient();
+
     // Fetch all users with their subscription info
     const [usersResult, subscriptionsResult, patreonResult] = await Promise.all([
-      supabase.from("profiles").select("id, email, full_name, created_at"),
-      supabase.from("subscriptions").select("user_id, status, current_period_end"),
-      supabase.from("patreon_links").select("user_id, is_active"),
+      adminSupabase.from("profiles").select("id, email, full_name, created_at"),
+      adminSupabase.from("subscriptions").select("user_id, status, current_period_end"),
+      adminSupabase.from("patreon_links").select("user_id, is_active"),
     ]);
 
     if (usersResult.error) {
