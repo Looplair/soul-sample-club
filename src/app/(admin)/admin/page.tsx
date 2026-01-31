@@ -434,8 +434,8 @@ export default async function AdminDashboardPage() {
         />
         <StatCard
           title="Active Subscribers"
-          value={stats.activeSubscriptions}
-          subtext={`${Math.round((stats.activeSubscriptions / Math.max(stats.totalUsers, 1)) * 100)}% conversion`}
+          value={subscriptionBreakdown.stripeActive + subscriptionBreakdown.stripTrialing + subscriptionBreakdown.patreonActive}
+          subtext={`${subscriptionBreakdown.stripeActive + subscriptionBreakdown.stripTrialing} Stripe, ${subscriptionBreakdown.patreonActive} Patreon`}
           icon={<CreditCard className="w-5 h-5" />}
           color="mint"
           href="/admin/analytics"

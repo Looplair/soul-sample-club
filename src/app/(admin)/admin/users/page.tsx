@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { createClient } from "@/lib/supabase/client";
 import {
   Search,
   Filter,
@@ -66,48 +65,36 @@ export default function AdminUsersPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const supabase = createClient();
-
-  // Fetch data
+  // Fetch data via admin API route to bypass RLS
   const fetchData = async () => {
     setLoading(true);
 
-    const [usersResult, downloadsResult, patreonResult] = await Promise.all([
-      supabase
-        .from("profiles")
-        .select(
-          `
-          id,
-          email,
-          full_name,
-          is_admin,
-          created_at,
-          subscription:subscriptions(status, current_period_end)
-        `
-        )
-        .order("created_at", { ascending: false }),
-      supabase.from("downloads").select("user_id"),
-      supabase.from("patreon_links").select("user_id, is_active, tier_title"),
-    ]);
+    try {
+      const res = await fetch("/api/admin/users");
+      if (!res.ok) throw new Error("Failed to fetch");
+      const data = await res.json();
 
-    if (usersResult.data) {
-      setUsers(usersResult.data as UserRow[]);
-    }
-
-    if (downloadsResult.data) {
-      const counts: Record<string, number> = {};
-      for (const row of downloadsResult.data as DownloadCount[]) {
-        counts[row.user_id] = (counts[row.user_id] || 0) + 1;
+      if (data.users) {
+        setUsers(data.users as UserRow[]);
       }
-      setDownloadCounts(counts);
-    }
 
-    if (patreonResult.data) {
-      const links: Record<string, PatreonLink> = {};
-      for (const row of patreonResult.data as PatreonLink[]) {
-        links[row.user_id] = row;
+      if (data.downloads) {
+        const counts: Record<string, number> = {};
+        for (const row of data.downloads as DownloadCount[]) {
+          counts[row.user_id] = (counts[row.user_id] || 0) + 1;
+        }
+        setDownloadCounts(counts);
       }
-      setPatreonLinks(links);
+
+      if (data.patreonLinks) {
+        const links: Record<string, PatreonLink> = {};
+        for (const row of data.patreonLinks as PatreonLink[]) {
+          links[row.user_id] = row;
+        }
+        setPatreonLinks(links);
+      }
+    } catch (err) {
+      console.error("Failed to fetch users:", err);
     }
 
     setLoading(false);
