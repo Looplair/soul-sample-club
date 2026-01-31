@@ -168,6 +168,19 @@ export async function POST(request: Request) {
         if (error) {
           console.error("Error upserting subscription:", error);
         }
+
+        // If user cancels during trial, cancel immediately so they don't get charged
+        if (
+          subscription.status === "trialing" &&
+          subscription.cancel_at_period_end
+        ) {
+          console.log("Trial cancellation detected, canceling immediately:", subscription.id);
+          try {
+            await stripe.subscriptions.cancel(subscription.id);
+          } catch (cancelErr) {
+            console.error("Error immediately canceling trial subscription:", cancelErr);
+          }
+        }
         break;
       }
 
