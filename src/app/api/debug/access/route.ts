@@ -23,12 +23,22 @@ export async function GET() {
       .select("id, status, current_period_end, current_period_start, stripe_subscription_id, cancel_at_period_end, created_at")
       .eq("user_id", user.id);
 
-    // Get active/trialing only (what the download API checks)
+    // Auto-cleanup: mark any expired active/trialing rows as canceled
+    const now = new Date().toISOString();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (adminSupabase.from("subscriptions") as any)
+      .update({ status: "canceled" })
+      .eq("user_id", user.id)
+      .in("status", ["active", "trialing"])
+      .lt("current_period_end", now);
+
+    // Get active/trialing only WITH current_period_end check (what the download API checks)
     const activeSubsResult = await adminSupabase
       .from("subscriptions")
       .select("id, status, current_period_end")
       .eq("user_id", user.id)
-      .in("status", ["active", "trialing"]);
+      .in("status", ["active", "trialing"])
+      .gte("current_period_end", now);
 
     // Get Patreon
     const patreonResult = await adminSupabase
