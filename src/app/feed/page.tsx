@@ -63,12 +63,14 @@ async function getUserState(): Promise<{ isLoggedIn: boolean; hasSubscription: b
       return { isLoggedIn: false, hasSubscription: false, hasPatreon: false };
     }
 
-    // Use limit(1) instead of single() because user may have multiple subscription rows
+    // Check for active subscription with valid period end date
+    const now = new Date().toISOString();
     const subResult = await adminSupabase
       .from("subscriptions")
       .select("status")
       .eq("user_id", user.id)
       .in("status", ["active", "trialing"])
+      .gte("current_period_end", now)
       .limit(1);
 
     let hasPatreon = false;

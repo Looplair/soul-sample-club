@@ -128,12 +128,14 @@ async function getUserAccess(): Promise<{ hasAccess: boolean; isLoggedIn: boolea
   if (!user) return { hasAccess: false, isLoggedIn: false };
 
   // Check subscription using admin client to bypass RLS
-  // Use limit(1) instead of single() because user may have multiple subscription rows
+  // Filter by current_period_end in the future to catch stale rows
+  const now = new Date().toISOString();
   const subResult = await adminSupabase
     .from("subscriptions")
     .select("status")
     .eq("user_id", user.id)
     .in("status", ["active", "trialing"])
+    .gte("current_period_end", now)
     .limit(1);
 
   const hasSubscription = (subResult.data?.length ?? 0) > 0;
