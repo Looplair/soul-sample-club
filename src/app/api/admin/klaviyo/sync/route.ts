@@ -37,7 +37,7 @@ export async function POST() {
     // Fetch all users with their subscription info
     const [usersResult, subscriptionsResult, patreonResult] = await Promise.all([
       supabase.from("profiles").select("id, email, full_name, created_at"),
-      supabase.from("subscriptions").select("user_id, status"),
+      supabase.from("subscriptions").select("user_id, status, current_period_end"),
       supabase.from("patreon_links").select("user_id, is_active"),
     ]);
 
@@ -45,12 +45,25 @@ export async function POST() {
       return NextResponse.json({ error: "Failed to fetch users" }, { status: 500 });
     }
 
-    // Build subscription lookup
+    // Build subscription lookup - only count subscriptions with valid current_period_end
     const subscriptionMap: Record<string, string> = {};
-    const subscriptions = subscriptionsResult.data as Array<{ user_id: string; status: string }> | null;
+    const now = new Date().toISOString();
+    const subscriptions = subscriptionsResult.data as Array<{ user_id: string; status: string; current_period_end: string | null }> | null;
     if (subscriptions) {
       for (const sub of subscriptions) {
-        subscriptionMap[sub.user_id] = sub.status;
+        // Skip expired active/trialing rows (stale webhook data)
+        if ((sub.status === "active" || sub.status === "trialing") && sub.current_period_end && sub.current_period_end < now) {
+          // Treat as canceled
+          if (!subscriptionMap[sub.user_id]) {
+            subscriptionMap[sub.user_id] = "canceled";
+          }
+          continue;
+        }
+        // Prioritize: active > trialing > canceled > anything else
+        const existing = subscriptionMap[sub.user_id];
+        if (!existing || sub.status === "active" || (sub.status === "trialing" && existing !== "active")) {
+          subscriptionMap[sub.user_id] = sub.status;
+        }
       }
     }
 
