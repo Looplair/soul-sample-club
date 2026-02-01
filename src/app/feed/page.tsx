@@ -8,8 +8,10 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { PackCard } from "@/components/packs/PackCard";
 import { Button } from "@/components/ui";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { getNotificationsForUser } from "@/lib/notifications";
 import { Music, LogIn, Archive, User, Sparkles, Star } from "lucide-react";
-import type { Sample, Subscription } from "@/types/database";
+import type { Sample, Subscription, NotificationWithReadStatus } from "@/types/database";
 
 export const metadata = {
   title: "Catalog | Soul Sample Club",
@@ -52,7 +54,7 @@ async function getAllPacks(): Promise<PackWithSamples[]> {
 
 // Check if user is logged in and has subscription
 // Uses admin client for subscription/patreon checks to bypass RLS
-async function getUserState(): Promise<{ isLoggedIn: boolean; hasSubscription: boolean; hasPatreon: boolean }> {
+async function getUserState(): Promise<{ isLoggedIn: boolean; hasSubscription: boolean; hasPatreon: boolean; userId: string | null }> {
   try {
     const supabase = await createClient();
     const adminSupabase = createAdminClient();
@@ -61,7 +63,7 @@ async function getUserState(): Promise<{ isLoggedIn: boolean; hasSubscription: b
     } = await supabase.auth.getUser();
 
     if (!user) {
-      return { isLoggedIn: false, hasSubscription: false, hasPatreon: false };
+      return { isLoggedIn: false, hasSubscription: false, hasPatreon: false, userId: null };
     }
 
     // Check for active subscription with valid period end date
@@ -91,9 +93,10 @@ async function getUserState(): Promise<{ isLoggedIn: boolean; hasSubscription: b
       isLoggedIn: true,
       hasSubscription: (subResult.data?.length ?? 0) > 0,
       hasPatreon,
+      userId: user.id,
     };
   } catch {
-    return { isLoggedIn: false, hasSubscription: false, hasPatreon: false };
+    return { isLoggedIn: false, hasSubscription: false, hasPatreon: false, userId: null };
   }
 }
 
@@ -127,8 +130,13 @@ export default async function FeedPage() {
     getUserState(),
   ]);
 
-  const { isLoggedIn, hasSubscription, hasPatreon } = userState;
+  const { isLoggedIn, hasSubscription, hasPatreon, userId } = userState;
   const hasAccess = hasSubscription || hasPatreon;
+
+  // Fetch notifications for logged-in users
+  const { notifications, unreadCount } = userId
+    ? await getNotificationsForUser(userId)
+    : { notifications: [] as NotificationWithReadStatus[], unreadCount: 0 };
 
   return (
     <div className="min-h-screen bg-charcoal">
@@ -147,8 +155,13 @@ export default async function FeedPage() {
           </Link>
 
           <div className="flex items-center gap-2 sm:gap-3">
-            {isLoggedIn ? (
+            {isLoggedIn && userId ? (
               <>
+                <NotificationBell
+                  userId={userId}
+                  initialNotifications={notifications}
+                  initialUnreadCount={unreadCount}
+                />
                 <Link href="/library" className="hidden sm:block">
                   <Button variant="ghost" size="sm">
                     Library

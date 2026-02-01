@@ -15,7 +15,9 @@ import { cn } from "@/lib/utils";
 import { SubscribeButton } from "@/components/subscription/SubscribeButton";
 import { ShareButtonsInline } from "@/components/social/ShareButtons";
 import { VoteBringBack } from "@/components/packs/VoteBringBack";
-import type { Pack, Sample } from "@/types/database";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { getNotificationsForUser } from "@/lib/notifications";
+import type { Pack, Sample, NotificationWithReadStatus } from "@/types/database";
 
 // -----------------------------------------
 // TYPE DEFINITIONS
@@ -118,14 +120,14 @@ async function getPack(id: string): Promise<PackWithSamples | null> {
 // FETCH ACCESS (subscription OR patreon)
 // -----------------------------------------
 // Uses admin client to bypass RLS for subscription checks
-async function getUserAccess(): Promise<{ hasAccess: boolean; isLoggedIn: boolean }> {
+async function getUserAccess(): Promise<{ hasAccess: boolean; isLoggedIn: boolean; userId: string | null }> {
   const supabase = await createClient();
   const adminSupabase = createAdminClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) return { hasAccess: false, isLoggedIn: false };
+  if (!user) return { hasAccess: false, isLoggedIn: false, userId: null };
 
   // Check subscription using admin client to bypass RLS
   // Filter by current_period_end in the future to catch stale rows
@@ -152,7 +154,8 @@ async function getUserAccess(): Promise<{ hasAccess: boolean; isLoggedIn: boolea
 
   return {
     hasAccess: hasSubscription || hasPatreon,
-    isLoggedIn: true
+    isLoggedIn: true,
+    userId: user.id,
   };
 }
 
@@ -209,7 +212,12 @@ export default async function PackDetailPage({
     notFound();
   }
 
-  const { hasAccess, isLoggedIn } = userState;
+  const { hasAccess, isLoggedIn, userId } = userState;
+
+  // Fetch notifications for logged-in users
+  const { notifications, unreadCount } = userId
+    ? await getNotificationsForUser(userId)
+    : { notifications: [] as NotificationWithReadStatus[], unreadCount: 0 };
 
   // Pack status checks
   const isNew = isPackNew(pack.release_date);
@@ -255,12 +263,19 @@ export default async function PackDetailPage({
           </Link>
 
           <div className="flex items-center gap-3">
-            {isLoggedIn ? (
-              <Link href="/">
-                <Button variant="secondary" size="sm">
-                  Catalog
-                </Button>
-              </Link>
+            {isLoggedIn && userId ? (
+              <>
+                <NotificationBell
+                  userId={userId}
+                  initialNotifications={notifications}
+                  initialUnreadCount={unreadCount}
+                />
+                <Link href="/">
+                  <Button variant="secondary" size="sm">
+                    Catalog
+                  </Button>
+                </Link>
+              </>
             ) : (
               <>
                 <Link href="/login">
