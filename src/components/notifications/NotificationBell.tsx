@@ -102,6 +102,14 @@ export function NotificationBell({
     setUnreadCount((prev) => Math.max(0, prev - 1));
   };
 
+  const handleClearAll = async () => {
+    // Mark all as read then clear from view
+    await handleMarkAllRead();
+    setNotifications([]);
+    setUnreadCount(0);
+    setIsOpen(false);
+  };
+
   const handleMarkAllRead = async () => {
     const unread = notifications.filter((n) => !n.is_read);
     if (unread.length === 0) return;
@@ -145,6 +153,7 @@ export function NotificationBell({
             notifications={notifications}
             onMarkAsRead={handleMarkAsRead}
             onMarkAllRead={handleMarkAllRead}
+            onClearAll={handleClearAll}
             onClose={() => setIsOpen(false)}
           />
         )}

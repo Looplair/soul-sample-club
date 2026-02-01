@@ -7,6 +7,7 @@ import {
   Megaphone,
   Info,
   Bell,
+  ExternalLink,
 } from "lucide-react";
 import { Card, CardContent, Badge } from "@/components/ui";
 import { CreateNotificationButton } from "@/components/admin/CreateNotificationButton";
@@ -58,14 +59,6 @@ export default function AdminNotificationsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Re-fetch when router refreshes (after create/delete)
-  useEffect(() => {
-    const handleFocus = () => fetchNotifications();
-    window.addEventListener("focus", handleFocus);
-    return () => window.removeEventListener("focus", handleFocus);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -75,7 +68,7 @@ export default function AdminNotificationsPage() {
             Manage notifications shown to all users. Auto-generated when packs are published or returned.
           </p>
         </div>
-        <CreateNotificationButton />
+        <CreateNotificationButton onCreated={fetchNotifications} />
       </div>
 
       <Card>
@@ -88,7 +81,7 @@ export default function AdminNotificationsPage() {
                 <Bell className="w-7 h-7 text-text-muted opacity-40" />
               </div>
               <p className="text-text-muted mb-4">No notifications yet</p>
-              <CreateNotificationButton />
+              <CreateNotificationButton onCreated={fetchNotifications} />
             </div>
           ) : (
             <div className="divide-y divide-white/5">
@@ -129,6 +122,12 @@ export default function AdminNotificationsPage() {
                             Expires {formatDate(notification.expires_at)}
                           </span>
                         )}
+                        {notification.link_url && (
+                          <span className="flex items-center gap-1">
+                            <ExternalLink className="w-2.5 h-2.5" />
+                            {notification.link_url}
+                          </span>
+                        )}
                       </div>
                     </div>
 
@@ -136,6 +135,7 @@ export default function AdminNotificationsPage() {
                     <DeleteNotificationButton
                       notificationId={notification.id}
                       notificationTitle={notification.title}
+                      onDeleted={fetchNotifications}
                     />
                   </div>
                 );

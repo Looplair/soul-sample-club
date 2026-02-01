@@ -7,12 +7,17 @@ import { createClient } from "@/lib/supabase/client";
 import { Button, Input } from "@/components/ui";
 import { Modal } from "@/components/ui/Modal";
 
-export function CreateNotificationButton() {
+interface CreateNotificationButtonProps {
+  onCreated?: () => void;
+}
+
+export function CreateNotificationButton({ onCreated }: CreateNotificationButtonProps = {}) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [title, setTitle] = useState("");
   const [message, setMessage] = useState("");
   const [type, setType] = useState<"announcement" | "custom">("announcement");
+  const [linkUrl, setLinkUrl] = useState("");
   const router = useRouter();
   const supabase = createClient();
 
@@ -30,6 +35,7 @@ export function CreateNotificationButton() {
         title,
         message,
         type,
+        link_url: linkUrl || null,
         created_by: user?.id,
       });
 
@@ -39,7 +45,8 @@ export function CreateNotificationButton() {
       setTitle("");
       setMessage("");
       setType("announcement");
-      router.refresh();
+      setLinkUrl("");
+      onCreated?.();
     } catch (error) {
       console.error("Error creating notification:", error);
     } finally {
@@ -79,6 +86,13 @@ export function CreateNotificationButton() {
               required
             />
           </div>
+
+          <Input
+            label="Link URL (Optional)"
+            value={linkUrl}
+            onChange={(e) => setLinkUrl(e.target.value)}
+            placeholder="e.g., /blog/new-feature or https://example.com"
+          />
 
           <div>
             <label className="label">Type</label>

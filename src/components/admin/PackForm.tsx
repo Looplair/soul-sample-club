@@ -111,25 +111,32 @@ export function PackForm({ pack }: PackFormProps) {
         if (wasJustPublished || wasJustReturned) {
           const { data: { user: currentUser } } = await supabase.auth.getUser();
           const notifType = wasJustReturned ? "returned_pack" : "new_pack";
-          const notifTitle = wasJustReturned
-            ? `${name} is back!`
-            : `New pack: ${name}`;
-          const notifMessage = wasJustReturned
-            ? `By popular demand! "${name}" has returned for a limited time.`
-            : `Check out our latest release — ${name}`;
 
+          // Check for existing notification to avoid duplicates
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (supabase.from("notifications") as any)
-            .insert({
+          const { data: existing } = await (supabase.from("notifications") as any)
+            .select("id")
+            .eq("pack_id", pack.id)
+            .eq("type", notifType)
+            .limit(1);
+
+          if (!existing || existing.length === 0) {
+            const notifTitle = wasJustReturned
+              ? `${name} is back!`
+              : `New pack: ${name}`;
+            const notifMessage = wasJustReturned
+              ? `By popular demand! "${name}" has returned for a limited time.`
+              : `Check out our latest release — ${name}`;
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            await (supabase.from("notifications") as any).insert({
               title: notifTitle,
               message: notifMessage,
               type: notifType,
               pack_id: pack.id,
               created_by: currentUser?.id,
-            })
-            .then(({ error: notifError }: { error: unknown }) => {
-              if (notifError) console.error("Error creating notification:", notifError);
             });
+          }
         }
 
         setSuccess(true);
@@ -148,17 +155,13 @@ export function PackForm({ pack }: PackFormProps) {
         if (isPublished) {
           const { data: { user: currentUser } } = await supabase.auth.getUser();
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (supabase.from("notifications") as any)
-            .insert({
-              title: `New pack: ${name}`,
-              message: `Check out our latest release — ${name}`,
-              type: "new_pack",
-              pack_id: data.id,
-              created_by: currentUser?.id,
-            })
-            .then(({ error: notifError }: { error: unknown }) => {
-              if (notifError) console.error("Error creating notification:", notifError);
-            });
+          await (supabase.from("notifications") as any).insert({
+            title: `New pack: ${name}`,
+            message: `Check out our latest release — ${name}`,
+            type: "new_pack",
+            pack_id: data.id,
+            created_by: currentUser?.id,
+          });
         }
 
         // Redirect to edit page to add samples

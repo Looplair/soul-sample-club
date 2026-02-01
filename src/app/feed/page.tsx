@@ -10,7 +10,7 @@ import { PackCard } from "@/components/packs/PackCard";
 import { Button } from "@/components/ui";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { getNotificationsForUser } from "@/lib/notifications";
-import { Music, LogIn, Archive, User, Sparkles, Star } from "lucide-react";
+import { Music, LogIn, Archive, User, Sparkles, RotateCcw } from "lucide-react";
 import type { Sample, Subscription, NotificationWithReadStatus } from "@/types/database";
 
 export const metadata = {
@@ -219,50 +219,26 @@ export default async function FeedPage() {
             )}
           </div>
 
-          {/* Staff Picks Section - Show if there are any */}
+          {/* Available Packs */}
           {(() => {
-            const staffPicks = allPacks.filter(p => p.is_staff_pick && !isArchived(p));
-            if (staffPicks.length === 0) return null;
-            return (
-              <section className="mb-12 sm:mb-16">
-                <div className="flex items-center gap-2 mb-4 sm:mb-6">
-                  <Star className="w-5 h-5 text-yellow-400" />
-                  <h2 className="text-h3 sm:text-h2 text-white">Staff Picks</h2>
-                </div>
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-                  {staffPicks.slice(0, 4).map((pack) => (
-                    <PackCard
-                      key={pack.id}
-                      pack={pack}
-                      sampleCount={Array.isArray(pack.samples) ? pack.samples.length : 0}
-                      hasSubscription={hasAccess}
-                    />
-                  ))}
-                </div>
-              </section>
-            );
-          })()}
-
-          {/* Recently Added Section */}
-          {(() => {
-            const recentPacks = allPacks.filter(p => !isArchived(p)).slice(0, 4);
-            const olderPacks = allPacks.filter(p => !isArchived(p)).slice(4);
+            const availablePacks = allPacks.filter(p => !isArchived(p) && !p.is_returned);
+            const returnedPacks = allPacks.filter(p => p.is_returned && !isArchived(p));
             const archivedPacks = allPacks.filter(p => isArchived(p));
 
             return (
               <>
-                {recentPacks.length > 0 && (
+                {availablePacks.length > 0 && (
                   <section className="mb-12 sm:mb-16">
                     <div className="flex items-center gap-2 mb-4 sm:mb-6">
-                      <Sparkles className="w-5 h-5 text-white" />
-                      <h2 className="text-h3 sm:text-h2 text-white">Recently Added</h2>
+                      <Music className="w-5 h-5 text-white" />
+                      <h2 className="text-h3 sm:text-h2 text-white">Available Packs</h2>
                       <span className="text-caption text-text-muted ml-2">
-                        New this month
+                        {availablePacks.length} packs
                       </span>
                     </div>
                     <Suspense fallback={<PackGridSkeleton />}>
-                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-                        {recentPacks.map((pack) => (
+                      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+                        {availablePacks.map((pack) => (
                           <PackCard
                             key={pack.id}
                             pack={pack}
@@ -275,18 +251,15 @@ export default async function FeedPage() {
                   </section>
                 )}
 
-                {olderPacks.length > 0 && (
+                {returnedPacks.length > 0 && (
                   <section className="mb-12 sm:mb-16">
                     <div className="flex items-center gap-2 mb-4 sm:mb-6">
-                      <Music className="w-5 h-5 text-white" />
-                      <h2 className="text-h3 sm:text-h2 text-white">Available Now</h2>
-                      <span className="text-caption text-text-muted ml-2">
-                        {olderPacks.length} packs
-                      </span>
+                      <RotateCcw className="w-5 h-5 text-emerald-400" />
+                      <h2 className="text-h3 sm:text-h2 text-white">Back by Popular Demand</h2>
                     </div>
                     <Suspense fallback={<PackGridSkeleton />}>
                       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-                        {olderPacks.map((pack) => (
+                        {returnedPacks.map((pack) => (
                           <PackCard
                             key={pack.id}
                             pack={pack}

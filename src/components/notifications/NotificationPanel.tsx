@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Package, RotateCcw, Info, Megaphone, CheckCheck } from "lucide-react";
+import { Package, RotateCcw, Info, Megaphone, CheckCheck, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -11,6 +11,7 @@ interface NotificationPanelProps {
   notifications: NotificationWithReadStatus[];
   onMarkAsRead: (notificationId: string) => void;
   onMarkAllRead: () => void;
+  onClearAll: () => void;
   onClose: () => void;
 }
 
@@ -52,10 +53,18 @@ function timeAgo(dateStr: string): string {
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
+// Get the link href for a notification — pack link, custom link_url, or null
+function getNotificationHref(notification: NotificationWithReadStatus): string | null {
+  if (notification.pack_id) return `/packs/${notification.pack_id}`;
+  if (notification.link_url) return notification.link_url;
+  return null;
+}
+
 export function NotificationPanel({
   notifications,
   onMarkAsRead,
   onMarkAllRead,
+  onClearAll,
   onClose,
 }: NotificationPanelProps) {
   const unread = notifications.filter((n) => !n.is_read);
@@ -67,20 +76,31 @@ export function NotificationPanel({
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: -8, scale: 0.95 }}
       transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
-      className="absolute right-0 top-full mt-2 w-[380px] max-w-[calc(100vw-2rem)] bg-charcoal rounded-xl shadow-2xl border border-white/10 overflow-hidden z-50"
+      className="fixed sm:absolute right-2 sm:right-0 left-2 sm:left-auto top-14 sm:top-full sm:mt-2 w-auto sm:w-[380px] bg-charcoal rounded-xl shadow-2xl border border-white/10 overflow-hidden z-50"
     >
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
         <h3 className="text-white font-semibold text-sm">Notifications</h3>
-        {unread.length > 0 && (
-          <button
-            onClick={onMarkAllRead}
-            className="flex items-center gap-1.5 text-xs text-text-muted hover:text-white transition-colors"
-          >
-            <CheckCheck className="w-3.5 h-3.5" />
-            Mark all read
-          </button>
-        )}
+        <div className="flex items-center gap-3">
+          {unread.length > 0 && (
+            <button
+              onClick={onMarkAllRead}
+              className="flex items-center gap-1.5 text-xs text-text-muted hover:text-white transition-colors"
+            >
+              <CheckCheck className="w-3.5 h-3.5" />
+              Mark all read
+            </button>
+          )}
+          {notifications.length > 0 && (
+            <button
+              onClick={onClearAll}
+              className="flex items-center gap-1.5 text-xs text-text-muted hover:text-white transition-colors"
+            >
+              <X className="w-3.5 h-3.5" />
+              Clear
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Notifications List */}
@@ -149,12 +169,13 @@ function NotificationItem({
   const Icon = notificationIcons[notification.type] || Info;
   const iconColor = notificationColors[notification.type] || "text-text-muted";
   const iconBg = notificationBg[notification.type] || "bg-white/5";
+  const href = getNotificationHref(notification);
 
   const handleClick = () => {
     if (!notification.is_read) {
       onMarkAsRead(notification.id);
     }
-    if (notification.pack_id) {
+    if (href) {
       onClose();
     }
   };
@@ -219,9 +240,17 @@ function NotificationItem({
     </div>
   );
 
-  if (notification.pack_id) {
+  if (href) {
+    // External links (http) open in new tab, internal links use Next Link
+    if (href.startsWith("http")) {
+      return (
+        <a href={href} target="_blank" rel="noopener noreferrer">
+          {content}
+        </a>
+      );
+    }
     return (
-      <Link href={`/packs/${notification.pack_id}`} prefetch={false}>
+      <Link href={href} prefetch={false}>
         {content}
       </Link>
     );

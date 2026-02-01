@@ -10,6 +10,8 @@ import { FAQSection } from "@/components/sections/FAQSection";
 import { HowItWorksSection } from "@/components/sections/HowItWorksSection";
 import { Button } from "@/components/ui";
 import { SubscribeCTA } from "@/components/ui/SubscribeCTA";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { getNotificationsForUser } from "@/lib/notifications";
 import {
   Music,
   Sparkles,
@@ -27,7 +29,7 @@ import {
   User,
   Shuffle,
 } from "lucide-react";
-import type { Sample, Profile } from "@/types/database";
+import type { Sample, Profile, NotificationWithReadStatus } from "@/types/database";
 
 // ============================================
 // TYPES
@@ -65,6 +67,7 @@ async function getUserState(): Promise<{
   isLoggedIn: boolean;
   hasSubscription: boolean;
   profile: Profile | null;
+  userId: string | null;
 }> {
   try {
     const supabase = await createClient();
@@ -73,7 +76,7 @@ async function getUserState(): Promise<{
     } = await supabase.auth.getUser();
 
     if (!user) {
-      return { isLoggedIn: false, hasSubscription: false, profile: null };
+      return { isLoggedIn: false, hasSubscription: false, profile: null, userId: null };
     }
 
     // Get profile
@@ -109,9 +112,10 @@ async function getUserState(): Promise<{
       isLoggedIn: true,
       hasSubscription: !!subResult.data || hasPatreon,
       profile: profileResult.data as Profile | null,
+      userId: user.id,
     };
   } catch {
-    return { isLoggedIn: false, hasSubscription: false, profile: null };
+    return { isLoggedIn: false, hasSubscription: false, profile: null, userId: null };
   }
 }
 
@@ -163,7 +167,12 @@ const stats = [
 export default async function HomePage() {
   const [allPacks, userState] = await Promise.all([getAllPacks(), getUserState()]);
 
-  const { isLoggedIn, hasSubscription, profile } = userState;
+  const { isLoggedIn, hasSubscription, profile, userId } = userState;
+
+  // Fetch notifications for logged-in users
+  const { notifications, unreadCount } = userId
+    ? await getNotificationsForUser(userId)
+    : { notifications: [] as NotificationWithReadStatus[], unreadCount: 0 };
 
   // Organize packs
   const staffPicks = allPacks.filter((p) => p.is_staff_pick && !isArchived(p.release_date));
@@ -212,6 +221,13 @@ export default async function HomePage() {
           <div className="flex items-center gap-2 sm:gap-3">
             {isLoggedIn ? (
               <>
+                {userId && (
+                  <NotificationBell
+                    userId={userId}
+                    initialNotifications={notifications}
+                    initialUnreadCount={unreadCount}
+                  />
+                )}
                 <Link href="/library" className="hidden sm:block">
                   <Button variant="ghost" size="sm">
                     Library

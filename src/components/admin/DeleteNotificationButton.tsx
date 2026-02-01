@@ -9,11 +9,13 @@ import { ConfirmModal } from "@/components/ui/Modal";
 interface DeleteNotificationButtonProps {
   notificationId: string;
   notificationTitle: string;
+  onDeleted?: () => void;
 }
 
 export function DeleteNotificationButton({
   notificationId,
   notificationTitle,
+  onDeleted,
 }: DeleteNotificationButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -31,7 +33,7 @@ export function DeleteNotificationButton({
       if (error) throw error;
 
       setIsOpen(false);
-      router.refresh();
+      onDeleted?.();
     } catch (error) {
       console.error("Error deleting notification:", error);
     } finally {

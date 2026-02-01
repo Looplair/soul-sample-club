@@ -278,6 +278,7 @@ export interface Database {
           message: string;
           type: "new_pack" | "returned_pack" | "announcement" | "custom";
           pack_id: string | null;
+          link_url: string | null;
           created_by: string | null;
           expires_at: string | null;
           created_at: string;
@@ -288,6 +289,7 @@ export interface Database {
           message: string;
           type?: "new_pack" | "returned_pack" | "announcement" | "custom";
           pack_id?: string | null;
+          link_url?: string | null;
           created_by?: string | null;
           expires_at?: string | null;
           created_at?: string;
@@ -298,6 +300,7 @@ export interface Database {
           message?: string;
           type?: "new_pack" | "returned_pack" | "announcement" | "custom";
           pack_id?: string | null;
+          link_url?: string | null;
           created_by?: string | null;
           expires_at?: string | null;
           created_at?: string;
