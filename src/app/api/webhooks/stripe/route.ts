@@ -192,6 +192,26 @@ export async function POST(request: Request) {
           }
         }
 
+        // Only cancel if there isn't a newer active subscription for this user.
+        // This prevents out-of-order webhook events from clobbering a new subscription.
+        if (canceledUserId) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const { data: activeSubs } = await (supabase.from("subscriptions") as any)
+            .select("id")
+            .eq("user_id", canceledUserId)
+            .in("status", ["active", "trialing"])
+            .neq("stripe_subscription_id", subscription.id)
+            .limit(1);
+
+          if (activeSubs && activeSubs.length > 0) {
+            console.log(
+              "Skipping subscription.deleted — user has a newer active subscription:",
+              subscription.id
+            );
+            break;
+          }
+        }
+
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { error } = await (supabase.from("subscriptions") as any)
           .update({
@@ -252,22 +272,70 @@ export async function POST(request: Request) {
             invoice.subscription as string
           );
 
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const { error } = await (supabase.from("subscriptions") as any)
-            .update({
-              status: subscription.status as any,
-              current_period_start: new Date(
-                subscription.current_period_start * 1000
-              ).toISOString(),
-              current_period_end: new Date(
-                subscription.current_period_end * 1000
-              ).toISOString(),
-              updated_at: new Date().toISOString(),
-            })
-            .eq("stripe_subscription_id", subscription.id);
+          // If an invoice was paid, the subscription should be active regardless
+          // of what Stripe reports at this instant (race condition protection).
+          // Stripe confirms: paid invoice = active subscription.
+          const resolvedStatus =
+            subscription.status === "active" || subscription.status === "trialing"
+              ? subscription.status
+              : "active";
 
-          if (error) {
-            console.error("Error updating subscription after payment:", error);
+          // Try to get user ID for upsert (handles case where row doesn't exist yet)
+          let paidUserId = getUserIdFromMetadata(subscription);
+          if (!paidUserId) {
+            const customer = await stripe.customers.retrieve(
+              subscription.customer as string
+            );
+            if (!("deleted" in customer)) {
+              paidUserId = getUserIdFromMetadata(customer);
+            }
+          }
+
+          if (paidUserId) {
+            // Use upsert so this works even if the subscription row was deleted or never created
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const { error } = await (supabase.from("subscriptions") as any).upsert(
+              {
+                user_id: paidUserId,
+                stripe_customer_id: subscription.customer as string,
+                stripe_subscription_id: subscription.id,
+                status: resolvedStatus as any,
+                current_period_start: new Date(
+                  subscription.current_period_start * 1000
+                ).toISOString(),
+                current_period_end: new Date(
+                  subscription.current_period_end * 1000
+                ).toISOString(),
+                cancel_at_period_end: subscription.cancel_at_period_end,
+              },
+              {
+                onConflict: "stripe_subscription_id",
+              }
+            );
+
+            if (error) {
+              console.error("Error updating subscription after payment:", error);
+            }
+          } else {
+            // Fallback: update by subscription ID only
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const { error } = await (supabase.from("subscriptions") as any)
+              .update({
+                status: resolvedStatus as any,
+                current_period_start: new Date(
+                  subscription.current_period_start * 1000
+                ).toISOString(),
+                current_period_end: new Date(
+                  subscription.current_period_end * 1000
+                ).toISOString(),
+                cancel_at_period_end: subscription.cancel_at_period_end,
+                updated_at: new Date().toISOString(),
+              })
+              .eq("stripe_subscription_id", subscription.id);
+
+            if (error) {
+              console.error("Error updating subscription after payment:", error);
+            }
           }
         }
         break;

@@ -21,13 +21,16 @@ import {
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { Dropdown } from "@/components/ui";
-import type { Profile } from "@/types/database";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
+import type { Profile, NotificationWithReadStatus } from "@/types/database";
 
 interface NavbarProps {
   user: Profile | null;
+  notifications?: NotificationWithReadStatus[];
+  unreadCount?: number;
 }
 
-export function Navbar({ user }: NavbarProps) {
+export function Navbar({ user, notifications = [], unreadCount = 0 }: NavbarProps) {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const supabase = createClient();
@@ -107,9 +110,15 @@ export function Navbar({ user }: NavbarProps) {
         </div>
 
         {/* User Menu */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
           {user && (
-            <Dropdown
+            <>
+              <NotificationBell
+                userId={user.id}
+                initialNotifications={notifications}
+                initialUnreadCount={unreadCount}
+              />
+              <Dropdown
               trigger={
                 <button className="flex items-center gap-2 px-3 py-2 rounded-full hover:bg-grey-800 transition-all duration-200 group border border-transparent hover:border-grey-700">
                   <div className="w-8 h-8 rounded-full bg-grey-700 flex items-center justify-center">
@@ -125,6 +134,7 @@ export function Navbar({ user }: NavbarProps) {
               }
               items={userMenuItems}
             />
+            </>
           )}
 
           {/* Mobile Menu Toggle */}

@@ -271,6 +271,58 @@ export interface Database {
           created_at?: string;
         };
       };
+      notifications: {
+        Row: {
+          id: string;
+          title: string;
+          message: string;
+          type: "new_pack" | "returned_pack" | "announcement" | "custom";
+          pack_id: string | null;
+          created_by: string | null;
+          expires_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          title: string;
+          message: string;
+          type?: "new_pack" | "returned_pack" | "announcement" | "custom";
+          pack_id?: string | null;
+          created_by?: string | null;
+          expires_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          title?: string;
+          message?: string;
+          type?: "new_pack" | "returned_pack" | "announcement" | "custom";
+          pack_id?: string | null;
+          created_by?: string | null;
+          expires_at?: string | null;
+          created_at?: string;
+        };
+      };
+      notification_reads: {
+        Row: {
+          id: string;
+          notification_id: string;
+          user_id: string;
+          read_at: string;
+        };
+        Insert: {
+          id?: string;
+          notification_id: string;
+          user_id: string;
+          read_at?: string;
+        };
+        Update: {
+          id?: string;
+          notification_id?: string;
+          user_id?: string;
+          read_at?: string;
+        };
+      };
       pack_votes: {
         Row: {
           id: string;
@@ -325,6 +377,13 @@ export type Sample = Database["public"]["Tables"]["samples"]["Row"];
 export type Download = Database["public"]["Tables"]["downloads"]["Row"];
 export type Like = Database["public"]["Tables"]["likes"]["Row"];
 export type PackVote = Database["public"]["Tables"]["pack_votes"]["Row"];
+export type Notification = Database["public"]["Tables"]["notifications"]["Row"];
+export type NotificationRead = Database["public"]["Tables"]["notification_reads"]["Row"];
+
+export type NotificationWithReadStatus = Notification & {
+  is_read: boolean;
+  pack?: Pick<Pack, "id" | "name" | "cover_image_url"> | null;
+};
 
 // Extended types with relations
 export type PackWithSamples = Pack & {

@@ -103,6 +103,35 @@ export function PackForm({ pack }: PackFormProps) {
           .eq("id", pack.id);
 
         if (error) throw error;
+
+        // Auto-create notifications when pack is newly published or returned
+        const wasJustPublished = !pack.is_published && isPublished;
+        const wasJustReturned = !pack.is_returned && isReturned;
+
+        if (wasJustPublished || wasJustReturned) {
+          const { data: { user: currentUser } } = await supabase.auth.getUser();
+          const notifType = wasJustReturned ? "returned_pack" : "new_pack";
+          const notifTitle = wasJustReturned
+            ? `${name} is back!`
+            : `New pack: ${name}`;
+          const notifMessage = wasJustReturned
+            ? `By popular demand! "${name}" has returned for a limited time.`
+            : `Check out our latest release — ${name}`;
+
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (supabase.from("notifications") as any)
+            .insert({
+              title: notifTitle,
+              message: notifMessage,
+              type: notifType,
+              pack_id: pack.id,
+              created_by: currentUser?.id,
+            })
+            .then(({ error: notifError }: { error: unknown }) => {
+              if (notifError) console.error("Error creating notification:", notifError);
+            });
+        }
+
         setSuccess(true);
         router.refresh();
       } else {
@@ -114,6 +143,23 @@ export function PackForm({ pack }: PackFormProps) {
           .single();
 
         if (error) throw error;
+
+        // Auto-create notification if new pack is published immediately
+        if (isPublished) {
+          const { data: { user: currentUser } } = await supabase.auth.getUser();
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (supabase.from("notifications") as any)
+            .insert({
+              title: `New pack: ${name}`,
+              message: `Check out our latest release — ${name}`,
+              type: "new_pack",
+              pack_id: data.id,
+              created_by: currentUser?.id,
+            })
+            .then(({ error: notifError }: { error: unknown }) => {
+              if (notifError) console.error("Error creating notification:", notifError);
+            });
+        }
 
         // Redirect to edit page to add samples
         router.push(`/admin/packs/${data.id}`);

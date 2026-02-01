@@ -56,17 +56,11 @@ export async function GET(
       );
     }
 
-    // Auto-cleanup first: mark any expired active/trialing rows as canceled
-    // This fixes stale rows where Stripe webhook didn't fire
+    // Check subscription status using admin client to bypass RLS
+    // Note: we do NOT auto-cleanup expired rows here — let Stripe webhooks be the
+    // sole source of truth. Auto-cleanup can race with renewal webhooks and lock
+    // users out during period rollovers.
     const now = new Date().toISOString();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (adminSupabase.from("subscriptions") as any)
-      .update({ status: "canceled" })
-      .eq("user_id", user.id)
-      .in("status", ["active", "trialing"])
-      .lt("current_period_end", now);
-
-    // Then check subscription status using admin client to bypass RLS
     const subscriptionResult = await adminSupabase
       .from("subscriptions")
       .select("status, current_period_end, user_id")
