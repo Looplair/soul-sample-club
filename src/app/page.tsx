@@ -68,6 +68,7 @@ async function getUserState(): Promise<{
   hasSubscription: boolean;
   profile: Profile | null;
   userId: string | null;
+  hasUsedTrial: boolean;
 }> {
   try {
     const supabase = await createClient();
@@ -76,7 +77,7 @@ async function getUserState(): Promise<{
     } = await supabase.auth.getUser();
 
     if (!user) {
-      return { isLoggedIn: false, hasSubscription: false, profile: null, userId: null };
+      return { isLoggedIn: false, hasSubscription: false, profile: null, userId: null, hasUsedTrial: false };
     }
 
     // Get profile
@@ -108,14 +109,22 @@ async function getUserState(): Promise<{
       // Table might not exist
     }
 
+    // Check if user has ever had any subscription (for trial messaging)
+    const anySubResult = await supabase
+      .from("subscriptions")
+      .select("id")
+      .eq("user_id", user.id)
+      .limit(1);
+
     return {
       isLoggedIn: true,
       hasSubscription: !!subResult.data || hasPatreon,
       profile: profileResult.data as Profile | null,
       userId: user.id,
+      hasUsedTrial: (anySubResult.data?.length ?? 0) > 0,
     };
   } catch {
-    return { isLoggedIn: false, hasSubscription: false, profile: null, userId: null };
+    return { isLoggedIn: false, hasSubscription: false, profile: null, userId: null, hasUsedTrial: false };
   }
 }
 
@@ -157,7 +166,7 @@ const benefits = [
 
 const stats = [
   { value: "1000+", label: "members" },
-  { value: "7-day", label: "free trial" },
+  { value: "$3.99", label: "/month" },
   { value: "0", label: "restrictions" },
 ];
 
@@ -167,7 +176,7 @@ const stats = [
 export default async function HomePage() {
   const [allPacks, userState] = await Promise.all([getAllPacks(), getUserState()]);
 
-  const { isLoggedIn, hasSubscription, profile, userId } = userState;
+  const { isLoggedIn, hasSubscription, profile, userId, hasUsedTrial } = userState;
 
   // Fetch notifications for logged-in users
   const { notifications, unreadCount } = userId
@@ -248,8 +257,8 @@ export default async function HomePage() {
                 </Link>
                 <Link href="/signup">
                   <Button size="sm">
-                    <span className="hidden sm:inline">Start free trial</span>
-                    <span className="sm:hidden">Try free</span>
+                    <span className="hidden sm:inline">Get started</span>
+                    <span className="sm:hidden">Sign up</span>
                   </Button>
                 </Link>
               </>
@@ -283,11 +292,13 @@ export default async function HomePage() {
               {/* Left: Text content */}
               <div className="text-center lg:text-left">
                 {/* Badge */}
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 mb-6 sm:mb-8">
-                  <Sparkles className="w-4 h-4 text-white" />
-                  <span className="text-sm text-white font-medium">7-day free trial</span>
-                  <span className="text-sm text-white/60">• Cancel anytime</span>
-                </div>
+                {!(isLoggedIn && hasUsedTrial) && (
+                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 mb-6 sm:mb-8">
+                    <Sparkles className="w-4 h-4 text-white" />
+                    <span className="text-sm text-white font-medium">7-day free trial</span>
+                    <span className="text-sm text-white/60">• Cancel anytime</span>
+                  </div>
+                )}
 
                 {/* Headline */}
                 <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-white mb-6 leading-[1.1] tracking-tight">
@@ -323,7 +334,7 @@ export default async function HomePage() {
                     <>
                       <Link href="/signup">
                         <Button size="lg" className="w-full sm:w-auto" rightIcon={<ArrowRight className="w-4 h-4" />}>
-                          Start free trial
+                          Get started
                         </Button>
                       </Link>
                       <a href="#catalog">
@@ -564,7 +575,9 @@ export default async function HomePage() {
                     <span className="text-5xl font-bold text-white">$3.99</span>
                     <span className="text-text-muted text-lg">/month</span>
                   </div>
-                  <p className="text-sm text-text-muted mt-2">7-day free trial included</p>
+                  {!(isLoggedIn && hasUsedTrial) && (
+                    <p className="text-sm text-text-muted mt-2">7-day free trial included</p>
+                  )}
                 </div>
 
                 <ul className="space-y-3 mb-6">
@@ -671,12 +684,12 @@ export default async function HomePage() {
                     Ready to find your sound?
                   </h2>
                   <p className="text-lg text-text-muted mb-8 max-w-xl mx-auto">
-                    Join producers who use Soul Sample Club for inspiration. Start your free trial today.
+                    Join producers who use Soul Sample Club for inspiration. Sign up today.
                   </p>
                   <div className="flex flex-col sm:flex-row gap-4 justify-center">
                     <Link href="/signup">
                       <Button size="lg" className="w-full sm:w-auto">
-                        Start free trial
+                        Get started
                         <ArrowRight className="w-4 h-4 ml-2" />
                       </Button>
                     </Link>
@@ -703,7 +716,11 @@ export default async function HomePage() {
               <div className="bg-gradient-to-r from-white/5 to-transparent border border-white/10 rounded-2xl p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div>
                   <h3 className="text-lg font-semibold text-white mb-1">Ready to download?</h3>
-                  <p className="text-text-muted">Start your 7-day free trial to download all samples.</p>
+                  <p className="text-text-muted">
+                    {hasUsedTrial
+                      ? "Subscribe to download all samples."
+                      : "Start your 7-day free trial to download all samples."}
+                  </p>
                 </div>
                 <SubscribeCTA
                   isLoggedIn={isLoggedIn}

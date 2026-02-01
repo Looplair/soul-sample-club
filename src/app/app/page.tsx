@@ -124,7 +124,7 @@ export default async function AppPage() {
                   </Button>
                 </Link>
                 <Link href="/signup">
-                  <Button size="sm">Start free trial</Button>
+                  <Button size="sm">Get started</Button>
                 </Link>
               </>
             )}

@@ -334,7 +334,7 @@ function BillingTab({ subscription, patreonLink }: { subscription: Subscription 
                       <p className="text-warning font-medium mb-1">Your access ends on {formatDate(subscription.current_period_end)}</p>
                       <p className="text-sm text-text-muted">
                         Your trial has been canceled. You&apos;ll retain access until the trial period ends.
-                        After that, you&apos;ll need to subscribe for continued access — free trials are one-time only.
+                        After that, you&apos;ll need to subscribe for continued access.
                       </p>
                     </div>
                   </div>
@@ -365,7 +365,6 @@ function BillingTab({ subscription, patreonLink }: { subscription: Subscription 
                       <p className="text-white font-medium mb-1">Subscription ended</p>
                       <p className="text-sm text-text-muted">
                         Your subscription has ended. Subscribe again to regain access to downloads.
-                        Note: free trials are one-time only.
                       </p>
                     </div>
                   </div>

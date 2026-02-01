@@ -19,8 +19,8 @@ const steps = [
   },
   {
     step: "02",
-    title: "Start your free trial",
-    description: "Get full access free for 7 days. Cancel anytime.",
+    title: "Subscribe",
+    description: "Get full access to every pack. Cancel anytime.",
     icon: Sparkles,
   },
   {

@@ -54,7 +54,7 @@ async function getAllPacks(): Promise<PackWithSamples[]> {
 
 // Check if user is logged in and has subscription
 // Uses admin client for subscription/patreon checks to bypass RLS
-async function getUserState(): Promise<{ isLoggedIn: boolean; hasSubscription: boolean; hasPatreon: boolean; userId: string | null }> {
+async function getUserState(): Promise<{ isLoggedIn: boolean; hasSubscription: boolean; hasPatreon: boolean; userId: string | null; hasUsedTrial: boolean }> {
   try {
     const supabase = await createClient();
     const adminSupabase = createAdminClient();
@@ -63,7 +63,7 @@ async function getUserState(): Promise<{ isLoggedIn: boolean; hasSubscription: b
     } = await supabase.auth.getUser();
 
     if (!user) {
-      return { isLoggedIn: false, hasSubscription: false, hasPatreon: false, userId: null };
+      return { isLoggedIn: false, hasSubscription: false, hasPatreon: false, userId: null, hasUsedTrial: false };
     }
 
     // Check for active subscription with valid period end date
@@ -89,14 +89,22 @@ async function getUserState(): Promise<{ isLoggedIn: boolean; hasSubscription: b
       // Table might not exist yet
     }
 
+    // Check if user has ever had any subscription (for trial messaging)
+    const anySubResult = await adminSupabase
+      .from("subscriptions")
+      .select("id")
+      .eq("user_id", user.id)
+      .limit(1);
+
     return {
       isLoggedIn: true,
       hasSubscription: (subResult.data?.length ?? 0) > 0,
       hasPatreon,
       userId: user.id,
+      hasUsedTrial: (anySubResult.data?.length ?? 0) > 0,
     };
   } catch {
-    return { isLoggedIn: false, hasSubscription: false, hasPatreon: false, userId: null };
+    return { isLoggedIn: false, hasSubscription: false, hasPatreon: false, userId: null, hasUsedTrial: false };
   }
 }
 
@@ -130,7 +138,7 @@ export default async function FeedPage() {
     getUserState(),
   ]);
 
-  const { isLoggedIn, hasSubscription, hasPatreon, userId } = userState;
+  const { isLoggedIn, hasSubscription, hasPatreon, userId, hasUsedTrial } = userState;
   const hasAccess = hasSubscription || hasPatreon;
 
   // Fetch notifications for logged-in users
@@ -183,8 +191,8 @@ export default async function FeedPage() {
                 </Link>
                 <Link href="/signup">
                   <Button size="sm">
-                    <span className="hidden sm:inline">Start free trial</span>
-                    <span className="sm:hidden">Free trial</span>
+                    <span className="hidden sm:inline">Get started</span>
+                    <span className="sm:hidden">Sign up</span>
                   </Button>
                 </Link>
               </>
@@ -207,11 +215,15 @@ export default async function FeedPage() {
               {isLoggedIn && !hasAccess && " Subscribe or link Patreon to download."}
             </p>
 
-            {/* Free Trial Banner - for non-subscribed users */}
+            {/* Subscribe Banner - for non-subscribed users */}
             {isLoggedIn && !hasAccess && (
               <div className="mt-6 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20">
                 <Sparkles className="w-4 h-4 text-white" />
-                <span className="text-sm text-white">Subscribe to download — includes a 7-day free trial</span>
+                <span className="text-sm text-white">
+                  {hasUsedTrial
+                    ? "Subscribe to download all packs"
+                    : "Subscribe to download — includes a 7-day free trial"}
+                </span>
                 <Link href="/account?tab=billing" className="text-sm text-white underline hover:no-underline ml-1">
                   Subscribe →
                 </Link>

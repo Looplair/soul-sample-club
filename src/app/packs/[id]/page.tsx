@@ -120,14 +120,14 @@ async function getPack(id: string): Promise<PackWithSamples | null> {
 // FETCH ACCESS (subscription OR patreon)
 // -----------------------------------------
 // Uses admin client to bypass RLS for subscription checks
-async function getUserAccess(): Promise<{ hasAccess: boolean; isLoggedIn: boolean; userId: string | null }> {
+async function getUserAccess(): Promise<{ hasAccess: boolean; isLoggedIn: boolean; userId: string | null; hasUsedTrial: boolean }> {
   const supabase = await createClient();
   const adminSupabase = createAdminClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) return { hasAccess: false, isLoggedIn: false, userId: null };
+  if (!user) return { hasAccess: false, isLoggedIn: false, userId: null, hasUsedTrial: false };
 
   // Check subscription using admin client to bypass RLS
   // Filter by current_period_end in the future to catch stale rows
@@ -152,10 +152,18 @@ async function getUserAccess(): Promise<{ hasAccess: boolean; isLoggedIn: boolea
 
   const hasPatreon = !!patreonResult.data;
 
+  // Check if user has ever had any subscription
+  const anySubResult = await adminSupabase
+    .from("subscriptions")
+    .select("id")
+    .eq("user_id", user.id)
+    .limit(1);
+
   return {
     hasAccess: hasSubscription || hasPatreon,
     isLoggedIn: true,
     userId: user.id,
+    hasUsedTrial: (anySubResult.data?.length ?? 0) > 0,
   };
 }
 
@@ -212,7 +220,7 @@ export default async function PackDetailPage({
     notFound();
   }
 
-  const { hasAccess, isLoggedIn, userId } = userState;
+  const { hasAccess, isLoggedIn, userId, hasUsedTrial } = userState;
 
   // Fetch notifications for logged-in users
   const { notifications, unreadCount } = userId
@@ -538,7 +546,7 @@ export default async function PackDetailPage({
                           Subscribe to download
                         </p>
                         <p className="text-body-sm text-text-muted mt-1">
-                          Subscribe to download all {pack.samples.length} tracks. Includes a 7-day free trial.
+                          Subscribe to download all {pack.samples.length} tracks.{!hasUsedTrial && " Includes a 7-day free trial."}
                         </p>
                       </div>
                     </div>

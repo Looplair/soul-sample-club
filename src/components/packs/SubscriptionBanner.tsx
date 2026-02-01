@@ -41,7 +41,7 @@ export function SubscriptionBanner() {
             </h2>
             <p className="text-body text-text-muted max-w-lg">
               Subscribe to get unlimited access to all packs
-              from the last 3 months. Includes a 7-day free trial. Cancel anytime.
+              from the last 3 months. Cancel anytime.
             </p>
           </div>
         </div>

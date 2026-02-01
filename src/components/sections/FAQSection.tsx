@@ -84,9 +84,9 @@ const faqs = [
       "Both.\n\nIf you are new, it removes fear around clearance and gives you confidence to release music.\nIf you are experienced, it gives you trusted material you can use without second guessing.",
   },
   {
-    question: "How does the free trial work",
+    question: "Can I cancel anytime",
     answer:
-      "You can explore the platform and download samples during the trial period.\n\nIf it is not for you, cancel before the trial ends and you will not be charged.",
+      "Yes. You can cancel your subscription at any time from your account settings.\n\nYou will retain access until the end of your current billing period.",
   },
   {
     question: "Can I use the samples across multiple projects",
