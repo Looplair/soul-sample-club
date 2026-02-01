@@ -4,7 +4,7 @@ export const revalidate = 0;
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, Calendar, Music2, Download, Lock, Archive, Sparkles, Star, Play, LogIn, User, Gift, Clock } from "lucide-react";
+import { ArrowLeft, Calendar, Music2, Download, Lock, Archive, Sparkles, Star, Play, LogIn, User, Gift, Clock, RotateCcw } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { formatDate, isPackNew, isPackExpiredWithEndDate, getDaysUntilEndDate, getExpiryBadgeText } from "@/lib/utils";
@@ -214,8 +214,9 @@ export default async function PackDetailPage({
   // Pack status checks
   const isNew = isPackNew(pack.release_date);
   const isBonus = pack.is_bonus ?? false;
+  const isReturned = pack.is_returned ?? false;
   const endDate = pack.end_date ?? null;
-  const isExpired = isPackExpiredWithEndDate(pack.release_date, endDate);
+  const isExpired = isReturned ? false : isPackExpiredWithEndDate(pack.release_date, endDate);
   const isStaffPick = pack.is_staff_pick ?? false;
 
   // Calculate expiry countdown for non-expired packs
@@ -229,12 +230,13 @@ export default async function PackDetailPage({
   // Active packs: subscribers/patrons can download, others can preview
   const canDownload = hasAccess && !isExpired;
 
-  // Calculate total file size
+  // Calculate total file size (WAV files only - stems sizes not tracked)
   const totalSize = pack.samples.reduce(
     (acc: number, sample: Sample) => acc + (sample.file_size || 0),
     0
   );
   const totalSizeMB = (totalSize / (1024 * 1024)).toFixed(1);
+  const hasStemsAvailable = pack.samples.some((s: Sample) => !!s.stems_path);
 
   return (
     <div className="min-h-screen bg-charcoal">
@@ -300,7 +302,7 @@ export default async function PackDetailPage({
                   fill
                   className={cn(
                     "object-cover",
-                    isExpired && "blur-sm brightness-50"
+                    isExpired && "blur-[3px] brightness-[0.5] saturate-[0.6]"
                   )}
                   priority
                   sizes="(max-width: 1024px) 100vw, 33vw"
@@ -335,6 +337,12 @@ export default async function PackDetailPage({
                       Staff Pick
                     </span>
                   )}
+                  {isReturned && (
+                    <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-emerald-500 text-charcoal text-label font-semibold">
+                      <RotateCcw className="w-4 h-4" />
+                      Back by Demand
+                    </span>
+                  )}
                 </div>
                 {/* Expiry countdown badge */}
                 {expiryBadgeText && (
@@ -363,6 +371,12 @@ export default async function PackDetailPage({
             <div className="lg:col-span-2">
               {/* Status Badges */}
               <div className="flex flex-wrap items-center gap-2 mb-4">
+                {isReturned && (
+                  <Badge variant="default" className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
+                    <RotateCcw className="w-3 h-3 mr-1" />
+                    Back by Demand
+                  </Badge>
+                )}
                 {isBonus && (
                   <Badge variant="default" className="bg-amber-500/20 text-amber-400 border-amber-500/30">
                     <Gift className="w-3 h-3 mr-1" />
@@ -418,7 +432,7 @@ export default async function PackDetailPage({
                 </div>
                 <div className="flex items-center gap-2 text-body text-text-muted">
                   <Download className="w-5 h-5 text-white" />
-                  <span>{totalSizeMB} MB total</span>
+                  <span>{totalSizeMB} MB{hasStemsAvailable ? " (WAV) + stems" : ""}</span>
                 </div>
                 <div className="flex items-center gap-2 text-body text-text-muted">
                   <Calendar className="w-5 h-5 text-white" />
@@ -432,6 +446,21 @@ export default async function PackDetailPage({
                   />
                 </div>
               </div>
+
+              {/* Returned Pack Notice */}
+              {isReturned && (
+                <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-card p-4 flex items-start sm:items-center gap-3 mb-4">
+                  <RotateCcw className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5 sm:mt-0" />
+                  <div>
+                    <p className="text-body text-emerald-200 font-medium">
+                      Back by Popular Demand
+                    </p>
+                    <p className="text-body-sm text-emerald-200/70 mt-1">
+                      This pack was previously archived and has been brought back for a limited time. {expiryBadgeText ? `${expiryBadgeText}.` : 'Download before it expires!'}
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {/* Bonus Pack Notice */}
               {isBonus && !isExpired && (
@@ -494,7 +523,7 @@ export default async function PackDetailPage({
                           Subscribe to download
                         </p>
                         <p className="text-body-sm text-text-muted mt-1">
-                          Start your 7-day free trial to download all {pack.samples.length} tracks.
+                          Subscribe to download all {pack.samples.length} tracks. Includes a 7-day free trial.
                         </p>
                       </div>
                     </div>

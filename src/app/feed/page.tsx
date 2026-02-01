@@ -26,6 +26,7 @@ interface PackWithSamples {
   is_published: boolean;
   is_staff_pick?: boolean;
   is_bonus: boolean;
+  is_returned?: boolean;
   created_at: string;
   updated_at: string;
   samples: Sample[];
@@ -112,11 +113,12 @@ function PackGridSkeleton() {
   );
 }
 
-// Helper to check if pack is archived (older than 3 months)
-function isArchived(releaseDate: string): boolean {
+// Helper to check if pack is archived (older than 3 months, and not returned)
+function isArchived(pack: PackWithSamples): boolean {
+  if (pack.is_returned) return false;
   const threeMonthsAgo = new Date();
   threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
-  return new Date(releaseDate) < threeMonthsAgo;
+  return new Date(pack.release_date) < threeMonthsAgo;
 }
 
 export default async function FeedPage() {
@@ -196,7 +198,7 @@ export default async function FeedPage() {
             {isLoggedIn && !hasAccess && (
               <div className="mt-6 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20">
                 <Sparkles className="w-4 h-4 text-white" />
-                <span className="text-sm text-white">Start your 7-day free trial to download</span>
+                <span className="text-sm text-white">Subscribe to download — includes a 7-day free trial</span>
                 <Link href="/account?tab=billing" className="text-sm text-white underline hover:no-underline ml-1">
                   Subscribe →
                 </Link>
@@ -206,7 +208,7 @@ export default async function FeedPage() {
 
           {/* Staff Picks Section - Show if there are any */}
           {(() => {
-            const staffPicks = allPacks.filter(p => p.is_staff_pick && !isArchived(p.release_date));
+            const staffPicks = allPacks.filter(p => p.is_staff_pick && !isArchived(p));
             if (staffPicks.length === 0) return null;
             return (
               <section className="mb-12 sm:mb-16">
@@ -230,9 +232,9 @@ export default async function FeedPage() {
 
           {/* Recently Added Section */}
           {(() => {
-            const recentPacks = allPacks.filter(p => !isArchived(p.release_date)).slice(0, 4);
-            const olderPacks = allPacks.filter(p => !isArchived(p.release_date)).slice(4);
-            const archivedPacks = allPacks.filter(p => isArchived(p.release_date));
+            const recentPacks = allPacks.filter(p => !isArchived(p)).slice(0, 4);
+            const olderPacks = allPacks.filter(p => !isArchived(p)).slice(4);
+            const archivedPacks = allPacks.filter(p => isArchived(p));
 
             return (
               <>

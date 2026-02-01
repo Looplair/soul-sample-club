@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Download, Loader2, Lock, Archive, Heart, Play, Pause } from "lucide-react";
+import { DownloadProgress } from "@/components/ui/DownloadProgress";
 import WaveSurfer from "wavesurfer.js";
 import { Button } from "@/components/ui";
 import { formatFileSize, formatDuration, cn } from "@/lib/utils";
@@ -28,6 +29,8 @@ export function SampleRow({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const [isDownloadingStems, setIsDownloadingStems] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState(0);
+  const [stemsProgress, setStemsProgress] = useState(0);
   const [isLoadingPreview, setIsLoadingPreview] = useState(true);
   const [previewError, setPreviewError] = useState<string | null>(null);
   const [liked, setLiked] = useState(isLiked);
@@ -256,23 +259,46 @@ export function SampleRow({
       return;
     }
 
-    // ✅ WEB BROWSER PATH (unchanged)
+    // ✅ WEB BROWSER PATH
     const fileResponse = await fetch(data.url);
-    const blob = await fileResponse.blob();
-    const blobUrl = URL.createObjectURL(blob);
-
-    const link = document.createElement("a");
-    link.href = blobUrl;
-    link.download = sample.name + ".wav";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    URL.revokeObjectURL(blobUrl);
+    const contentLength = fileResponse.headers.get("content-length");
+    if (contentLength && fileResponse.body) {
+      const total = parseInt(contentLength, 10);
+      const reader = fileResponse.body.getReader();
+      const chunks: Uint8Array[] = [];
+      let received = 0;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value);
+        received += value.length;
+        setDownloadProgress(Math.round((received / total) * 100));
+      }
+      const blob = new Blob(chunks as BlobPart[]);
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = sample.name + ".wav";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
+    } else {
+      const blob = await fileResponse.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = sample.name + ".wav";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
+    }
   } catch (error) {
     console.error("Download error:", error);
   } finally {
     setIsDownloading(false);
+    setDownloadProgress(0);
   }
 }
 
@@ -298,23 +324,46 @@ const handleDownloadStems = async () => {
       return;
     }
 
-    // ✅ WEB BROWSER PATH (unchanged)
+    // ✅ WEB BROWSER PATH
     const fileResponse = await fetch(data.url);
-    const blob = await fileResponse.blob();
-    const blobUrl = URL.createObjectURL(blob);
-
-    const link = document.createElement("a");
-    link.href = blobUrl;
-    link.download = sample.name + "-stems.zip";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    URL.revokeObjectURL(blobUrl);
+    const contentLength = fileResponse.headers.get("content-length");
+    if (contentLength && fileResponse.body) {
+      const total = parseInt(contentLength, 10);
+      const reader = fileResponse.body.getReader();
+      const chunks: Uint8Array[] = [];
+      let received = 0;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value);
+        received += value.length;
+        setStemsProgress(Math.round((received / total) * 100));
+      }
+      const blob = new Blob(chunks as BlobPart[]);
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = sample.name + "-stems.zip";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
+    } else {
+      const blob = await fileResponse.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = sample.name + "-stems.zip";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
+    }
   } catch (error) {
     console.error("Stems download error:", error);
   } finally {
     setIsDownloadingStems(false);
+    setStemsProgress(0);
   }
 };
 
@@ -422,7 +471,7 @@ const handleDownloadStems = async () => {
             className="flex"
             leftIcon={
               isDownloadingStems ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <DownloadProgress progress={stemsProgress} />
               ) : !sample.stems_path ? (
                 <Archive className="w-4 h-4 opacity-40" />
               ) : !canDownload ? (
@@ -450,7 +499,7 @@ const handleDownloadStems = async () => {
             disabled={!canDownload || isDownloading}
             leftIcon={
               isDownloading ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <DownloadProgress progress={downloadProgress} />
               ) : canDownload ? (
                 <Download className="w-4 h-4" />
               ) : (

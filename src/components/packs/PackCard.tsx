@@ -2,12 +2,12 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Music2, Archive, Star, Sparkles, Play, Gift, Clock } from "lucide-react";
+import { Music2, Archive, Star, Sparkles, Play, Gift, Clock, RotateCcw } from "lucide-react";
 import { cn, formatDate, isPackNew, isPackExpiredWithEndDate, getDaysUntilEndDate, getExpiryBadgeText } from "@/lib/utils";
 import type { Pack } from "@/types/database";
 
 interface PackCardProps {
-  pack: Pack & { is_staff_pick?: boolean; is_bonus?: boolean; end_date?: string | null };
+  pack: Pack & { is_staff_pick?: boolean; is_bonus?: boolean; is_returned?: boolean; end_date?: string | null };
   sampleCount: number;
   hasSubscription: boolean;
 }
@@ -19,7 +19,8 @@ export function PackCard({ pack, sampleCount }: PackCardProps) {
   const endDate = pack.end_date ?? null;
 
   const isNew = isPackNew(releaseDate);
-  const isExpired = isPackExpiredWithEndDate(releaseDate, endDate);
+  const isReturned = pack.is_returned ?? false;
+  const isExpired = isReturned ? false : isPackExpiredWithEndDate(releaseDate, endDate);
   const isStaffPick = pack.is_staff_pick ?? false;
   const isBonus = pack.is_bonus ?? false;
 
@@ -44,7 +45,7 @@ export function PackCard({ pack, sampleCount }: PackCardProps) {
             fill
             className={cn(
               "object-cover",
-              isExpired && "brightness-[0.35] saturate-[0.3] grayscale-[0.5]"
+              isExpired && "brightness-[0.5] saturate-[0.6] blur-[2px]"
             )}
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
           />
@@ -79,6 +80,12 @@ export function PackCard({ pack, sampleCount }: PackCardProps) {
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white text-charcoal text-[10px] font-bold tracking-wide uppercase">
                 <Star className="w-2.5 h-2.5" />
                 Pick
+              </span>
+            )}
+            {isReturned && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500 text-charcoal text-[10px] font-bold tracking-wide uppercase">
+                <RotateCcw className="w-2.5 h-2.5" />
+                Back
               </span>
             )}
           </div>

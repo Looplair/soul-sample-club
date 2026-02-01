@@ -151,6 +151,7 @@ export interface Database {
           is_published: boolean;
           is_staff_pick?: boolean;
           is_bonus: boolean;
+          is_returned?: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -164,6 +165,7 @@ export interface Database {
           is_published?: boolean;
           is_staff_pick?: boolean;
           is_bonus?: boolean;
+          is_returned?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -177,6 +179,7 @@ export interface Database {
           is_published?: boolean;
           is_staff_pick?: boolean;
           is_bonus?: boolean;
+          is_returned?: boolean;
           created_at?: string;
           updated_at?: string;
         };

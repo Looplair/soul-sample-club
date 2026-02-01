@@ -40,8 +40,8 @@ export function SubscriptionBanner() {
               Unlock all sample packs
             </h2>
             <p className="text-body text-text-muted max-w-lg">
-              Start your 7-day free trial and get unlimited access to all packs
-              from the last 3 months. Cancel anytime.
+              Subscribe to get unlimited access to all packs
+              from the last 3 months. Includes a 7-day free trial. Cancel anytime.
             </p>
           </div>
         </div>
@@ -53,7 +53,7 @@ export function SubscriptionBanner() {
           rightIcon={!isLoading && <ArrowRight className="w-4 h-4" />}
           className="flex-shrink-0"
         >
-          Start Free Trial
+          Subscribe to Download
         </Button>
       </div>
     </div>

@@ -73,7 +73,7 @@ export function SubscribeCTA({
         </>
       ) : (
         <>
-          {children || "Start free trial"}
+          {children || "Subscribe to download"}
           <ArrowRight className="w-4 h-4 ml-2" />
         </>
       )}

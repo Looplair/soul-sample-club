@@ -301,7 +301,12 @@ function BillingTab({ subscription, patreonLink }: { subscription: Subscription 
                     >
                       {subscription.status === "trialing" ? "Trial" : subscription.status}
                     </Badge>
-                    {subscription.cancel_at_period_end && (
+                    {subscription.cancel_at_period_end && subscription.status === "trialing" && (
+                      <span className="text-xs text-warning">
+                        Trial canceled
+                      </span>
+                    )}
+                    {subscription.cancel_at_period_end && subscription.status !== "trialing" && (
                       <span className="text-xs text-warning">
                         Cancels at period end
                       </span>
@@ -319,6 +324,53 @@ function BillingTab({ subscription, patreonLink }: { subscription: Subscription 
                   </div>
                 )}
               </div>
+
+              {/* Canceled trial notice */}
+              {subscription.status === "trialing" && subscription.cancel_at_period_end && (
+                <div className="p-4 bg-warning/10 border border-warning/30 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-warning font-medium mb-1">Your access ends on {formatDate(subscription.current_period_end)}</p>
+                      <p className="text-sm text-text-muted">
+                        Your trial has been canceled. You&apos;ll retain access until the trial period ends.
+                        After that, you&apos;ll need to subscribe for continued access — free trials are one-time only.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Canceled subscription (non-trial) notice */}
+              {subscription.status !== "trialing" && subscription.cancel_at_period_end && (
+                <div className="p-4 bg-warning/10 border border-warning/30 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-warning font-medium mb-1">Your subscription ends on {formatDate(subscription.current_period_end)}</p>
+                      <p className="text-sm text-text-muted">
+                        You&apos;ll retain access until the end of your current billing period. You can resubscribe anytime.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Post-cancellation: status is canceled */}
+              {subscription.status === "canceled" && (
+                <div className="p-4 bg-grey-800 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-text-muted flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-white font-medium mb-1">Subscription ended</p>
+                      <p className="text-sm text-text-muted">
+                        Your subscription has ended. Subscribe again to regain access to downloads.
+                        Note: free trials are one-time only.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Billing Period */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -367,13 +419,25 @@ function BillingTab({ subscription, patreonLink }: { subscription: Subscription 
                 Manage billing, update payment method, or cancel your subscription through Stripe.
               </p>
             </div>
+          ) : hasPatreonAccess ? (
+            <div className="py-6">
+              <div className="flex items-start gap-3 p-4 bg-success/10 border border-success/30 rounded-lg">
+                <CheckCircle className="w-5 h-5 text-success flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-white font-medium mb-1">You&apos;re subscribed via Patreon</p>
+                  <p className="text-sm text-text-muted">
+                    Your active Patreon pledge gives you full download access. No additional subscription needed.
+                  </p>
+                </div>
+              </div>
+            </div>
           ) : (
             <div className="text-center py-6">
               <p className="text-sm text-text-muted mb-4">
                 You don&apos;t have an active subscription.
               </p>
               <Button onClick={handleSubscribe} isLoading={isLoading}>
-                Start Free Trial
+                Subscribe to Download
               </Button>
             </div>
           )}

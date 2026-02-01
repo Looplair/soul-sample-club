@@ -45,7 +45,7 @@ export function SubscribeButton({
       className={className}
       rightIcon={<ArrowRight className="w-4 h-4" />}
     >
-      {children || "Start free trial"}
+      {children || "Subscribe to download"}
     </Button>
   );
 }

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useDropzone } from "react-dropzone";
-import { Upload, X, AlertCircle, CheckCircle, Gift, Calendar } from "lucide-react";
+import { Upload, X, AlertCircle, CheckCircle, Gift, Calendar, RotateCcw } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button, Input, Card, CardContent } from "@/components/ui";
 import type { Pack } from "@/types/database";
@@ -26,6 +26,7 @@ export function PackForm({ pack }: PackFormProps) {
   const [endDate, setEndDate] = useState(pack?.end_date || "");
   const [isPublished, setIsPublished] = useState(pack?.is_published || false);
   const [isBonus, setIsBonus] = useState(pack?.is_bonus || false);
+  const [isReturned, setIsReturned] = useState(pack?.is_returned || false);
   const [coverImage, setCoverImage] = useState<File | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(
     pack?.cover_image_url || null
@@ -90,6 +91,7 @@ export function PackForm({ pack }: PackFormProps) {
         end_date: endDate || null,
         is_published: isPublished,
         is_bonus: isBonus,
+        is_returned: isReturned,
         cover_image_url: coverImageUrl,
       };
 
@@ -270,7 +272,31 @@ export function PackForm({ pack }: PackFormProps) {
                 {isBonus ? "Bonus Pack" : "Regular Pack"}
               </span>
             </div>
+
+            {/* Returned Pack Toggle */}
+            <div className="flex items-center gap-12">
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isReturned}
+                  onChange={(e) => setIsReturned(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-steel rounded-full peer peer-checked:bg-emerald-500 transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full" />
+              </label>
+              <span className="text-body text-snow flex items-center gap-8">
+                <RotateCcw className="w-4 h-4 text-emerald-500" />
+                {isReturned ? "Returned Pack" : "Not Returned"}
+              </span>
+            </div>
           </div>
+
+          {isReturned && (
+            <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-button p-12 text-emerald-200 text-body-sm">
+              <RotateCcw className="w-4 h-4 inline mr-8" />
+              This pack was previously archived and has been brought back for a limited time. Make sure the end date reflects when it will expire again.
+            </div>
+          )}
 
           {isBonus && (
             <div className="bg-amber-500/10 border border-amber-500/30 rounded-button p-12 text-amber-200 text-body-sm">

@@ -253,7 +253,7 @@ function SampleSlide({
             onClick={onCTA}
             className="flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium bg-white text-charcoal hover:bg-white/90 active:scale-95 active:bg-white/80 transition-all"
           >
-            Start Free Trial
+            {isLoggedIn ? "Subscribe to download" : "Start Free Trial"}
           </button>
         )}
       </main>

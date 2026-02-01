@@ -61,11 +61,6 @@ export function VoteBringBack({
             </p>
             <p className="text-body-sm text-text-muted mt-1">
               Vote to bring this release back. If enough people vote, we&apos;ll make it available again.
-              {voteCount > 0 && (
-                <span className="text-white font-medium ml-1">
-                  {voteCount} {voteCount === 1 ? "vote" : "votes"} so far
-                </span>
-              )}
             </p>
           </div>
         </div>
