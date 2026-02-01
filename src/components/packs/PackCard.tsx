@@ -85,7 +85,7 @@ export function PackCard({ pack, sampleCount }: PackCardProps) {
             {isReturned && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500 text-charcoal text-[10px] font-bold tracking-wide uppercase">
                 <RotateCcw className="w-2.5 h-2.5" />
-                Back
+                Back by Demand
               </span>
             )}
           </div>
