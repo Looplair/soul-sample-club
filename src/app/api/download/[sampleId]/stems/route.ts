@@ -41,13 +41,12 @@ export async function GET(
       .in("status", ["active", "trialing"])
       .lt("current_period_end", now);
 
-    // Then check subscription status
+    // Then check subscription status (past_due keeps access while Stripe retries)
     const subscriptionResult = await adminSupabase
       .from("subscriptions")
       .select("status, current_period_end")
       .eq("user_id", user.id)
-      .in("status", ["active", "trialing"])
-      .gte("current_period_end", now)
+      .in("status", ["active", "trialing", "past_due"])
       .limit(1);
 
     const subscription = subscriptionResult.data?.[0] as { status: string; current_period_end: string } | undefined;

@@ -64,7 +64,7 @@ export async function GET(request: Request) {
             .from("subscriptions")
             .select("status")
             .eq("user_id", user.id)
-            .in("status", ["active", "trialing"])
+            .in("status", ["active", "trialing", "past_due"])
             .single();
 
           // Check for Patreon link

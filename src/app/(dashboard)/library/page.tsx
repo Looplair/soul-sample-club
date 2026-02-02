@@ -133,7 +133,7 @@ async function checkUserAccess(userId: string): Promise<boolean> {
     .from("subscriptions")
     .select("status")
     .eq("user_id", userId)
-    .in("status", ["active", "trialing"])
+    .in("status", ["active", "trialing", "past_due"])
     .gte("current_period_end", now)
     .limit(1);
 
@@ -142,7 +142,7 @@ async function checkUserAccess(userId: string): Promise<boolean> {
   await (adminSupabase.from("subscriptions") as any)
     .update({ status: "canceled" })
     .eq("user_id", userId)
-    .in("status", ["active", "trialing"])
+    .in("status", ["active", "trialing", "past_due"])
     .lt("current_period_end", now);
 
   if ((stripeResult.data?.length ?? 0) > 0) {

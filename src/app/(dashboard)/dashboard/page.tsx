@@ -83,7 +83,7 @@ async function getUserSubscription(): Promise<Subscription | null> {
     .from("subscriptions")
     .select("*")
     .eq("user_id", user.id)
-    .in("status", ["active", "trialing"])
+    .in("status", ["active", "trialing", "past_due"])
     .single();
 
   return result.data as Subscription | null;
