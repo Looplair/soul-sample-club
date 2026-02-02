@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { NotificationPanel } from "./NotificationPanel";
 import type { NotificationWithReadStatus } from "@/types/database";
+import { dismissAllNotifications } from "@/app/actions/notifications";
 
 interface NotificationBellProps {
   userId: string;
@@ -109,21 +110,13 @@ export function NotificationBell({
   };
 
   const handleClearAll = async () => {
-    // Dismiss all notifications (persisted so they don't return on reload)
-    if (notifications.length > 0) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supabase.from("notification_reads") as any).upsert(
-        notifications.map((n) => ({
-          notification_id: n.id,
-          user_id: userId,
-          dismissed: true,
-        })),
-        { onConflict: "notification_id,user_id" }
-      );
-    }
+    // Dismiss all notifications via server action (bypasses RLS)
     setNotifications([]);
     setUnreadCount(0);
     setIsOpen(false);
+    if (notifications.length > 0) {
+      await dismissAllNotifications(notifications.map((n) => n.id));
+    }
   };
 
   const handleMarkAllRead = async () => {
