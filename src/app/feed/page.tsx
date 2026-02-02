@@ -191,7 +191,7 @@ export default async function FeedPage() {
                 </Link>
                 <Link href="/signup">
                   <Button size="sm">
-                    <span className="hidden sm:inline">Get started</span>
+                    <span className="hidden sm:inline">Start free</span>
                     <span className="sm:hidden">Sign up</span>
                   </Button>
                 </Link>

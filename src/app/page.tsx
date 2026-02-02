@@ -257,7 +257,7 @@ export default async function HomePage() {
                 </Link>
                 <Link href="/signup">
                   <Button size="sm">
-                    <span className="hidden sm:inline">Get started</span>
+                    <span className="hidden sm:inline">Start free</span>
                     <span className="sm:hidden">Sign up</span>
                   </Button>
                 </Link>
@@ -334,7 +334,7 @@ export default async function HomePage() {
                     <>
                       <Link href="/signup">
                         <Button size="lg" className="w-full sm:w-auto" rightIcon={<ArrowRight className="w-4 h-4" />}>
-                          Get started
+                          Start free
                         </Button>
                       </Link>
                       <a href="#catalog">
@@ -689,7 +689,7 @@ export default async function HomePage() {
                   <div className="flex flex-col sm:flex-row gap-4 justify-center">
                     <Link href="/signup">
                       <Button size="lg" className="w-full sm:w-auto">
-                        Get started
+                        Start free
                         <ArrowRight className="w-4 h-4 ml-2" />
                       </Button>
                     </Link>
