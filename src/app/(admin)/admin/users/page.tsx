@@ -51,7 +51,7 @@ interface DownloadCount {
 
 type SortField = "created_at" | "email" | "full_name" | "downloads";
 type SortDirection = "asc" | "desc";
-type SubscriptionFilter = "all" | "active" | "trialing" | "canceled" | "patreon" | "none";
+type SubscriptionFilter = "all" | "active" | "trialing" | "past_due" | "canceled" | "patreon" | "none";
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<UserRow[]>([]);
@@ -170,8 +170,9 @@ export default function AdminUsersPage() {
     const withPatreon = users.filter((u) => patreonLinks[u.id]?.is_active).length;
     const noSub = users.filter((u) => !u.subscription?.[0] && !patreonLinks[u.id]?.is_active).length;
     const canceled = users.filter((u) => u.subscription?.[0]?.status === "canceled").length;
+    const pastDue = users.filter((u) => u.subscription?.[0]?.status === "past_due").length;
 
-    return { total, withStripeSub, withPatreon, noSub, canceled };
+    return { total, withStripeSub, withPatreon, noSub, canceled, pastDue };
   }, [users, patreonLinks]);
 
   // Export emails function
@@ -242,7 +243,7 @@ export default function AdminUsersPage() {
       </div>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
         <QuickStat
           label="Total Users"
           value={stats.total}
@@ -264,6 +265,12 @@ export default function AdminUsersPage() {
           label="Free Users"
           value={stats.noSub}
           icon={<Mail className="w-4 h-4" />}
+        />
+        <QuickStat
+          label="Past Due"
+          value={stats.pastDue}
+          icon={<CreditCard className="w-4 h-4" />}
+          color="danger"
         />
         <QuickStat
           label="Canceled"
@@ -311,6 +318,7 @@ export default function AdminUsersPage() {
                   { value: "all", label: "All" },
                   { value: "active", label: "Stripe Active" },
                   { value: "trialing", label: "Stripe Trialing" },
+                  { value: "past_due", label: "Past Due" },
                   { value: "patreon", label: "Patreon" },
                   { value: "canceled", label: "Canceled" },
                   { value: "none", label: "No Subscription" },
@@ -447,6 +455,8 @@ export default function AdminUsersPage() {
                                       ? "success"
                                       : subscription.status === "trialing"
                                       ? "primary"
+                                      : subscription.status === "past_due"
+                                      ? "error"
                                       : "warning"
                                   }
                                 >
@@ -524,12 +534,13 @@ function QuickStat({
   label: string;
   value: number;
   icon: React.ReactNode;
-  color?: "default" | "mint" | "warning" | "patreon";
+  color?: "default" | "mint" | "warning" | "danger" | "patreon";
 }) {
   const colorClasses = {
     default: "bg-grey-700 text-snow/60",
     mint: "bg-mint/20 text-mint",
     warning: "bg-amber-500/20 text-amber-500",
+    danger: "bg-red-500/20 text-red-500",
     patreon: "bg-[#FF424D]/20 text-[#FF424D]",
   };
 

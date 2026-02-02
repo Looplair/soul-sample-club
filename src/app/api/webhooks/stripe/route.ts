@@ -139,13 +139,40 @@ export async function POST(request: Request) {
           break;
         }
 
+        // Don't let subscription.updated overwrite past_due with trialing
+        // (race condition when payment fails at end of trial)
+        let resolvedSubStatus = subscription.status;
+        if (event.type === "customer.subscription.updated") {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const { data: existing } = await (supabase.from("subscriptions") as any)
+            .select("status")
+            .eq("stripe_subscription_id", subscription.id)
+            .single();
+
+          if (
+            existing?.status === "past_due" &&
+            (subscription.status === "trialing" || subscription.status === "active")
+          ) {
+            // Check Stripe for the latest invoice status to confirm
+            const latestInvoice = subscription.latest_invoice;
+            if (latestInvoice) {
+              const invoice = await stripe.invoices.retrieve(
+                typeof latestInvoice === "string" ? latestInvoice : latestInvoice.id
+              );
+              if (invoice.status === "open" || invoice.status === "uncollectible") {
+                resolvedSubStatus = "past_due" as Stripe.Subscription.Status;
+              }
+            }
+          }
+        }
+
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { error } = await (supabase.from("subscriptions") as any).upsert(
           {
             user_id: userId,
             stripe_customer_id: subscription.customer as string,
             stripe_subscription_id: subscription.id,
-            status: subscription.status as any,
+            status: resolvedSubStatus as any,
             current_period_start: new Date(
               subscription.current_period_start * 1000
             ).toISOString(),
