@@ -16,20 +16,26 @@ export async function getNotificationsForUser(
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: reads } = await (adminSupabase.from("notification_reads") as any)
-    .select("notification_id")
+    .select("notification_id, dismissed")
     .eq("user_id", userId);
 
   const readIds = new Set(
     (reads || []).map((r: { notification_id: string }) => r.notification_id)
   );
+  const dismissedIds = new Set(
+    (reads || [])
+      .filter((r: { dismissed: boolean }) => r.dismissed)
+      .map((r: { notification_id: string }) => r.notification_id)
+  );
 
-  const notifications: NotificationWithReadStatus[] = (notificationsRaw || []).map(
+  const notifications: NotificationWithReadStatus[] = (notificationsRaw || [])
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (n: any) => ({
+    .filter((n: any) => !dismissedIds.has(n.id))
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .map((n: any) => ({
       ...n,
       is_read: readIds.has(n.id),
-    })
-  );
+    }));
 
   const unreadCount = notifications.filter((n) => !n.is_read).length;
 

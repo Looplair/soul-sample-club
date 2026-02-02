@@ -279,6 +279,7 @@ export interface Database {
           type: "new_pack" | "returned_pack" | "announcement" | "custom";
           pack_id: string | null;
           link_url: string | null;
+          link_new_tab: boolean;
           created_by: string | null;
           expires_at: string | null;
           created_at: string;
@@ -290,6 +291,7 @@ export interface Database {
           type?: "new_pack" | "returned_pack" | "announcement" | "custom";
           pack_id?: string | null;
           link_url?: string | null;
+          link_new_tab?: boolean;
           created_by?: string | null;
           expires_at?: string | null;
           created_at?: string;
@@ -301,6 +303,7 @@ export interface Database {
           type?: "new_pack" | "returned_pack" | "announcement" | "custom";
           pack_id?: string | null;
           link_url?: string | null;
+          link_new_tab?: boolean;
           created_by?: string | null;
           expires_at?: string | null;
           created_at?: string;
@@ -312,18 +315,21 @@ export interface Database {
           notification_id: string;
           user_id: string;
           read_at: string;
+          dismissed: boolean;
         };
         Insert: {
           id?: string;
           notification_id: string;
           user_id: string;
           read_at?: string;
+          dismissed?: boolean;
         };
         Update: {
           id?: string;
           notification_id?: string;
           user_id?: string;
           read_at?: string;
+          dismissed?: boolean;
         };
       };
       pack_votes: {

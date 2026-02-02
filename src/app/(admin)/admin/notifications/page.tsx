@@ -126,6 +126,9 @@ export default function AdminNotificationsPage() {
                           <span className="flex items-center gap-1">
                             <ExternalLink className="w-2.5 h-2.5" />
                             {notification.link_url}
+                            {(notification as any).link_new_tab && (
+                              <span className="text-text-muted/40">(new tab)</span>
+                            )}
                           </span>
                         )}
                       </div>

@@ -241,8 +241,8 @@ function NotificationItem({
   );
 
   if (href) {
-    // External links (http) open in new tab, internal links use Next Link
-    if (href.startsWith("http")) {
+    const openNewTab = notification.link_new_tab ?? href.startsWith("http");
+    if (openNewTab) {
       return (
         <a href={href} target="_blank" rel="noopener noreferrer">
           {content}

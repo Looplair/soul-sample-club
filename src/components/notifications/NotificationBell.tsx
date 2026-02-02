@@ -46,20 +46,26 @@ export function NotificationBell({
             .limit(20);
 
           if (data) {
-            // Check which are read
+            // Check which are read/dismissed
             const { data: reads } = await supabase
               .from("notification_reads")
-              .select("notification_id")
+              .select("notification_id, dismissed")
               .eq("user_id", userId);
 
             const readIds = new Set(
               reads?.map((r: { notification_id: string }) => r.notification_id) || []
             );
+            const dismissedIds = new Set(
+              reads?.filter((r: { dismissed: boolean }) => r.dismissed)
+                .map((r: { notification_id: string }) => r.notification_id) || []
+            );
 
-            const withStatus = data.map((n: NotificationWithReadStatus) => ({
-              ...n,
-              is_read: readIds.has(n.id),
-            }));
+            const withStatus = data
+              .filter((n: NotificationWithReadStatus) => !dismissedIds.has(n.id))
+              .map((n: NotificationWithReadStatus) => ({
+                ...n,
+                is_read: readIds.has(n.id),
+              }));
 
             setNotifications(withStatus);
             setUnreadCount(withStatus.filter((n: NotificationWithReadStatus) => !n.is_read).length);
@@ -103,8 +109,18 @@ export function NotificationBell({
   };
 
   const handleClearAll = async () => {
-    // Mark all as read then clear from view
-    await handleMarkAllRead();
+    // Dismiss all notifications (persisted so they don't return on reload)
+    if (notifications.length > 0) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase.from("notification_reads") as any).upsert(
+        notifications.map((n) => ({
+          notification_id: n.id,
+          user_id: userId,
+          dismissed: true,
+        })),
+        { onConflict: "notification_id,user_id" }
+      );
+    }
     setNotifications([]);
     setUnreadCount(0);
     setIsOpen(false);

@@ -18,6 +18,7 @@ export function CreateNotificationButton({ onCreated }: CreateNotificationButton
   const [message, setMessage] = useState("");
   const [type, setType] = useState<"announcement" | "custom">("announcement");
   const [linkUrl, setLinkUrl] = useState("");
+  const [linkNewTab, setLinkNewTab] = useState(false);
   const router = useRouter();
   const supabase = createClient();
 
@@ -36,6 +37,7 @@ export function CreateNotificationButton({ onCreated }: CreateNotificationButton
         message,
         type,
         link_url: linkUrl || null,
+        link_new_tab: linkUrl ? linkNewTab : false,
         created_by: user?.id,
       });
 
@@ -46,6 +48,7 @@ export function CreateNotificationButton({ onCreated }: CreateNotificationButton
       setMessage("");
       setType("announcement");
       setLinkUrl("");
+      setLinkNewTab(false);
       onCreated?.();
     } catch (error) {
       console.error("Error creating notification:", error);
@@ -93,6 +96,18 @@ export function CreateNotificationButton({ onCreated }: CreateNotificationButton
             onChange={(e) => setLinkUrl(e.target.value)}
             placeholder="e.g., /blog/new-feature or https://example.com"
           />
+
+          {linkUrl && (
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={linkNewTab}
+                onChange={(e) => setLinkNewTab(e.target.checked)}
+                className="w-4 h-4 rounded border-grey-600 bg-grey-800 text-velvet focus:ring-velvet"
+              />
+              <span className="text-sm text-text-muted">Open link in new tab</span>
+            </label>
+          )}
 
           <div>
             <label className="label">Type</label>
