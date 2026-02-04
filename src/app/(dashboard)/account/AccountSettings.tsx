@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   User,
   CreditCard,
@@ -25,7 +25,19 @@ interface AccountSettingsProps {
 }
 
 export function AccountSettings({ profile, subscription, patreonLink }: AccountSettingsProps) {
-  const [activeTab, setActiveTab] = useState<"profile" | "billing" | "password">("profile");
+  const searchParams = useSearchParams();
+  const initialTab = searchParams.get("tab") as "profile" | "billing" | "password" | null;
+  const [activeTab, setActiveTab] = useState<"profile" | "billing" | "password">(
+    initialTab && ["profile", "billing", "password"].includes(initialTab) ? initialTab : "profile"
+  );
+
+  // Update tab when URL changes
+  useEffect(() => {
+    const tab = searchParams.get("tab") as "profile" | "billing" | "password" | null;
+    if (tab && ["profile", "billing", "password"].includes(tab)) {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
 
   return (
     <div className="space-y-6">
@@ -396,15 +408,6 @@ function BillingTab({ subscription, patreonLink }: { subscription: Subscription 
                 >
                   Manage Billing
                 </Button>
-                {isStripeActive && !subscription.cancel_at_period_end && (
-                  <Button
-                    variant="ghost"
-                    onClick={handleManageBilling}
-                    className="text-text-muted hover:text-error"
-                  >
-                    Cancel Subscription
-                  </Button>
-                )}
                 {!isStripeActive && (
                   <Button
                     onClick={handleSubscribe}
