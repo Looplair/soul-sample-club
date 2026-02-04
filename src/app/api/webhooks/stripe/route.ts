@@ -237,6 +237,42 @@ export async function POST(request: Request) {
             );
             break;
           }
+
+          // Double-check with Stripe: does this customer have ANY active subscription?
+          // This catches cases where the new subscription has a different ID but exists.
+          const stripeCustomerId = subscription.customer as string;
+          const activeStripeSubs = await stripe.subscriptions.list({
+            customer: stripeCustomerId,
+            status: "active",
+            limit: 1,
+          });
+
+          if (activeStripeSubs.data.length > 0) {
+            console.log(
+              "Skipping subscription.deleted — customer has active subscription in Stripe:",
+              subscription.id,
+              "active:",
+              activeStripeSubs.data[0].id
+            );
+            break;
+          }
+
+          // Also check for trialing subscriptions
+          const trialingStripeSubs = await stripe.subscriptions.list({
+            customer: stripeCustomerId,
+            status: "trialing",
+            limit: 1,
+          });
+
+          if (trialingStripeSubs.data.length > 0) {
+            console.log(
+              "Skipping subscription.deleted — customer has trialing subscription in Stripe:",
+              subscription.id,
+              "trialing:",
+              trialingStripeSubs.data[0].id
+            );
+            break;
+          }
         }
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -15,9 +15,19 @@ import {
   FileDown,
   Copy,
   Check,
+  Plus,
+  RotateCcw,
+  X,
+  Shield,
+  AlertCircle,
 } from "lucide-react";
 import { Card, CardContent, Badge, Button } from "@/components/ui";
 import { formatDate } from "@/lib/utils";
+import {
+  grantManualAccess,
+  syncUserSubscription,
+  revokeAccess,
+} from "@/app/actions/admin-subscription";
 
 // Patreon Icon
 const PatreonIcon = () => (
@@ -64,6 +74,15 @@ export default function AdminUsersPage() {
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [showFilters, setShowFilters] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  // Grant access modal state
+  const [showGrantModal, setShowGrantModal] = useState(false);
+  const [grantEmail, setGrantEmail] = useState("");
+  const [grantLoading, setGrantLoading] = useState(false);
+  const [grantMessage, setGrantMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  // Per-row action state
+  const [syncingUserId, setSyncingUserId] = useState<string | null>(null);
 
   // Fetch data via admin API route to bypass RLS
   const fetchData = async () => {
@@ -222,6 +241,52 @@ export default function AdminUsersPage() {
     );
   };
 
+  const handleGrantAccess = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!grantEmail.trim()) return;
+
+    setGrantLoading(true);
+    setGrantMessage(null);
+
+    const result = await grantManualAccess(grantEmail);
+
+    setGrantMessage({
+      type: result.success ? "success" : "error",
+      text: result.message,
+    });
+    setGrantLoading(false);
+
+    if (result.success) {
+      setGrantEmail("");
+      fetchData(); // Refresh the list
+    }
+  };
+
+  const handleSyncUser = async (email: string, userId: string) => {
+    setSyncingUserId(userId);
+    const result = await syncUserSubscription(email);
+
+    if (result.success) {
+      fetchData(); // Refresh the list
+    } else {
+      alert(result.message);
+    }
+
+    setSyncingUserId(null);
+  };
+
+  const handleRevokeAccess = async (email: string) => {
+    if (!confirm(`Are you sure you want to revoke access for ${email}?`)) return;
+
+    const result = await revokeAccess(email);
+
+    if (result.success) {
+      fetchData();
+    } else {
+      alert(result.message);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -232,15 +297,115 @@ export default function AdminUsersPage() {
             Manage platform users and subscriptions
           </p>
         </div>
-        <Button
-          variant="secondary"
-          onClick={fetchData}
-          disabled={loading}
-          leftIcon={<RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />}
-        >
-          Refresh
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="primary"
+            onClick={() => setShowGrantModal(true)}
+            leftIcon={<Shield className="w-4 h-4" />}
+          >
+            Grant Access
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={fetchData}
+            disabled={loading}
+            leftIcon={<RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />}
+          >
+            Refresh
+          </Button>
+        </div>
       </div>
+
+      {/* Grant Access Modal */}
+      {showGrantModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <Card className="w-full max-w-md">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-h3 text-snow">Grant Access</h2>
+                <button
+                  onClick={() => {
+                    setShowGrantModal(false);
+                    setGrantMessage(null);
+                    setGrantEmail("");
+                  }}
+                  className="p-1 rounded hover:bg-grey-700 transition-colors"
+                >
+                  <X className="w-5 h-5 text-snow/60" />
+                </button>
+              </div>
+
+              <p className="text-body text-snow/60 mb-4">
+                Enter an email address to grant manual access. If the user has a Stripe subscription,
+                it will sync from Stripe instead.
+              </p>
+
+              <form onSubmit={handleGrantAccess} className="space-y-4">
+                <div>
+                  <label className="block text-label text-snow/60 mb-2">
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    value={grantEmail}
+                    onChange={(e) => setGrantEmail(e.target.value)}
+                    placeholder="user@example.com"
+                    className="w-full px-4 py-2 bg-grey-800 border border-grey-700 rounded-lg text-snow placeholder:text-snow/40 focus:outline-none focus:border-velvet"
+                    required
+                  />
+                </div>
+
+                {grantMessage && (
+                  <div
+                    className={`p-3 rounded-lg flex items-start gap-2 ${
+                      grantMessage.type === "success"
+                        ? "bg-mint/20 text-mint"
+                        : "bg-red-500/20 text-red-400"
+                    }`}
+                  >
+                    {grantMessage.type === "success" ? (
+                      <Check className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                    ) : (
+                      <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                    )}
+                    <p className="text-sm">{grantMessage.text}</p>
+                  </div>
+                )}
+
+                <div className="flex gap-3">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => {
+                      setShowGrantModal(false);
+                      setGrantMessage(null);
+                      setGrantEmail("");
+                    }}
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    disabled={grantLoading || !grantEmail.trim()}
+                    leftIcon={
+                      grantLoading ? (
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Plus className="w-4 h-4" />
+                      )
+                    }
+                    className="flex-1"
+                  >
+                    {grantLoading ? "Processing..." : "Grant Access"}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Quick Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
@@ -421,6 +586,9 @@ export default function AdminUsersPage() {
                     <th className="px-4 py-3 text-left text-label text-snow/60">
                       Role
                     </th>
+                    <th className="px-4 py-3 text-left text-label text-snow/60">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-grey-700">
@@ -502,6 +670,35 @@ export default function AdminUsersPage() {
                           ) : (
                             <span className="text-snow/50 text-sm">User</span>
                           )}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-1">
+                            {/* Sync from Stripe button - only show if they have a real Stripe customer */}
+                            {subscription && !subscription.status?.startsWith("manual") && (
+                              <button
+                                onClick={() => handleSyncUser(user.email, user.id)}
+                                disabled={syncingUserId === user.id}
+                                className="p-1.5 rounded hover:bg-grey-700 transition-colors text-snow/50 hover:text-mint disabled:opacity-50"
+                                title="Sync from Stripe"
+                              >
+                                <RotateCcw
+                                  className={`w-4 h-4 ${
+                                    syncingUserId === user.id ? "animate-spin" : ""
+                                  }`}
+                                />
+                              </button>
+                            )}
+                            {/* Revoke access button */}
+                            {(isStripeActive || subscription?.status === "active") && (
+                              <button
+                                onClick={() => handleRevokeAccess(user.email)}
+                                className="p-1.5 rounded hover:bg-grey-700 transition-colors text-snow/50 hover:text-red-400"
+                                title="Revoke access"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     );
