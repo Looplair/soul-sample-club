@@ -60,21 +60,37 @@ export async function grantManualAccess(email: string): Promise<GrantAccessResul
   const oneYearFromNow = new Date();
   oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error } = await (adminSupabase.from("subscriptions") as any).upsert(
-    {
-      user_id: targetProfile.id,
-      stripe_customer_id: `manual_${Date.now()}`,
-      stripe_subscription_id: `manual_grant_${Date.now()}`,
-      status: "active",
-      current_period_start: new Date().toISOString(),
-      current_period_end: oneYearFromNow.toISOString(),
-      cancel_at_period_end: false,
-    },
-    {
-      onConflict: "user_id",
-    }
-  );
+  let error;
+  if (existingSub) {
+    // Update existing row
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const result = await (adminSupabase.from("subscriptions") as any)
+      .update({
+        stripe_customer_id: `manual_${Date.now()}`,
+        stripe_subscription_id: `manual_grant_${Date.now()}`,
+        status: "active",
+        current_period_start: new Date().toISOString(),
+        current_period_end: oneYearFromNow.toISOString(),
+        cancel_at_period_end: false,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("user_id", targetProfile.id);
+    error = result.error;
+  } else {
+    // Insert new row
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const result = await (adminSupabase.from("subscriptions") as any)
+      .insert({
+        user_id: targetProfile.id,
+        stripe_customer_id: `manual_${Date.now()}`,
+        stripe_subscription_id: `manual_grant_${Date.now()}`,
+        status: "active",
+        current_period_start: new Date().toISOString(),
+        current_period_end: oneYearFromNow.toISOString(),
+        cancel_at_period_end: false,
+      });
+    error = result.error;
+  }
 
   if (error) {
     console.error("Error granting access:", error);
@@ -115,22 +131,44 @@ export async function syncSubscriptionFromStripe(
       return { success: false, message: "No subscriptions found in Stripe for this customer" };
     }
 
-    // Update database with Stripe data
+    // Check if user already has a subscription row
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (adminSupabase.from("subscriptions") as any).upsert(
-      {
-        user_id: userId,
-        stripe_customer_id: stripeCustomerId,
-        stripe_subscription_id: subscription.id,
-        status: subscription.status,
-        current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-        current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-        cancel_at_period_end: subscription.cancel_at_period_end,
-      },
-      {
-        onConflict: "user_id",
-      }
-    );
+    const { data: existingRow } = await (adminSupabase.from("subscriptions") as any)
+      .select("id")
+      .eq("user_id", userId)
+      .single();
+
+    let error;
+    if (existingRow) {
+      // Update existing row
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await (adminSupabase.from("subscriptions") as any)
+        .update({
+          stripe_customer_id: stripeCustomerId,
+          stripe_subscription_id: subscription.id,
+          status: subscription.status,
+          current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
+          current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+          cancel_at_period_end: subscription.cancel_at_period_end,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("user_id", userId);
+      error = result.error;
+    } else {
+      // Insert new row
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await (adminSupabase.from("subscriptions") as any)
+        .insert({
+          user_id: userId,
+          stripe_customer_id: stripeCustomerId,
+          stripe_subscription_id: subscription.id,
+          status: subscription.status,
+          current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
+          current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+          cancel_at_period_end: subscription.cancel_at_period_end,
+        });
+      error = result.error;
+    }
 
     if (error) {
       console.error("Error syncing subscription:", error);
