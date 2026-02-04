@@ -58,6 +58,21 @@ export async function POST(request: Request) {
       console.warn("Webhook idempotency check error:", idempotencyError);
     }
 
+    // Reject stale events for destructive actions (older than 1 hour)
+    // This prevents delayed webhook retries from causing damage
+    const eventAgeMs = Date.now() - event.created * 1000;
+    const ONE_HOUR_MS = 60 * 60 * 1000;
+    const isStaleEvent = eventAgeMs > ONE_HOUR_MS;
+
+    if (isStaleEvent && event.type === "customer.subscription.deleted") {
+      console.warn(
+        `Rejecting stale subscription.deleted event (${Math.round(eventAgeMs / 1000 / 60)} minutes old):`,
+        event.id
+      );
+      // Still return 200 so Stripe doesn't keep retrying
+      return NextResponse.json({ received: true, rejected: "stale_event" });
+    }
+
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;

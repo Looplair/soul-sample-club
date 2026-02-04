@@ -19,8 +19,8 @@ export async function grantManualAccess(email: string): Promise<GrantAccessResul
     return { success: false, message: "Not authenticated" };
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: profile } = await (supabase.from("profiles") as any)
     .select("is_admin")
     .eq("id", user.id)
     .single();
@@ -32,8 +32,8 @@ export async function grantManualAccess(email: string): Promise<GrantAccessResul
   const adminSupabase = createAdminClient();
 
   // Find user by email
-  const { data: targetProfile } = await adminSupabase
-    .from("profiles")
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: targetProfile } = await (adminSupabase.from("profiles") as any)
     .select("id, email")
     .eq("email", email.toLowerCase().trim())
     .single();
@@ -157,8 +157,8 @@ export async function syncUserSubscription(email: string): Promise<GrantAccessRe
     return { success: false, message: "Not authenticated" };
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: profile } = await (supabase.from("profiles") as any)
     .select("is_admin")
     .eq("id", user.id)
     .single();
@@ -170,8 +170,8 @@ export async function syncUserSubscription(email: string): Promise<GrantAccessRe
   const adminSupabase = createAdminClient();
 
   // Find user by email
-  const { data: targetProfile } = await adminSupabase
-    .from("profiles")
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: targetProfile } = await (adminSupabase.from("profiles") as any)
     .select("id, email")
     .eq("email", email.toLowerCase().trim())
     .single();
@@ -207,8 +207,8 @@ export async function revokeAccess(email: string): Promise<GrantAccessResult> {
     return { success: false, message: "Not authenticated" };
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: profile } = await (supabase.from("profiles") as any)
     .select("is_admin")
     .eq("id", user.id)
     .single();
@@ -220,8 +220,8 @@ export async function revokeAccess(email: string): Promise<GrantAccessResult> {
   const adminSupabase = createAdminClient();
 
   // Find user by email
-  const { data: targetProfile } = await adminSupabase
-    .from("profiles")
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: targetProfile } = await (adminSupabase.from("profiles") as any)
     .select("id, email")
     .eq("email", email.toLowerCase().trim())
     .single();
