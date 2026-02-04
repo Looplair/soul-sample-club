@@ -16,8 +16,9 @@ import { SubscribeButton } from "@/components/subscription/SubscribeButton";
 import { ShareButtonsInline } from "@/components/social/ShareButtons";
 import { VoteBringBack } from "@/components/packs/VoteBringBack";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { UserDropdown } from "@/components/layout/UserDropdown";
 import { getNotificationsForUser } from "@/lib/notifications";
-import type { Pack, Sample, NotificationWithReadStatus } from "@/types/database";
+import type { Pack, Sample, NotificationWithReadStatus, Profile } from "@/types/database";
 
 // -----------------------------------------
 // TYPE DEFINITIONS
@@ -120,14 +121,23 @@ async function getPack(id: string): Promise<PackWithSamples | null> {
 // FETCH ACCESS (subscription OR patreon)
 // -----------------------------------------
 // Uses admin client to bypass RLS for subscription checks
-async function getUserAccess(): Promise<{ hasAccess: boolean; isLoggedIn: boolean; userId: string | null; hasUsedTrial: boolean }> {
+async function getUserAccess(): Promise<{ hasAccess: boolean; isLoggedIn: boolean; userId: string | null; hasUsedTrial: boolean; profile: Profile | null }> {
   const supabase = await createClient();
   const adminSupabase = createAdminClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) return { hasAccess: false, isLoggedIn: false, userId: null, hasUsedTrial: false };
+  if (!user) return { hasAccess: false, isLoggedIn: false, userId: null, hasUsedTrial: false, profile: null };
+
+  // Fetch user profile
+  const profileResult = await adminSupabase
+    .from("profiles")
+    .select("*")
+    .eq("id", user.id)
+    .single();
+
+  const profile = profileResult.data as Profile | null;
 
   // Check subscription using admin client to bypass RLS
   // Filter by current_period_end in the future to catch stale rows
@@ -164,6 +174,7 @@ async function getUserAccess(): Promise<{ hasAccess: boolean; isLoggedIn: boolea
     isLoggedIn: true,
     userId: user.id,
     hasUsedTrial: (anySubResult.data?.length ?? 0) > 0,
+    profile,
   };
 }
 
@@ -220,7 +231,7 @@ export default async function PackDetailPage({
     notFound();
   }
 
-  const { hasAccess, isLoggedIn, userId, hasUsedTrial } = userState;
+  const { hasAccess, isLoggedIn, userId, hasUsedTrial, profile } = userState;
 
   // Fetch notifications for logged-in users
   const { notifications, unreadCount } = userId
@@ -271,18 +282,23 @@ export default async function PackDetailPage({
           </Link>
 
           <div className="flex items-center gap-3">
-            {isLoggedIn && userId ? (
+            {isLoggedIn && userId && profile ? (
               <>
+                <Link href="/feed" className="hidden sm:block">
+                  <Button variant="secondary" size="sm">
+                    Catalog
+                  </Button>
+                </Link>
                 <NotificationBell
                   userId={userId}
                   initialNotifications={notifications}
                   initialUnreadCount={unreadCount}
                 />
-                <Link href="/">
-                  <Button variant="secondary" size="sm">
-                    Catalog
-                  </Button>
-                </Link>
+                <UserDropdown
+                  email={profile.email}
+                  displayName={profile.username || profile.full_name || profile.email?.split("@")[0] || "User"}
+                  isAdmin={profile.is_admin}
+                />
               </>
             ) : (
               <>
@@ -307,7 +323,7 @@ export default async function PackDetailPage({
         <div className="container-app">
           {/* Back Link */}
           <Link
-            href="/"
+            href="/feed"
             className="inline-flex items-center gap-2 text-body text-text-muted hover:text-white transition-colors mb-8"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -601,7 +617,7 @@ export default async function PackDetailPage({
       {isLoggedIn && (
         <nav className="sm:hidden fixed bottom-0 left-0 right-0 bg-charcoal-elevated/95 backdrop-blur-xl border-t border-grey-700 z-40 safe-area-bottom">
           <div className="flex items-center justify-around h-14">
-            <Link href="/" className="flex flex-col items-center gap-1 py-2 px-4 text-white">
+            <Link href="/feed" className="flex flex-col items-center gap-1 py-2 px-4 text-white">
               <Music2 className="w-5 h-5" />
               <span className="text-[10px]">Catalog</span>
             </Link>

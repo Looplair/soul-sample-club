@@ -36,7 +36,8 @@ export function PackCard({ pack, sampleCount }: PackCardProps) {
       {/* Artwork Container - Pure artwork-first, no box underneath */}
       <div className={cn(
         "relative aspect-square rounded-2xl overflow-hidden bg-grey-800",
-        "transition-transform duration-300 group-hover:scale-[1.02]"
+        "transition-transform duration-300 group-hover:scale-[1.02]",
+        isReturned && "ring-2 ring-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.3)]"
       )}>
         {pack.cover_image_url ? (
           <Image
