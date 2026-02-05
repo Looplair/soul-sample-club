@@ -83,16 +83,17 @@ function SampleSlide({
   onSeek: (percent: number) => void;
 }) {
   return (
-    <div className="absolute inset-0 flex flex-col overflow-hidden" style={{ height: '100dvh' }}>
-      {/* Background - blurred album art */}
-      <div className="absolute inset-0 pointer-events-none">
+    <div className="absolute inset-0 flex flex-col overflow-hidden bg-charcoal" style={{ height: '100dvh' }}>
+      {/* Background - blurred album art with solid fallback */}
+      <div className="absolute inset-0 pointer-events-none bg-charcoal">
         {sample.pack.cover_image_url && (
           <Image
             src={sample.pack.cover_image_url}
             alt=""
             fill
             className="object-cover opacity-40 blur-3xl scale-125"
-            priority
+            priority={isActive}
+            loading={isActive ? "eager" : "lazy"}
           />
         )}
         <div className="absolute inset-0 bg-gradient-to-b from-charcoal/50 via-charcoal/70 to-charcoal/90" />
@@ -332,10 +333,11 @@ export function ExplorePlayer({
     fetchUrl();
   }, [currentSample?.id]);
 
-  // Render more slides for smoother preloading
+  // Render more slides for smoother preloading - expanded range to prevent flash
   const visibleSlides = useMemo(() => {
     const slides = [];
-    for (let i = -1; i <= 2; i++) {
+    // Render 2 slides before and 2 after for smoother transitions
+    for (let i = -2; i <= 2; i++) {
       const idx = currentIndex + i;
       if (samples[idx]) {
         slides.push({ sample: samples[idx], index: idx });
@@ -670,11 +672,13 @@ export function ExplorePlayer({
         return (
           <div
             key={sample.id}
-            className="absolute inset-0"
+            className="absolute inset-0 bg-charcoal"
             style={{
               transform: `translateY(calc(${offset * 100}% + ${dragOffset}px))`,
               transition: isDragging ? 'none' : 'transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
               willChange: 'transform',
+              backfaceVisibility: 'hidden',
+              WebkitBackfaceVisibility: 'hidden',
             }}
           >
             <SampleSlide
