@@ -1,6 +1,8 @@
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+// Cache pack data for 60 seconds - packs don't change often
+// User-specific data (subscription status) is still fetched fresh
+export const revalidate = 60;
 
+import { cache } from "react";
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -28,65 +30,10 @@ interface PackWithSamples extends Pack {
 }
 
 // -----------------------------------------
-// METADATA
-// -----------------------------------------
-export async function generateMetadata({
-  params,
-}: {
-  params: { id: string };
-}) {
-  const adminSupabase = createAdminClient();
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://soulsampleclub.com";
-
-  const result = await adminSupabase
-    .from("packs")
-    .select("name, description, cover_image_url")
-    .eq("id", params.id)
-    .single();
-
-  const data = result.data as { name: string; description: string; cover_image_url: string | null } | null;
-
-  if (result.error || !data) {
-    return {
-      title: "Release Not Found | Soul Sample Club",
-      description: "This release does not exist.",
-    };
-  }
-
-  const packUrl = `${siteUrl}/packs/${params.id}`;
-  const ogImage = data.cover_image_url || `${siteUrl}/og-image.png`;
-
-  return {
-    title: `${data.name} | Soul Sample Club`,
-    description: data.description,
-    openGraph: {
-      title: `${data.name} | Soul Sample Club`,
-      description: data.description,
-      url: packUrl,
-      siteName: "Soul Sample Club",
-      images: [
-        {
-          url: ogImage,
-          width: 1200,
-          height: 630,
-          alt: data.name,
-        },
-      ],
-      type: "music.album",
-    },
-    twitter: {
-      card: "summary_large_image",
-      title: `${data.name} | Soul Sample Club`,
-      description: data.description,
-      images: [ogImage],
-    },
-  };
-}
-
-// -----------------------------------------
 // FETCH PACK (Public - uses admin client)
+// Wrapped with React cache() to deduplicate requests within the same render
 // -----------------------------------------
-async function getPack(id: string): Promise<PackWithSamples | null> {
+const getPack = cache(async (id: string): Promise<PackWithSamples | null> => {
   const adminSupabase = createAdminClient();
 
   const result = await adminSupabase
@@ -115,6 +62,69 @@ async function getPack(id: string): Promise<PackWithSamples | null> {
   }
 
   return pack;
+});
+
+// -----------------------------------------
+// STATIC PARAMS - Pre-render all pack pages at build time
+// -----------------------------------------
+export async function generateStaticParams() {
+  const adminSupabase = createAdminClient();
+  const { data: packs } = await adminSupabase
+    .from("packs")
+    .select("id")
+    .eq("is_published", true);
+
+  return (packs as { id: string }[] || []).map((pack) => ({
+    id: pack.id,
+  }));
+}
+
+// -----------------------------------------
+// METADATA - Uses cached getPack to avoid duplicate fetch
+// -----------------------------------------
+export async function generateMetadata({
+  params,
+}: {
+  params: { id: string };
+}) {
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://soulsampleclub.com";
+  const pack = await getPack(params.id);
+
+  if (!pack) {
+    return {
+      title: "Release Not Found | Soul Sample Club",
+      description: "This release does not exist.",
+    };
+  }
+
+  const packUrl = `${siteUrl}/packs/${params.id}`;
+  const ogImage = pack.cover_image_url || `${siteUrl}/og-image.png`;
+
+  return {
+    title: `${pack.name} | Soul Sample Club`,
+    description: pack.description,
+    openGraph: {
+      title: `${pack.name} | Soul Sample Club`,
+      description: pack.description,
+      url: packUrl,
+      siteName: "Soul Sample Club",
+      images: [
+        {
+          url: ogImage,
+          width: 1200,
+          height: 630,
+          alt: pack.name,
+        },
+      ],
+      type: "music.album",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${pack.name} | Soul Sample Club`,
+      description: pack.description,
+      images: [ogImage],
+    },
+  };
 }
 
 // -----------------------------------------
