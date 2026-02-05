@@ -9,6 +9,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { PackCard } from "@/components/packs/PackCard";
 import { Button } from "@/components/ui";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { MetaPixelCheckoutSuccess } from "@/components/analytics/MetaPixelEvents";
 import { getNotificationsForUser } from "@/lib/notifications";
 import { Music, LogIn, Archive, User, Sparkles, RotateCcw } from "lucide-react";
 import type { Sample, Subscription, NotificationWithReadStatus } from "@/types/database";
@@ -148,6 +149,11 @@ export default async function FeedPage() {
 
   return (
     <div className="min-h-screen bg-charcoal">
+      {/* Meta Pixel conversion tracking */}
+      <Suspense fallback={null}>
+        <MetaPixelCheckoutSuccess />
+      </Suspense>
+
       {/* Header */}
       <header className="border-b border-grey-700 bg-charcoal/90 backdrop-blur-xl sticky top-0 z-40">
         <div className="container-app h-14 sm:h-16 flex items-center justify-between">

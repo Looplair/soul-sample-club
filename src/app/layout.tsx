@@ -7,6 +7,7 @@ import { NowPlayingBar } from "@/components/audio/NowPlayingBar";
 import { NavigationProgress } from "@/components/layout/NavigationProgress";
 import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
 import { KlaviyoTracking } from "@/components/analytics/KlaviyoTracking";
+import { MetaPixel } from "@/components/analytics/MetaPixel";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -64,6 +65,7 @@ export default function RootLayout({
     <html lang="en" className={`${inter.variable} ${bebasNeue.variable}`}>
       <body className="font-sans min-h-screen flex flex-col">
         {gaId && <GoogleAnalytics gaId={gaId} />}
+        <MetaPixel />
         <KlaviyoTracking />
         <Suspense fallback={null}>
           <NavigationProgress />
