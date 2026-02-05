@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { Inter, Bebas_Neue } from "next/font/google";
 import "./globals.css";
+import { Suspense } from "react";
 import { AudioProvider } from "@/contexts/AudioContext";
 import { NowPlayingBar } from "@/components/audio/NowPlayingBar";
+import { NavigationProgress } from "@/components/layout/NavigationProgress";
 import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
 import { KlaviyoTracking } from "@/components/analytics/KlaviyoTracking";
 
@@ -63,6 +65,9 @@ export default function RootLayout({
       <body className="font-sans min-h-screen flex flex-col">
         {gaId && <GoogleAnalytics gaId={gaId} />}
         <KlaviyoTracking />
+        <Suspense fallback={null}>
+          <NavigationProgress />
+        </Suspense>
         <AudioProvider>
           <div className="flex-1 pb-20">{children}</div>
           <NowPlayingBar />

@@ -1,8 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Music2, Archive, Star, Sparkles, Play, Gift, Clock, RotateCcw } from "lucide-react";
+import { Music2, Archive, Star, Sparkles, Play, Gift, Clock, RotateCcw, Loader2 } from "lucide-react";
 import { cn, formatDate, isPackNew, isPackExpiredWithEndDate, getDaysUntilEndDate, getExpiryBadgeText } from "@/lib/utils";
 import type { Pack } from "@/types/database";
 
@@ -13,6 +14,7 @@ interface PackCardProps {
 }
 
 export function PackCard({ pack, sampleCount }: PackCardProps) {
+  const [isLoading, setIsLoading] = useState(false);
   const name = pack.name ?? "Untitled Release";
   const description = pack.description ?? "";
   const releaseDate = pack.release_date ?? "";
@@ -28,10 +30,15 @@ export function PackCard({ pack, sampleCount }: PackCardProps) {
   const daysRemaining = !isExpired ? getDaysUntilEndDate(releaseDate, endDate, isBonus ? 1 : 3) : 0;
   const expiryBadgeText = !isExpired ? getExpiryBadgeText(daysRemaining) : null;
 
+  const handleClick = () => {
+    setIsLoading(true);
+  };
+
   return (
     <Link
       href={`/packs/${pack.id}`}
       className="block group relative"
+      onClick={handleClick}
     >
       {/* Artwork Container - Pure artwork-first, no box underneath */}
       <div className={cn(
@@ -109,10 +116,20 @@ export function PackCard({ pack, sampleCount }: PackCardProps) {
           </div>
         )}
 
-        {/* Hover Play Button */}
-        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-          <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-lg transform scale-90 group-hover:scale-100 transition-transform duration-200">
-            <Play className="w-5 h-5 text-charcoal ml-0.5" fill="currentColor" />
+        {/* Hover Play Button / Loading State */}
+        <div className={cn(
+          "absolute inset-0 flex items-center justify-center transition-opacity duration-200",
+          isLoading ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+        )}>
+          <div className={cn(
+            "w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-lg transition-transform duration-200",
+            isLoading ? "scale-100" : "scale-90 group-hover:scale-100"
+          )}>
+            {isLoading ? (
+              <Loader2 className="w-5 h-5 text-charcoal animate-spin" />
+            ) : (
+              <Play className="w-5 h-5 text-charcoal ml-0.5" fill="currentColor" />
+            )}
           </div>
         </div>
 
