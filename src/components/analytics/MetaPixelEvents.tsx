@@ -9,21 +9,34 @@ declare global {
   }
 }
 
+const STORAGE_KEY = "ssc_start_trial_fired";
+
 /**
- * Fires Meta Pixel conversion events based on URL params.
- * Place this inside a Suspense boundary on pages that need conversion tracking.
+ * Fires Meta Pixel StartTrial event once per user after Stripe checkout.
+ * Guards: sessionStorage prevents refresh duplicates, localStorage prevents
+ * the same user from being counted twice (e.g. cancel and re-subscribe).
  */
 export function MetaPixelCheckoutSuccess() {
   const searchParams = useSearchParams();
 
   useEffect(() => {
     const success = searchParams.get("success");
-    if (success === "true" && typeof window.fbq === "function") {
-      window.fbq("track", "StartTrial", {
-        currency: "GBP",
-        value: 0,
-      });
-    }
+    if (success !== "true") return;
+    if (typeof window.fbq !== "function") return;
+
+    // Already fired for this user (persists across sessions)
+    if (localStorage.getItem(STORAGE_KEY)) return;
+
+    // Already fired this session (guards against refresh)
+    if (sessionStorage.getItem(STORAGE_KEY)) return;
+
+    window.fbq("track", "StartTrial", {
+      currency: "GBP",
+      value: 0,
+    });
+
+    sessionStorage.setItem(STORAGE_KEY, "1");
+    localStorage.setItem(STORAGE_KEY, "1");
   }, [searchParams]);
 
   return null;
