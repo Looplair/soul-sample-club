@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { Quote } from "lucide-react";
 
 // ============================================
@@ -127,28 +127,28 @@ function TestimonialCard({
 // ============================================
 export function MemberTestimonials() {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [isPaused, setIsPaused] = useState(false);
+  const scrollPositionRef = useRef(0);
+  const isPausedRef = useRef(false);
 
-  // Auto-scroll effect
+  // Auto-scroll effect - runs once, uses refs to avoid re-running
   useEffect(() => {
     const scrollContainer = scrollRef.current;
     if (!scrollContainer) return;
 
     let animationId: number;
-    let scrollPosition = 0;
     const scrollSpeed = 0.5; // pixels per frame
 
     const animate = () => {
-      if (!isPaused && scrollContainer) {
-        scrollPosition += scrollSpeed;
+      if (!isPausedRef.current && scrollContainer) {
+        scrollPositionRef.current += scrollSpeed;
 
         // Reset when we've scrolled half the content (since content is duplicated)
         const halfWidth = scrollContainer.scrollWidth / 2;
-        if (scrollPosition >= halfWidth) {
-          scrollPosition = 0;
+        if (scrollPositionRef.current >= halfWidth) {
+          scrollPositionRef.current = 0;
         }
 
-        scrollContainer.scrollLeft = scrollPosition;
+        scrollContainer.scrollLeft = scrollPositionRef.current;
       }
       animationId = requestAnimationFrame(animate);
     };
@@ -158,7 +158,15 @@ export function MemberTestimonials() {
     return () => {
       cancelAnimationFrame(animationId);
     };
-  }, [isPaused]);
+  }, []);
+
+  const handlePause = () => {
+    isPausedRef.current = true;
+  };
+
+  const handleResume = () => {
+    isPausedRef.current = false;
+  };
 
   // Duplicate testimonials for seamless loop
   const duplicatedTestimonials = [...testimonials, ...testimonials];
@@ -193,10 +201,10 @@ export function MemberTestimonials() {
           <div
             ref={scrollRef}
             className="flex gap-4 overflow-x-hidden"
-            onMouseEnter={() => setIsPaused(true)}
-            onMouseLeave={() => setIsPaused(false)}
-            onTouchStart={() => setIsPaused(true)}
-            onTouchEnd={() => setIsPaused(false)}
+            onMouseEnter={handlePause}
+            onMouseLeave={handleResume}
+            onTouchStart={handlePause}
+            onTouchEnd={handleResume}
           >
             <div className="flex gap-4 pl-4 sm:pl-8">
               {duplicatedTestimonials.map((testimonial, index) => (
