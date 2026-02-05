@@ -168,8 +168,33 @@ export default function TermsPage() {
                 <li>Use the Platform to create a competing service</li>
                 <li>Circumvent access controls, download limits, or security features</li>
                 <li>Scrape, harvest, or automate access to Platform content or metadata</li>
+                <li><strong className="text-white">Use samples to train, develop, or improve any artificial intelligence, machine learning model, or similar technology</strong></li>
+                <li><strong className="text-white">Include samples in datasets intended for AI training purposes</strong></li>
               </ul>
               <p>These restrictions apply regardless of whether access is via web or desktop application.</p>
+            </section>
+
+            {/* Section 6A - AI Prohibition */}
+            <section className="space-y-4">
+              <h2 className="text-h3 text-white">6A. Prohibition on AI Training</h2>
+              <div className="bg-rose-500/10 border border-rose-500/20 rounded-xl p-6 space-y-4">
+                <p>
+                  <strong className="text-white">Soul Sample Club samples may not be used for artificial intelligence or machine learning purposes.</strong>
+                </p>
+                <p>This includes, but is not limited to:</p>
+                <ul className="list-disc pl-6 space-y-2">
+                  <li>Training generative AI models (audio, music, or otherwise)</li>
+                  <li>Fine-tuning existing AI models</li>
+                  <li>Creating datasets for machine learning research or development</li>
+                  <li>Feeding samples into any system designed to analyse, replicate, or generate audio</li>
+                </ul>
+                <p>
+                  This prohibition exists to protect the integrity of human-made music and ensure our compositions are not used to train systems that may replace human creativity.
+                </p>
+                <p className="text-rose-400 font-medium">
+                  Violation of this policy constitutes a material breach of these Terms and may result in immediate account termination and legal action.
+                </p>
+              </div>
             </section>
 
             {/* Section 7 */}

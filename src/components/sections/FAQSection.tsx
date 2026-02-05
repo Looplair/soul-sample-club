@@ -99,6 +99,11 @@ const faqs = [
       "The Soul Sample Club is built by Looplair, a platform trusted by over 30,000 producers worldwide.\n\nThe focus has always been originality, soul, and long term trust.",
   },
   {
+    question: "Are these compositions made with AI",
+    answer:
+      "No. Every composition in the Soul Sample Club is made by humans.\n\nWe do not use AI to generate, compose, or assist in creating any of our music. Every note, chord, and arrangement comes from real musicians and producers.\n\nWe also explicitly prohibit the use of our samples to train AI models. This is about protecting the integrity of human-made music and ensuring our work is not used to replace human creativity.",
+  },
+  {
     question: "What happens if licensing rules change in the future",
     answer:
       "They do not.\n\nThe entire point of the Soul Sample Club is stability. What is cleared today stays cleared tomorrow, next year, and beyond.",

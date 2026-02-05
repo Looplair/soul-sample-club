@@ -6,6 +6,7 @@ import { CatalogSearch } from "@/components/catalog/CatalogSearch";
 import { CreatorHeroStrip } from "@/components/sections/CreatorHeroStrip";
 import { CompleteControlSection } from "@/components/sections/CompleteControlSection";
 import { CommunityProof } from "@/components/sections/CommunityProof";
+import { MemberTestimonials } from "@/components/sections/MemberTestimonials";
 import { FAQSection } from "@/components/sections/FAQSection";
 import { HowItWorksSection } from "@/components/sections/HowItWorksSection";
 import { Button } from "@/components/ui";
@@ -549,6 +550,11 @@ export default async function HomePage() {
             COMMUNITY PROOF
             ============================================ */}
         <CommunityProof />
+
+        {/* ============================================
+            MEMBER TESTIMONIALS
+            ============================================ */}
+        <MemberTestimonials />
 
         {/* ============================================
             HOW IT WORKS
