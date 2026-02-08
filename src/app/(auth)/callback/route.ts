@@ -95,9 +95,9 @@ export async function GET(request: Request) {
             joinedAt: user.created_at,
           }).catch((err) => console.error("Klaviyo sync error:", err));
 
-          // If no subscription or Patreon, redirect to feed with subscribe prompt
+          // If no subscription or Patreon, redirect straight to checkout
           if (!hasStripeSubscription && !hasPatreonAccess) {
-            finalRedirectUrl = `${origin}/feed?subscribe=true`;
+            finalRedirectUrl = `${origin}/subscribe`;
           }
         }
       }
