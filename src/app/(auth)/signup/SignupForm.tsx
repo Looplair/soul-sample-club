@@ -130,9 +130,12 @@ export function SignupForm() {
         </div>
         <h2 className="text-h3 text-white mb-2">Check your email</h2>
         <p className="text-body text-text-muted">
-          We&apos;ve sent you a confirmation link to{" "}
+          We&apos;ve sent a confirmation link to{" "}
           <span className="text-white">{email}</span>. Click the link to activate
           your account.
+        </p>
+        <p className="text-body-sm text-text-subtle mt-3">
+          Can&apos;t find it? Check your junk or spam folder.
         </p>
       </div>
     );
