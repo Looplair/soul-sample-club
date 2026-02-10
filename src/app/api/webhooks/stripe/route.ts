@@ -4,6 +4,7 @@ import Stripe from "stripe";
 import { stripe } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { syncUserToKlaviyo } from "@/lib/klaviyo";
+import { sendStartTrialEvent } from "@/lib/meta-conversions";
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
@@ -128,6 +129,15 @@ export async function POST(request: Request) {
             fullName: profileData.full_name,
             subscriptionType: subType,
           }).catch((err) => console.error("Klaviyo sync error:", err));
+
+          // Send Meta Conversions API event for trial signups
+          if (subscription.status === "trialing") {
+            sendStartTrialEvent({
+              email: profileData.email,
+              userId,
+              firstName: profileData.full_name?.split(" ")[0],
+            }).catch((err) => console.error("Meta Conversions API error:", err));
+          }
         }
         break;
       }
