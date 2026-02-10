@@ -518,20 +518,22 @@ function BillingTab({ subscription, patreonLink }: { subscription: Subscription 
           </details>
           <details className="group">
             <summary className="text-sm text-text-muted cursor-pointer hover:text-white transition-colors">
-              How do I cancel my subscription?
-            </summary>
-            <p className="text-sm text-text-subtle mt-2 pl-4">
-              Click &quot;Manage Billing&quot; above to access the Stripe portal where you can cancel anytime.
-              You&apos;ll keep access until the end of your billing period.
-            </p>
-          </details>
-          <details className="group">
-            <summary className="text-sm text-text-muted cursor-pointer hover:text-white transition-colors">
               Can I switch from Patreon to direct subscription?
             </summary>
             <p className="text-sm text-text-subtle mt-2 pl-4">
               Yes! Cancel your Patreon pledge, then subscribe directly here.
               You only need one active subscription for full access.
+            </p>
+          </details>
+          <details className="group">
+            <summary className="text-sm text-text-muted cursor-pointer hover:text-white transition-colors">
+              My payment failed but I have funds available
+            </summary>
+            <p className="text-sm text-text-subtle mt-2 pl-4">
+              This can happen with international cards or new subscriptions. Click &quot;Manage Billing&quot; to update your payment method, or try a different card. Still having issues? Email{" "}
+              <a href="mailto:hello@soulsampleclub.com" className="text-white hover:underline">
+                hello@soulsampleclub.com
+              </a>
             </p>
           </details>
         </div>
