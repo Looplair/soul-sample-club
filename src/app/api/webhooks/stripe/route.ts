@@ -136,6 +136,12 @@ export async function POST(request: Request) {
       case "customer.subscription.updated": {
         const subscription = event.data.object as Stripe.Subscription;
 
+        console.log(`Processing ${event.type}:`, {
+          subscriptionId: subscription.id,
+          status: subscription.status,
+          customerId: subscription.customer,
+        });
+
         // Try to get user ID from subscription metadata first
         let userId = getUserIdFromMetadata(subscription);
 
@@ -154,9 +160,10 @@ export async function POST(request: Request) {
           break;
         }
 
-        // Don't let subscription.updated overwrite past_due with trialing
-        // (race condition when payment fails at end of trial)
+        // When trial ends and converts to active, Stripe sends subscription.updated
+        // with status=active. We should ALWAYS trust Stripe's active status.
         let resolvedSubStatus = subscription.status;
+
         if (event.type === "customer.subscription.updated") {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const { data: existing } = await (supabase.from("subscriptions") as any)
@@ -164,9 +171,11 @@ export async function POST(request: Request) {
             .eq("stripe_subscription_id", subscription.id)
             .single();
 
+          // Only be protective when going FROM past_due TO trialing (not active)
+          // If Stripe says active, trust it - payment went through
           if (
             existing?.status === "past_due" &&
-            (subscription.status === "trialing" || subscription.status === "active")
+            subscription.status === "trialing"
           ) {
             // Check Stripe for the latest invoice status to confirm
             const latestInvoice = subscription.latest_invoice;
@@ -179,6 +188,8 @@ export async function POST(request: Request) {
               }
             }
           }
+
+          console.log(`Subscription update: existing=${existing?.status}, stripe=${subscription.status}, resolved=${resolvedSubStatus}`);
         }
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -344,19 +355,24 @@ export async function POST(request: Request) {
       case "invoice.paid": {
         const invoice = event.data.object as Stripe.Invoice;
 
+        console.log("Processing invoice.paid:", {
+          invoiceId: invoice.id,
+          subscriptionId: invoice.subscription,
+          customerId: invoice.customer,
+          amountPaid: invoice.amount_paid,
+          billingReason: invoice.billing_reason,
+        });
+
         if (invoice.subscription) {
           // Retrieve the latest subscription data
           const subscription = await stripe.subscriptions.retrieve(
             invoice.subscription as string
           );
 
-          // If an invoice was paid, the subscription should be active regardless
-          // of what Stripe reports at this instant (race condition protection).
-          // Stripe confirms: paid invoice = active subscription.
-          const resolvedStatus =
-            subscription.status === "active" || subscription.status === "trialing"
-              ? subscription.status
-              : "active";
+          // If an invoice was paid, the subscription should be active.
+          // For trial conversions (billing_reason: subscription_cycle), this is critical.
+          // Always set to active when payment succeeds.
+          const resolvedStatus = "active";
 
           // Try to get user ID for upsert (handles case where row doesn't exist yet)
           let paidUserId = getUserIdFromMetadata(subscription);
@@ -393,6 +409,24 @@ export async function POST(request: Request) {
 
             if (error) {
               console.error("Error updating subscription after payment:", error);
+            } else {
+              console.log("Successfully updated subscription to active for user:", paidUserId);
+            }
+
+            // Sync to Klaviyo - user is now a paying customer
+            const { data: paidProfile } = await supabase
+              .from("profiles")
+              .select("email, full_name")
+              .eq("id", paidUserId)
+              .single();
+
+            if (paidProfile) {
+              const profileData = paidProfile as { email: string; full_name: string | null };
+              syncUserToKlaviyo({
+                email: profileData.email,
+                fullName: profileData.full_name,
+                subscriptionType: "stripe_active",
+              }).catch((err) => console.error("Klaviyo sync error:", err));
             }
           } else {
             // Fallback: update by subscription ID only
