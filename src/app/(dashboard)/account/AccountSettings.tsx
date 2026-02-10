@@ -498,6 +498,44 @@ function BillingTab({ subscription, patreonLink }: { subscription: Subscription 
           )}
         </CardContent>
       </Card>
+
+      {/* Help Section */}
+      <div className="border-t border-grey-700 pt-6">
+        <h3 className="text-sm font-medium text-white mb-3">Need help?</h3>
+        <div className="space-y-3">
+          <details className="group">
+            <summary className="text-sm text-text-muted cursor-pointer hover:text-white transition-colors">
+              I&apos;ve paid but don&apos;t have access
+            </summary>
+            <p className="text-sm text-text-subtle mt-2 pl-4">
+              Sometimes it takes a moment for access to sync. Try refreshing the page.
+              If you still don&apos;t have access, email us at{" "}
+              <a href="mailto:hello@soulsampleclub.com" className="text-white hover:underline">
+                hello@soulsampleclub.com
+              </a>{" "}
+              and we&apos;ll sort it out straight away.
+            </p>
+          </details>
+          <details className="group">
+            <summary className="text-sm text-text-muted cursor-pointer hover:text-white transition-colors">
+              How do I cancel my subscription?
+            </summary>
+            <p className="text-sm text-text-subtle mt-2 pl-4">
+              Click &quot;Manage Billing&quot; above to access the Stripe portal where you can cancel anytime.
+              You&apos;ll keep access until the end of your billing period.
+            </p>
+          </details>
+          <details className="group">
+            <summary className="text-sm text-text-muted cursor-pointer hover:text-white transition-colors">
+              Can I switch from Patreon to direct subscription?
+            </summary>
+            <p className="text-sm text-text-subtle mt-2 pl-4">
+              Yes! Cancel your Patreon pledge, then subscribe directly here.
+              You only need one active subscription for full access.
+            </p>
+          </details>
+        </div>
+      </div>
     </div>
   );
 }
