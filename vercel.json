@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/sync-subscriptions",
       "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/cron/publish-scheduled-packs",
+      "schedule": "*/15 * * * *"
     }
   ]
 }
