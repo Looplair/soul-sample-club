@@ -9,6 +9,23 @@ export type Json =
 export interface Database {
   public: {
     Tables: {
+      homepage_settings: {
+        Row: {
+          id: string;
+          hero_image_url: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          hero_image_url?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          hero_image_url?: string | null;
+          updated_at?: string;
+        };
+      };
       profiles: {
         Row: {
           id: string;
@@ -151,7 +168,6 @@ export interface Database {
           end_date: string | null;
           is_published: boolean;
           is_staff_pick?: boolean;
-          is_featured?: boolean;
           is_bonus: boolean;
           is_returned?: boolean;
           created_at: string;
@@ -167,7 +183,6 @@ export interface Database {
           end_date?: string | null;
           is_published?: boolean;
           is_staff_pick?: boolean;
-          is_featured?: boolean;
           is_bonus?: boolean;
           is_returned?: boolean;
           created_at?: string;
@@ -183,7 +198,6 @@ export interface Database {
           end_date?: string | null;
           is_published?: boolean;
           is_staff_pick?: boolean;
-          is_featured?: boolean;
           is_bonus?: boolean;
           is_returned?: boolean;
           created_at?: string;

@@ -27,7 +27,6 @@ export function PackForm({ pack }: PackFormProps) {
   const [isPublished, setIsPublished] = useState(pack?.is_published || false);
   const [isBonus, setIsBonus] = useState(pack?.is_bonus || false);
   const [isReturned, setIsReturned] = useState(pack?.is_returned || false);
-  const [isFeatured, setIsFeatured] = useState(pack?.is_featured || false);
   const [coverImage, setCoverImage] = useState<File | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(
     pack?.cover_image_url || null
@@ -137,7 +136,6 @@ export function PackForm({ pack }: PackFormProps) {
         is_published: isPublished,
         is_bonus: isBonus,
         is_returned: isReturned,
-        is_featured: isFeatured,
         cover_image_url: coverImageUrl,
         hero_image_url: heroImageUrl,
       };
@@ -436,23 +434,6 @@ export function PackForm({ pack }: PackFormProps) {
                 {isReturned ? "Returned Pack" : "Not Returned"}
               </span>
             </div>
-
-            {/* Featured Homepage Hero Toggle */}
-            <div className="flex items-center gap-12">
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={isFeatured}
-                  onChange={(e) => setIsFeatured(e.target.checked)}
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-steel rounded-full peer peer-checked:bg-purple-500 transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full" />
-              </label>
-              <span className="text-body text-snow flex items-center gap-8">
-                <Sparkles className="w-4 h-4 text-purple-500" />
-                {isFeatured ? "Homepage Hero" : "Not Featured"}
-              </span>
-            </div>
           </div>
 
           {isReturned && (
@@ -466,13 +447,6 @@ export function PackForm({ pack }: PackFormProps) {
             <div className="bg-amber-500/10 border border-amber-500/30 rounded-button p-12 text-amber-200 text-body-sm">
               <Gift className="w-4 h-4 inline mr-8" />
               Bonus packs are from partner libraries and typically expire after 1 month. Make sure to set an explicit end date.
-            </div>
-          )}
-
-          {isFeatured && (
-            <div className="bg-purple-500/10 border border-purple-500/30 rounded-button p-12 text-purple-200 text-body-sm">
-              <Sparkles className="w-4 h-4 inline mr-8" />
-              This pack will appear as the main hero on the homepage. Only one pack should be featured at a time.
             </div>
           )}
         </CardContent>
