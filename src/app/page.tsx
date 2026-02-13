@@ -45,6 +45,7 @@ interface PackWithSamples {
   is_published: boolean;
   is_staff_pick?: boolean;
   is_bonus: boolean;
+  scheduled_publish_at: string | null;
   created_at: string;
   updated_at: string;
   samples: Sample[];
