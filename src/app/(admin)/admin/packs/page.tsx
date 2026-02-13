@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus, Edit, Trash2, Eye, EyeOff } from "lucide-react";
+import { Plus, Edit, Trash2, Eye, EyeOff, Calendar } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import {
   Button,
@@ -30,6 +30,7 @@ interface PackRow {
   release_date: string;
   cover_image_url: string | null;
   is_published: boolean;
+  scheduled_publish_at: string | null;
   samples: { count: number }[]; // <= joined count rows
 }
 
@@ -46,6 +47,7 @@ async function getPacks(): Promise<PackRow[]> {
       release_date,
       cover_image_url,
       is_published,
+      scheduled_publish_at,
       samples:samples(count)
     `
     )
@@ -121,19 +123,32 @@ export default async function AdminPacksPage() {
                       </td>
 
                       <td>
-                        <Badge variant={pack.is_published ? "success" : "warning"}>
-                          {pack.is_published ? (
-                            <>
-                              <Eye className="w-3 h-3 mr-4" />
-                              Published
-                            </>
-                          ) : (
-                            <>
-                              <EyeOff className="w-3 h-3 mr-4" />
-                              Draft
-                            </>
-                          )}
-                        </Badge>
+                        {pack.is_published ? (
+                          <Badge variant="success">
+                            <Eye className="w-3 h-3 mr-4" />
+                            Published
+                          </Badge>
+                        ) : pack.scheduled_publish_at ? (
+                          <div className="flex flex-col gap-4">
+                            <Badge variant="primary">
+                              <Calendar className="w-3 h-3 mr-4" />
+                              Scheduled
+                            </Badge>
+                            <span className="text-xs text-snow/50">
+                              {new Date(pack.scheduled_publish_at).toLocaleString([], {
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </span>
+                          </div>
+                        ) : (
+                          <Badge variant="warning">
+                            <EyeOff className="w-3 h-3 mr-4" />
+                            Draft
+                          </Badge>
+                        )}
                       </td>
 
                       <td>
