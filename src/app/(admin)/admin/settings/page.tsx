@@ -71,8 +71,8 @@ export default async function SettingsPage() {
   const stats = await getSystemStats();
 
   // Get homepage hero settings
-  const { data: homepageSettings } = await supabase
-    .from("homepage_settings")
+  const { data: homepageSettings } = await (supabase
+    .from("homepage_settings") as any)
     .select("hero_image_url")
     .eq("id", "singleton")
     .single();

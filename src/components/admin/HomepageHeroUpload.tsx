@@ -74,8 +74,8 @@ export function HomepageHeroUpload({ initialHeroUrl }: HomepageHeroUploadProps) 
       }
 
       // Update homepage_settings
-      const { error: updateError } = await supabase
-        .from("homepage_settings")
+      const { error: updateError } = await (supabase
+        .from("homepage_settings") as any)
         .update({
           hero_image_url: heroImageUrl,
           updated_at: new Date().toISOString()
@@ -102,8 +102,8 @@ export function HomepageHeroUpload({ initialHeroUrl }: HomepageHeroUploadProps) 
 
     try {
       // Clear the hero image
-      const { error: updateError } = await supabase
-        .from("homepage_settings")
+      const { error: updateError } = await (supabase
+        .from("homepage_settings") as any)
         .update({
           hero_image_url: null,
           updated_at: new Date().toISOString()
