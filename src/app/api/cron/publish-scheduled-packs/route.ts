@@ -7,13 +7,7 @@ export const dynamic = "force-dynamic";
  * Auto-publish scheduled packs
  * Runs every 15 minutes to check for packs that should be published
  *
- * Setup in vercel.json:
- * {
- *   "crons": [{
- *     "path": "/api/cron/publish-scheduled-packs",
- *     "schedule": "*/15 * * * *"
- *   }]
- * }
+ * Configured in vercel.json to run every 15 minutes
  */
 export async function GET(request: Request) {
   try {
