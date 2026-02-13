@@ -191,8 +191,8 @@ export default async function HomePage() {
   const recentPacks = allPacks.filter((p) => !isArchived(p.release_date));
   const archivedPacks = allPacks.filter((p) => isArchived(p.release_date));
 
-  // Featured pack for hero (most recent with cover image)
-  const featuredPack = recentPacks.find((p) => p.cover_image_url) || recentPacks[0];
+  // Featured pack for hero - look for is_featured first, then fall back to most recent with cover image
+  const featuredPack = allPacks.find((p) => p.is_featured) || recentPacks.find((p) => p.cover_image_url) || recentPacks[0];
 
   return (
     <div className="min-h-screen bg-charcoal">

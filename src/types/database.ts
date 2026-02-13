@@ -151,6 +151,7 @@ export interface Database {
           end_date: string | null;
           is_published: boolean;
           is_staff_pick?: boolean;
+          is_featured?: boolean;
           is_bonus: boolean;
           is_returned?: boolean;
           created_at: string;
@@ -166,6 +167,7 @@ export interface Database {
           end_date?: string | null;
           is_published?: boolean;
           is_staff_pick?: boolean;
+          is_featured?: boolean;
           is_bonus?: boolean;
           is_returned?: boolean;
           created_at?: string;
@@ -181,6 +183,7 @@ export interface Database {
           end_date?: string | null;
           is_published?: boolean;
           is_staff_pick?: boolean;
+          is_featured?: boolean;
           is_bonus?: boolean;
           is_returned?: boolean;
           created_at?: string;
