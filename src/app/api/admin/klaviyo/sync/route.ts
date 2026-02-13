@@ -38,15 +38,27 @@ export async function POST() {
     // Use admin client to bypass RLS and fetch ALL users' data
     const adminSupabase = createAdminClient();
 
-    // Fetch all users with their subscription info
-    const [usersResult, subscriptionsResult, patreonResult] = await Promise.all([
-      adminSupabase.from("profiles").select("id, email, full_name, created_at"),
+    // Fetch all users from auth.users (email is stored there, not in profiles)
+    const { data: authUsers, error: authError } = await adminSupabase.auth.admin.listUsers();
+
+    if (authError) {
+      console.error("Failed to fetch auth users:", authError);
+      return NextResponse.json({ error: "Failed to fetch users: " + authError.message }, { status: 500 });
+    }
+
+    // Fetch profiles for full_name, and subscription info
+    const [profilesResult, subscriptionsResult, patreonResult] = await Promise.all([
+      adminSupabase.from("profiles").select("id, full_name"),
       adminSupabase.from("subscriptions").select("user_id, status, current_period_end"),
       adminSupabase.from("patreon_links").select("user_id, is_active"),
     ]);
 
-    if (usersResult.error) {
-      return NextResponse.json({ error: "Failed to fetch users" }, { status: 500 });
+    // Build profiles lookup
+    const profilesMap: Record<string, { full_name: string | null }> = {};
+    if (profilesResult.data) {
+      for (const profile of profilesResult.data as Array<{ id: string; full_name: string | null }>) {
+        profilesMap[profile.id] = { full_name: profile.full_name };
+      }
     }
 
     // Build subscription lookup - only count subscriptions with valid current_period_end
@@ -79,32 +91,37 @@ export async function POST() {
       }
     }
 
-    // Prepare users for sync
-    const users = usersResult.data as Array<{ id: string; email: string; full_name: string | null; created_at: string }>;
-    const usersToSync = users.map((u) => {
-      let subscriptionType: "stripe_active" | "stripe_trialing" | "patreon" | "free" | "canceled" = "free";
+    // Prepare users for sync - use authUsers.users from the admin API
+    const usersToSync = authUsers.users
+      .filter((u) => u.email) // Only sync users with email
+      .map((u) => {
+        let subscriptionType: "stripe_active" | "stripe_trialing" | "patreon" | "free" | "canceled" = "free";
 
-      const stripeStatus = subscriptionMap[u.id];
-      const hasActivePatreon = patreonMap[u.id] === true;
+        const stripeStatus = subscriptionMap[u.id];
+        const hasActivePatreon = patreonMap[u.id] === true;
 
-      if (stripeStatus === "active") {
-        subscriptionType = "stripe_active";
-      } else if (stripeStatus === "trialing") {
-        subscriptionType = "stripe_trialing";
-      } else if (hasActivePatreon) {
-        // Patreon takes priority over canceled Stripe status
-        subscriptionType = "patreon";
-      } else if (stripeStatus === "canceled") {
-        subscriptionType = "canceled";
-      }
+        if (stripeStatus === "active") {
+          subscriptionType = "stripe_active";
+        } else if (stripeStatus === "trialing") {
+          subscriptionType = "stripe_trialing";
+        } else if (hasActivePatreon) {
+          // Patreon takes priority over canceled Stripe status
+          subscriptionType = "patreon";
+        } else if (stripeStatus === "canceled") {
+          subscriptionType = "canceled";
+        }
 
-      return {
-        email: u.email,
-        fullName: u.full_name,
-        subscriptionType,
-        joinedAt: u.created_at,
-      };
-    });
+        // Get full_name from profiles or user_metadata
+        const profileData = profilesMap[u.id];
+        const fullName = profileData?.full_name || u.user_metadata?.full_name || u.user_metadata?.name || null;
+
+        return {
+          email: u.email!,
+          fullName,
+          subscriptionType,
+          joinedAt: u.created_at,
+        };
+      });
 
     // Sync to Klaviyo
     const result = await bulkSyncUsersToKlaviyo(usersToSync);
