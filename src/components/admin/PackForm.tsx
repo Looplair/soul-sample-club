@@ -273,13 +273,18 @@ export function PackForm({ pack }: PackFormProps) {
           {/* Dates Section */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
             {/* Release Date */}
-            <Input
-              label="Release Date"
-              type="date"
-              value={releaseDate}
-              onChange={(e) => setReleaseDate(e.target.value)}
-              required
-            />
+            <div>
+              <Input
+                label="Release Date"
+                type="date"
+                value={releaseDate}
+                onChange={(e) => setReleaseDate(e.target.value)}
+                required
+              />
+              <p className="text-caption text-snow/40 mt-4">
+                The date this pack's content was created (shows on pack card)
+              </p>
+            </div>
 
             {/* End Date */}
             <div>
@@ -327,7 +332,7 @@ export function PackForm({ pack }: PackFormProps) {
                 />
                 <p className="text-caption text-snow/40 mt-4">
                   <Calendar className="w-3 h-3 inline mr-1" />
-                  Pack will automatically be published at this time. Leave "Published" unchecked below.
+                  When this pack will go live on the site. Leave "Published" toggle unchecked below.
                 </p>
               </div>
             )}
