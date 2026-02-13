@@ -5,6 +5,7 @@ import { stripe } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { syncUserToKlaviyo } from "@/lib/klaviyo";
 import { sendStartTrialEvent } from "@/lib/meta-conversions";
+import { notifyNewTrial, notifyTrialConverted } from "@/lib/notifications-admin";
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
@@ -137,6 +138,12 @@ export async function POST(request: Request) {
               userId,
               firstName: profileData.full_name?.split(" ")[0],
             }).catch((err) => console.error("Meta Conversions API error:", err));
+
+            // Notify admin of new trial signup
+            notifyNewTrial({
+              email: profileData.email,
+              name: profileData.full_name,
+            }).catch((err) => console.error("Admin notification error:", err));
           }
         }
         break;
@@ -482,6 +489,14 @@ export async function POST(request: Request) {
                 fullName: profileData.full_name,
                 subscriptionType: "stripe_active",
               }).catch((err) => console.error("Klaviyo sync error:", err));
+
+              // Notify admin of trial conversion (only for subscription_cycle = trial ended)
+              if (invoice.billing_reason === "subscription_cycle") {
+                notifyTrialConverted({
+                  email: profileData.email,
+                  name: profileData.full_name,
+                }).catch((err) => console.error("Admin notification error:", err));
+              }
             }
           } else {
             // Fallback: update by subscription ID only
