@@ -47,19 +47,22 @@ async function getPacks(): Promise<PackRow[]> {
       release_date,
       cover_image_url,
       is_published,
-      scheduled_publish_at,
       samples:samples(count)
     `
     )
     .order("release_date", { ascending: false })
-    .returns<PackRow[]>(); // <= CRITICAL FIX FOR VERCEL
+    .returns<Omit<PackRow, 'scheduled_publish_at'>[]>(); // <= CRITICAL FIX FOR VERCEL
 
   if (error) {
     console.error("Error fetching packs:", error);
     return [];
   }
 
-  return data ?? [];
+  // Map data and add scheduled_publish_at as null for now (until migration applied)
+  return (data ?? []).map(pack => ({
+    ...pack,
+    scheduled_publish_at: null
+  }));
 }
 
 export default async function AdminPacksPage() {
