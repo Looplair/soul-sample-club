@@ -13,10 +13,12 @@ import {
   Download,
   HardDrive,
   Plug,
+  Image as ImageIcon,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui";
 import Link from "next/link";
 import { KlaviyoSync } from "@/components/admin/KlaviyoSync";
+import { HomepageHeroUpload } from "@/components/admin/HomepageHeroUpload";
 
 export const metadata = {
   title: "Settings | Soul Sample Club Admin",
@@ -65,7 +67,15 @@ function formatBytes(bytes: number): string {
 }
 
 export default async function SettingsPage() {
+  const supabase = await createClient();
   const stats = await getSystemStats();
+
+  // Get homepage hero settings
+  const { data: homepageSettings } = await supabase
+    .from("homepage_settings")
+    .select("hero_image_url")
+    .eq("id", "singleton")
+    .single();
 
   // Environment checks
   const envChecks = {
@@ -85,6 +95,19 @@ export default async function SettingsPage() {
           System configuration and external services
         </p>
       </div>
+
+      {/* Homepage Hero Image */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <ImageIcon className="w-5 h-5" />
+            Homepage Hero Image
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <HomepageHeroUpload initialHeroUrl={homepageSettings?.hero_image_url || null} />
+        </CardContent>
+      </Card>
 
       {/* System Stats */}
       <Card>
