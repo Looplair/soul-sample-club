@@ -40,6 +40,7 @@ interface PackWithSamples {
   name: string;
   description: string;
   cover_image_url: string | null;
+  hero_image_url: string | null;
   release_date: string;
   end_date: string | null;
   is_published: boolean;
@@ -276,9 +277,9 @@ export default async function HomePage() {
         <section className="relative min-h-[80vh] sm:min-h-[90vh] flex items-center overflow-hidden">
           {/* Background with featured pack artwork */}
           <div className="absolute inset-0">
-            {featuredPack?.cover_image_url && (
+            {(featuredPack?.hero_image_url || featuredPack?.cover_image_url) && (
               <Image
-                src={featuredPack.cover_image_url}
+                src={featuredPack.hero_image_url || featuredPack.cover_image_url!}
                 alt=""
                 fill
                 className="object-cover opacity-20 blur-2xl scale-110"
@@ -384,9 +385,9 @@ export default async function HomePage() {
                     <div className="relative">
                       {/* Main featured pack */}
                       <div className="relative aspect-square rounded-2xl overflow-hidden shadow-2xl transform group-hover:scale-[1.02] transition-transform duration-500">
-                        {featuredPack.cover_image_url ? (
+                        {(featuredPack.hero_image_url || featuredPack.cover_image_url) ? (
                           <Image
-                            src={featuredPack.cover_image_url}
+                            src={featuredPack.hero_image_url || featuredPack.cover_image_url!}
                             alt={featuredPack.name}
                             fill
                             className="object-cover"
@@ -411,13 +412,11 @@ export default async function HomePage() {
 
                         {/* Info */}
                         <div className="absolute bottom-0 left-0 right-0 p-6">
-                          <div className="flex items-center gap-2 mb-2">
+                          <div className="flex items-center gap-2">
                             <span className="px-2 py-1 rounded-full bg-white text-charcoal text-xs font-bold uppercase">
                               Featured
                             </span>
                           </div>
-                          <h3 className="text-xl font-bold text-white">{featuredPack.name}</h3>
-                          <p className="text-white/70 mt-1">{featuredPack.samples?.length || 0} tracks</p>
                         </div>
                       </div>
 

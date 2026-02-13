@@ -31,6 +31,10 @@ export function PackForm({ pack }: PackFormProps) {
   const [coverPreview, setCoverPreview] = useState<string | null>(
     pack?.cover_image_url || null
   );
+  const [heroImage, setHeroImage] = useState<File | null>(null);
+  const [heroPreview, setHeroPreview] = useState<string | null>(
+    pack?.hero_image_url || null
+  );
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -51,9 +55,29 @@ export function PackForm({ pack }: PackFormProps) {
     },
   });
 
+  const { getRootProps: getHeroRootProps, getInputProps: getHeroInputProps, isDragActive: isHeroDragActive } = useDropzone({
+    accept: {
+      "image/*": [".jpeg", ".jpg", ".png", ".webp"],
+    },
+    maxFiles: 1,
+    maxSize: 5 * 1024 * 1024, // 5MB
+    onDrop: (acceptedFiles) => {
+      const file = acceptedFiles[0];
+      if (file) {
+        setHeroImage(file);
+        setHeroPreview(URL.createObjectURL(file));
+      }
+    },
+  });
+
   const removeCover = () => {
     setCoverImage(null);
     setCoverPreview(pack?.cover_image_url || null);
+  };
+
+  const removeHero = () => {
+    setHeroImage(null);
+    setHeroPreview(pack?.hero_image_url || null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -64,6 +88,7 @@ export function PackForm({ pack }: PackFormProps) {
 
     try {
       let coverImageUrl = pack?.cover_image_url || null;
+      let heroImageUrl = pack?.hero_image_url || null;
 
       // Upload cover image if new one selected
       if (coverImage) {
@@ -84,6 +109,25 @@ export function PackForm({ pack }: PackFormProps) {
         coverImageUrl = publicUrl.publicUrl;
       }
 
+      // Upload hero image if new one selected
+      if (heroImage) {
+        const fileExt = heroImage.name.split(".").pop();
+        const fileName = `hero-${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
+        const filePath = `pack-covers/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from("covers")
+          .upload(filePath, heroImage);
+
+        if (uploadError) throw uploadError;
+
+        const { data: publicUrl } = supabase.storage
+          .from("covers")
+          .getPublicUrl(filePath);
+
+        heroImageUrl = publicUrl.publicUrl;
+      }
+
       const packData = {
         name,
         description,
@@ -93,6 +137,7 @@ export function PackForm({ pack }: PackFormProps) {
         is_bonus: isBonus,
         is_returned: isReturned,
         cover_image_url: coverImageUrl,
+        hero_image_url: heroImageUrl,
       };
 
       if (isEditing) {
@@ -193,50 +238,101 @@ export function PackForm({ pack }: PackFormProps) {
             </div>
           )}
 
-          {/* Cover Image */}
-          <div>
-            <label className="label">Cover Image</label>
-            {coverPreview ? (
-              <div className="relative w-48 h-48 rounded-card overflow-hidden">
-                <Image
-                  src={coverPreview}
-                  alt="Cover preview"
-                  fill
-                  className="object-cover"
-                />
-                <button
-                  type="button"
-                  onClick={removeCover}
-                  className="absolute top-8 right-8 w-8 h-8 rounded-full bg-error flex items-center justify-center"
+          {/* Images Section */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
+            {/* Cover Image */}
+            <div>
+              <label className="label">Cover Image</label>
+              <p className="text-caption text-snow/40 mb-8">Displayed on pack cards</p>
+              {coverPreview ? (
+                <div className="relative w-full aspect-square rounded-card overflow-hidden">
+                  <Image
+                    src={coverPreview}
+                    alt="Cover preview"
+                    fill
+                    className="object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={removeCover}
+                    className="absolute top-8 right-8 w-8 h-8 rounded-full bg-error flex items-center justify-center"
+                  >
+                    <X className="w-4 h-4 text-white" />
+                  </button>
+                </div>
+              ) : (
+                <div
+                  {...getRootProps()}
+                  className={`
+                    border-2 border-dashed rounded-card p-24 text-center cursor-pointer
+                    transition-colors aspect-square flex flex-col items-center justify-center
+                    ${
+                      isDragActive
+                        ? "border-velvet bg-velvet/10"
+                        : "border-steel hover:border-velvet/50"
+                    }
+                  `}
                 >
-                  <X className="w-4 h-4 text-white" />
-                </button>
-              </div>
-            ) : (
-              <div
-                {...getRootProps()}
-                className={`
-                  border-2 border-dashed rounded-card p-32 text-center cursor-pointer
-                  transition-colors
-                  ${
-                    isDragActive
-                      ? "border-velvet bg-velvet/10"
-                      : "border-steel hover:border-velvet/50"
-                  }
-                `}
-              >
-                <input {...getInputProps()} />
-                <Upload className="w-8 h-8 text-snow/30 mx-auto mb-16" />
-                <p className="text-body text-snow/60">
-                  {isDragActive
-                    ? "Drop the image here"
-                    : "Drag & drop or click to upload"}
-                </p>
-                <p className="text-caption text-snow/40 mt-8">
-                  JPG, PNG or WebP, max 5MB
-                </p>
-              </div>
-            )}
+                  <input {...getInputProps()} />
+                  <Upload className="w-8 h-8 text-snow/30 mb-8" />
+                  <p className="text-body text-snow/60">
+                    {isDragActive
+                      ? "Drop the image here"
+                      : "Drag & drop or click"}
+                  </p>
+                  <p className="text-caption text-snow/40 mt-4">
+                    JPG, PNG or WebP, max 5MB
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Hero Image */}
+            <div>
+              <label className="label">Hero Image (Optional)</label>
+              <p className="text-caption text-snow/40 mb-8">Custom homepage hero. Defaults to cover if not set.</p>
+              {heroPreview ? (
+                <div className="relative w-full aspect-square rounded-card overflow-hidden">
+                  <Image
+                    src={heroPreview}
+                    alt="Hero preview"
+                    fill
+                    className="object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={removeHero}
+                    className="absolute top-8 right-8 w-8 h-8 rounded-full bg-error flex items-center justify-center"
+                  >
+                    <X className="w-4 h-4 text-white" />
+                  </button>
+                </div>
+              ) : (
+                <div
+                  {...getHeroRootProps()}
+                  className={`
+                    border-2 border-dashed rounded-card p-24 text-center cursor-pointer
+                    transition-colors aspect-square flex flex-col items-center justify-center
+                    ${
+                      isHeroDragActive
+                        ? "border-velvet bg-velvet/10"
+                        : "border-steel hover:border-velvet/50"
+                    }
+                  `}
+                >
+                  <input {...getHeroInputProps()} />
+                  <Upload className="w-8 h-8 text-snow/30 mb-8" />
+                  <p className="text-body text-snow/60">
+                    {isHeroDragActive
+                      ? "Drop the image here"
+                      : "Drag & drop or click"}
+                  </p>
+                  <p className="text-caption text-snow/40 mt-4">
+                    JPG, PNG or WebP, max 5MB
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Name */}
