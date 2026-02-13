@@ -27,12 +27,6 @@ export function PackForm({ pack }: PackFormProps) {
   const [isPublished, setIsPublished] = useState(pack?.is_published || false);
   const [isBonus, setIsBonus] = useState(pack?.is_bonus || false);
   const [isReturned, setIsReturned] = useState(pack?.is_returned || false);
-  const [enableScheduling, setEnableScheduling] = useState(!!pack?.scheduled_publish_at);
-  const [scheduledPublishAt, setScheduledPublishAt] = useState(
-    pack?.scheduled_publish_at
-      ? new Date(pack.scheduled_publish_at).toISOString().slice(0, 16)
-      : ""
-  );
   const [coverImage, setCoverImage] = useState<File | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(
     pack?.cover_image_url || null
@@ -99,9 +93,6 @@ export function PackForm({ pack }: PackFormProps) {
         is_bonus: isBonus,
         is_returned: isReturned,
         cover_image_url: coverImageUrl,
-        scheduled_publish_at: enableScheduling && scheduledPublishAt
-          ? new Date(scheduledPublishAt).toISOString()
-          : null,
       };
 
       if (isEditing) {
@@ -273,18 +264,13 @@ export function PackForm({ pack }: PackFormProps) {
           {/* Dates Section */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
             {/* Release Date */}
-            <div>
-              <Input
-                label="Release Date"
-                type="date"
-                value={releaseDate}
-                onChange={(e) => setReleaseDate(e.target.value)}
-                required
-              />
-              <p className="text-caption text-snow/40 mt-4">
-                The date this pack's content was created (shows on pack card)
-              </p>
-            </div>
+            <Input
+              label="Release Date"
+              type="date"
+              value={releaseDate}
+              onChange={(e) => setReleaseDate(e.target.value)}
+              required
+            />
 
             {/* End Date */}
             <div>
@@ -299,52 +285,6 @@ export function PackForm({ pack }: PackFormProps) {
                 Leave empty for default 3-month window. Set explicitly for bonus packs (1 month).
               </p>
             </div>
-          </div>
-
-          {/* Scheduled Publishing */}
-          <div className="border border-snow/10 rounded-card p-16 bg-charcoal/30">
-            <div className="flex items-center gap-12 mb-16">
-              <input
-                type="checkbox"
-                id="enableScheduling"
-                checked={enableScheduling}
-                onChange={(e) => {
-                  setEnableScheduling(e.target.checked);
-                  if (!e.target.checked) {
-                    setScheduledPublishAt("");
-                  }
-                }}
-                className="w-4 h-4 rounded border-steel bg-charcoal checked:bg-velvet focus:ring-2 focus:ring-velvet cursor-pointer"
-              />
-              <label htmlFor="enableScheduling" className="label cursor-pointer">
-                Schedule Auto-Publish
-              </label>
-            </div>
-
-            {enableScheduling && (
-              <div>
-                <Input
-                  label="Publish Date & Time"
-                  type="datetime-local"
-                  value={scheduledPublishAt}
-                  onChange={(e) => setScheduledPublishAt(e.target.value)}
-                  min={new Date().toISOString().slice(0, 16)}
-                />
-                <p className="text-caption text-snow/40 mt-4">
-                  <Calendar className="w-3 h-3 inline mr-1" />
-                  When this pack will go live on the site. Leave "Published" toggle unchecked below.
-                </p>
-              </div>
-            )}
-
-            {enableScheduling && isPublished && (
-              <div className="bg-amber-500/10 border border-amber-500/50 rounded-button p-12 text-amber-500 text-caption flex items-center gap-8 mt-12">
-                <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                <span>
-                  Note: This pack is already published. Scheduling only works for unpublished packs.
-                </span>
-              </div>
-            )}
           </div>
 
           {/* Toggle Options */}

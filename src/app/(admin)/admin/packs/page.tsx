@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus, Edit, Trash2, Eye, EyeOff, Calendar } from "lucide-react";
+import { Plus, Edit, Trash2, Eye, EyeOff } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import {
   Button,
@@ -16,10 +16,6 @@ export const metadata = {
   title: "Manage Packs | Soul Sample Club Admin",
 };
 
-// Force dynamic rendering - no caching
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
-
 // --------------------------------------
 // FIXED TYPED FETCH FUNCTION
 // --------------------------------------
@@ -30,7 +26,6 @@ interface PackRow {
   release_date: string;
   cover_image_url: string | null;
   is_published: boolean;
-  scheduled_publish_at: string | null;
   samples: { count: number }[]; // <= joined count rows
 }
 
@@ -51,18 +46,14 @@ async function getPacks(): Promise<PackRow[]> {
     `
     )
     .order("release_date", { ascending: false })
-    .returns<Omit<PackRow, 'scheduled_publish_at'>[]>(); // <= CRITICAL FIX FOR VERCEL
+    .returns<PackRow[]>(); // <= CRITICAL FIX FOR VERCEL
 
   if (error) {
     console.error("Error fetching packs:", error);
     return [];
   }
 
-  // Map data and add scheduled_publish_at as null for now (until migration applied)
-  return (data ?? []).map(pack => ({
-    ...pack,
-    scheduled_publish_at: null
-  }));
+  return data ?? [];
 }
 
 export default async function AdminPacksPage() {
@@ -126,32 +117,19 @@ export default async function AdminPacksPage() {
                       </td>
 
                       <td>
-                        {pack.is_published ? (
-                          <Badge variant="success">
-                            <Eye className="w-3 h-3 mr-4" />
-                            Published
-                          </Badge>
-                        ) : pack.scheduled_publish_at ? (
-                          <div className="flex flex-col gap-4">
-                            <Badge variant="primary">
-                              <Calendar className="w-3 h-3 mr-4" />
-                              Scheduled
-                            </Badge>
-                            <span className="text-xs text-snow/50">
-                              {new Date(pack.scheduled_publish_at).toLocaleString([], {
-                                month: 'short',
-                                day: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              })}
-                            </span>
-                          </div>
-                        ) : (
-                          <Badge variant="warning">
-                            <EyeOff className="w-3 h-3 mr-4" />
-                            Draft
-                          </Badge>
-                        )}
+                        <Badge variant={pack.is_published ? "success" : "warning"}>
+                          {pack.is_published ? (
+                            <>
+                              <Eye className="w-3 h-3 mr-4" />
+                              Published
+                            </>
+                          ) : (
+                            <>
+                              <EyeOff className="w-3 h-3 mr-4" />
+                              Draft
+                            </>
+                          )}
+                        </Badge>
                       </td>
 
                       <td>
