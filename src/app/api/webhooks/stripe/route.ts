@@ -384,14 +384,59 @@ export async function POST(request: Request) {
           // Always set to active when payment succeeds.
           const resolvedStatus = "active";
 
-          // Try to get user ID for upsert (handles case where row doesn't exist yet)
+          // Try to get user ID from multiple sources:
+          // 1. Subscription metadata
+          // 2. Invoice parent.subscription_details.metadata (new Stripe API structure)
+          // 3. Invoice line items metadata
+          // 4. Customer metadata
           let paidUserId = getUserIdFromMetadata(subscription);
+
+          // Check invoice parent subscription_details metadata
+          if (!paidUserId) {
+            const invoiceAny = invoice as any;
+            if (invoiceAny.parent?.subscription_details?.metadata?.supabase_user_id) {
+              paidUserId = invoiceAny.parent.subscription_details.metadata.supabase_user_id;
+              console.log("Found user ID in invoice parent subscription_details:", paidUserId);
+            }
+          }
+
+          // Check invoice line items metadata
+          if (!paidUserId) {
+            const invoiceAny = invoice as any;
+            const lineItems = invoiceAny.lines?.data || [];
+            for (const item of lineItems) {
+              if (item.metadata?.supabase_user_id) {
+                paidUserId = item.metadata.supabase_user_id;
+                console.log("Found user ID in invoice line item:", paidUserId);
+                break;
+              }
+            }
+          }
+
+          // Fallback to customer metadata
           if (!paidUserId) {
             const customer = await stripe.customers.retrieve(
               subscription.customer as string
             );
             if (!("deleted" in customer)) {
               paidUserId = getUserIdFromMetadata(customer);
+              if (paidUserId) {
+                console.log("Found user ID in customer metadata:", paidUserId);
+              }
+            }
+          }
+
+          // Final fallback: look up existing subscription in our database
+          if (!paidUserId) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const { data: existingSub } = await (supabase.from("subscriptions") as any)
+              .select("user_id")
+              .eq("stripe_subscription_id", subscription.id)
+              .single();
+
+            if (existingSub?.user_id) {
+              paidUserId = existingSub.user_id;
+              console.log("Found user ID from existing subscription record:", paidUserId);
             }
           }
 
