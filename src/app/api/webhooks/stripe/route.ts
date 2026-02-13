@@ -177,25 +177,35 @@ export async function POST(request: Request) {
           break;
         }
 
+        // CRITICAL FIX: Always fetch fresh subscription data from Stripe
+        // Webhook data can be stale, especially during trial->active transitions
+        const freshSubscription = await stripe.subscriptions.retrieve(subscription.id);
+
+        console.log(`Fetched fresh subscription data:`, {
+          status: freshSubscription.status,
+          currentPeriodStart: new Date(freshSubscription.current_period_start * 1000).toISOString(),
+          currentPeriodEnd: new Date(freshSubscription.current_period_end * 1000).toISOString(),
+        });
+
         // When trial ends and converts to active, Stripe sends subscription.updated
         // with status=active. We should ALWAYS trust Stripe's active status.
-        let resolvedSubStatus = subscription.status;
+        let resolvedSubStatus = freshSubscription.status;
 
         if (event.type === "customer.subscription.updated") {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const { data: existing } = await (supabase.from("subscriptions") as any)
             .select("status")
-            .eq("stripe_subscription_id", subscription.id)
+            .eq("stripe_subscription_id", freshSubscription.id)
             .single();
 
           // Only be protective when going FROM past_due TO trialing (not active)
           // If Stripe says active, trust it - payment went through
           if (
             existing?.status === "past_due" &&
-            subscription.status === "trialing"
+            freshSubscription.status === "trialing"
           ) {
             // Check Stripe for the latest invoice status to confirm
-            const latestInvoice = subscription.latest_invoice;
+            const latestInvoice = freshSubscription.latest_invoice;
             if (latestInvoice) {
               const invoice = await stripe.invoices.retrieve(
                 typeof latestInvoice === "string" ? latestInvoice : latestInvoice.id
@@ -206,23 +216,23 @@ export async function POST(request: Request) {
             }
           }
 
-          console.log(`Subscription update: existing=${existing?.status}, stripe=${subscription.status}, resolved=${resolvedSubStatus}`);
+          console.log(`Subscription update: existing=${existing?.status}, fresh_stripe=${freshSubscription.status}, resolved=${resolvedSubStatus}`);
         }
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { error } = await (supabase.from("subscriptions") as any).upsert(
           {
             user_id: userId,
-            stripe_customer_id: subscription.customer as string,
-            stripe_subscription_id: subscription.id,
+            stripe_customer_id: freshSubscription.customer as string,
+            stripe_subscription_id: freshSubscription.id,
             status: resolvedSubStatus as any,
             current_period_start: new Date(
-              subscription.current_period_start * 1000
+              freshSubscription.current_period_start * 1000
             ).toISOString(),
             current_period_end: new Date(
-              subscription.current_period_end * 1000
+              freshSubscription.current_period_end * 1000
             ).toISOString(),
-            cancel_at_period_end: subscription.cancel_at_period_end,
+            cancel_at_period_end: freshSubscription.cancel_at_period_end,
           },
           {
             onConflict: "stripe_subscription_id",
@@ -233,14 +243,57 @@ export async function POST(request: Request) {
           console.error("Error upserting subscription:", error);
         }
 
+        // Sync to Klaviyo when subscription status changes
+        const { data: subProfile } = await supabase
+          .from("profiles")
+          .select("email, full_name")
+          .eq("id", userId)
+          .single();
+
+        if (subProfile) {
+          const profileData = subProfile as { email: string; full_name: string | null };
+          let klaviyoType: "stripe_active" | "stripe_trialing" | "canceled" = "stripe_active";
+
+          if (resolvedSubStatus === "trialing") {
+            klaviyoType = "stripe_trialing";
+          } else if (resolvedSubStatus === "canceled") {
+            klaviyoType = "canceled";
+          }
+
+          console.log(`Syncing to Klaviyo: ${profileData.email} - ${klaviyoType}`);
+
+          syncUserToKlaviyo({
+            email: profileData.email,
+            fullName: profileData.full_name,
+            subscriptionType: klaviyoType,
+          }).catch((err) => console.error("Klaviyo sync error:", err));
+
+          // Notify admin when trial converts to paid
+          if (event.type === "customer.subscription.updated" && resolvedSubStatus === "active") {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const { data: previousSub } = await (supabase.from("subscriptions") as any)
+              .select("status")
+              .eq("stripe_subscription_id", freshSubscription.id)
+              .single();
+
+            if (previousSub?.status === "trialing") {
+              console.log("Trial converted to active, notifying admin");
+              notifyTrialConverted({
+                email: profileData.email,
+                name: profileData.full_name,
+              }).catch((err) => console.error("Admin notification error:", err));
+            }
+          }
+        }
+
         // If user cancels during trial, cancel immediately so they don't get charged
         if (
-          subscription.status === "trialing" &&
-          subscription.cancel_at_period_end
+          freshSubscription.status === "trialing" &&
+          freshSubscription.cancel_at_period_end
         ) {
-          console.log("Trial cancellation detected, canceling immediately:", subscription.id);
+          console.log("Trial cancellation detected, canceling immediately:", freshSubscription.id);
           try {
-            await stripe.subscriptions.cancel(subscription.id);
+            await stripe.subscriptions.cancel(freshSubscription.id);
           } catch (cancelErr) {
             console.error("Error immediately canceling trial subscription:", cancelErr);
           }
