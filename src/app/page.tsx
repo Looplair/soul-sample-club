@@ -151,9 +151,9 @@ const features = [
     description: "Download full compositions with individual stems.",
   },
   {
-    icon: Headphones,
-    title: "Preview Everything",
-    description: "Listen to every composition before you subscribe.",
+    icon: Shield,
+    title: "100% Royalty Free",
+    description: "No clearance needed. Ever.",
   },
 ];
 
