@@ -1,12 +1,14 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import Link from "next/link";
 import {
   CreditCard,
   Users as UsersIcon,
   CheckCircle,
   Clock,
   XCircle,
+  RefreshCw,
 } from "lucide-react";
-import { Card, CardContent } from "@/components/ui";
+import { Card, CardContent, Button } from "@/components/ui";
 import { SubscriptionTable } from "@/components/admin/SubscriptionTable";
 import { KlaviyoAutoSync } from "@/components/admin/KlaviyoAutoSync";
 
@@ -138,11 +140,19 @@ export default async function AdminSubscriptionsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-h1 text-snow mb-2">Subscriptions</h1>
-        <p className="text-body-lg text-snow/60">
-          Unified view of all member access
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-h1 text-snow mb-2">Subscriptions</h1>
+          <p className="text-body-lg text-snow/60">
+            Unified view of all member access
+          </p>
+        </div>
+        <Link href="/admin/fix-subscriptions">
+          <Button variant="secondary" className="flex items-center gap-2">
+            <RefreshCw className="w-4 h-4" />
+            Fix Subscription Data
+          </Button>
+        </Link>
       </div>
 
       {/* Stats Overview */}
