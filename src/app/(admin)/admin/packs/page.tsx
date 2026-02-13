@@ -16,6 +16,10 @@ export const metadata = {
   title: "Manage Packs | Soul Sample Club Admin",
 };
 
+// Force dynamic rendering - no caching
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 // --------------------------------------
 // FIXED TYPED FETCH FUNCTION
 // --------------------------------------

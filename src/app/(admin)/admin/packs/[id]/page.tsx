@@ -4,6 +4,10 @@ import { PackForm } from "@/components/admin/PackForm";
 import { SampleManager } from "@/components/admin/SampleManager";
 import type { Pack, Sample } from "@/types/database";
 
+// Force dynamic rendering - no caching
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 // ------------------------------
 // TYPE DEFINITIONS
 // ------------------------------
