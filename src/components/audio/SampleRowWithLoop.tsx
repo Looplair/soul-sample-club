@@ -1181,24 +1181,24 @@ export function SampleRowWithLoop({
             variant={canDownload && sample.stems_path ? "secondary" : "ghost"}
             size="sm"
             onClick={handleDownloadStems}
-            disabled={isDownloadingStems || !canDownload || !sample.stems_path}
+            disabled={isDownloadingStems || (canDownload && !sample.stems_path)}
             className="flex"
             leftIcon={
               isDownloadingStems ? (
                 <DownloadProgress progress={stemsProgress} />
-              ) : !sample.stems_path ? (
-                <Archive className="w-4 h-4 opacity-40" />
               ) : !canDownload ? (
                 <Lock className="w-4 h-4" />
+              ) : !sample.stems_path ? (
+                <Archive className="w-4 h-4 opacity-40" />
               ) : (
                 <Download className="w-4 h-4" />
               )
             }
             title={
-              !sample.stems_path
-                ? "No stems available"
-                : !canDownload
+              !canDownload
                 ? "Subscribe to download stems"
+                : !sample.stems_path
+                ? "No stems available"
                 : "Download stems"
             }
           >
@@ -1209,7 +1209,7 @@ export function SampleRowWithLoop({
             variant={canDownload ? "secondary" : "ghost"}
             size="sm"
             onClick={handleDownload}
-            disabled={!canDownload || isDownloading}
+            disabled={isDownloading}
             leftIcon={
               isDownloading ? (
                 <DownloadProgress progress={downloadProgress} />
