@@ -490,10 +490,15 @@ export default async function HomePage() {
               <p className="text-text-muted mb-3">
                 Preview any composition. Subscribe to save and download.
               </p>
-              <p className="text-sm text-amber-400/80 flex items-center gap-2">
-                <Clock className="w-4 h-4" />
-                Packs are archived after 90 days. Grab them while they&apos;re live.
-              </p>
+              <div className="text-sm text-amber-400/80 space-y-1">
+                <p className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 shrink-0" />
+                  New producer packs drop on the <strong>1st of every month</strong> — bonus packs drop <strong>mid-month</strong>. Moving to weekly releases soon.
+                </p>
+                <p className="flex items-center gap-2 pl-6">
+                  Packs are archived after 90 days. Grab them while they&apos;re live.
+                </p>
+              </div>
             </div>
 
             {/* Searchable Catalog */}

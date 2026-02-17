@@ -17,6 +17,7 @@ interface SampleListProps {
   canDownload: boolean;
   likedSampleIds?: Set<string>;
   showPackName?: boolean;
+  onLockedClick?: () => void;
 }
 
 export function SampleList({
@@ -24,6 +25,7 @@ export function SampleList({
   canDownload,
   likedSampleIds = new Set(),
   showPackName = false,
+  onLockedClick,
 }: SampleListProps) {
   const [likedIds, setLikedIds] = useState<Set<string>>(likedSampleIds);
 
@@ -58,6 +60,7 @@ export function SampleList({
           isLiked={likedIds.has(sample.id)}
           onToggleLike={() => handleToggleLike(sample.id)}
           packName={showPackName ? sample.pack?.name : undefined}
+          onLockedClick={onLockedClick}
         />
       ))}
     </div>

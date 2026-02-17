@@ -31,6 +31,7 @@ interface SampleRowWithLoopProps {
   isLiked?: boolean;
   onToggleLike?: () => void;
   packName?: string;
+  onLockedClick?: () => void;
 }
 
 function calculateLoopDuration(bpm: number, barCount: BarCount): number {
@@ -46,6 +47,7 @@ export function SampleRowWithLoop({
   isLiked = false,
   onToggleLike,
   packName,
+  onLockedClick,
 }: SampleRowWithLoopProps) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -971,7 +973,7 @@ export function SampleRowWithLoop({
 
   // Download handlers
   const handleDownload = async () => {
-    if (!canDownload) return;
+    if (!canDownload) { onLockedClick?.(); return; }
     setIsDownloading(true);
     try {
       const response = await fetch(`/api/download/${sample.id}`);
@@ -1030,7 +1032,8 @@ export function SampleRowWithLoop({
   };
 
   const handleDownloadStems = async () => {
-    if (!canDownload || !sample.stems_path) return;
+    if (!canDownload) { onLockedClick?.(); return; }
+    if (!sample.stems_path) return;
     setIsDownloadingStems(true);
     try {
       const response = await fetch(`/api/download/${sample.id}/stems`);

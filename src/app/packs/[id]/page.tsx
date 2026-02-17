@@ -10,7 +10,7 @@ import { ArrowLeft, Calendar, Music2, Download, Lock, Archive, Sparkles, Star, P
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { formatDate, isPackNew, isPackExpiredWithEndDate, getDaysUntilEndDate, getExpiryBadgeText } from "@/lib/utils";
-import { SampleList } from "@/components/audio/SampleList";
+import { SampleListWithModal } from "@/components/audio/SampleListWithModal";
 import { Button } from "@/components/ui";
 import { Badge } from "@/components/ui";
 import { cn } from "@/lib/utils";
@@ -605,10 +605,12 @@ export default async function PackDetailPage({
                 </Badge>
               )}
             </div>
-            <SampleList
+            <SampleListWithModal
               samples={pack.samples}
               packId={pack.id}
               canDownload={canDownload}
+              hasUsedTrial={hasUsedTrial}
+              isLoggedIn={isLoggedIn}
             />
           </div>
         </div>
