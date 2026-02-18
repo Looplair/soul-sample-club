@@ -113,11 +113,6 @@ export function PremiumModal({ isOpen, onClose, hasUsedTrial, isLoggedIn }: Prem
             )}
           </div>
 
-          {!hasUsedTrial && (
-            <p className="text-center text-xs text-text-subtle mt-4">
-              No credit card required to start your trial.
-            </p>
-          )}
         </div>
       </div>
     </div>
