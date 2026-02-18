@@ -129,7 +129,7 @@ export async function POST() {
 
     // Only give trial if user has never had a subscription
     if (!hasUsedTrialBefore) {
-      subscriptionData.trial_period_days = 7;
+      subscriptionData.trial_period_days = 3;
     }
 
     // Create checkout session
