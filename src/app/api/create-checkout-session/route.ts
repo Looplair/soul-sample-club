@@ -155,7 +155,7 @@ export async function POST() {
         submit: {
           message: hasUsedTrialBefore
             ? "Subscribe to Soul Sample Club"
-            : "Start your 7-day free trial. Cancel anytime.",
+            : "Start your 3-day free trial. Cancel anytime.",
         },
       },
     });

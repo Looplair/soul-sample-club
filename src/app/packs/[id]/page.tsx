@@ -572,7 +572,7 @@ export default async function PackDetailPage({
                           Subscribe to download
                         </p>
                         <p className="text-body-sm text-text-muted mt-1">
-                          Subscribe to download all {pack.samples.length} tracks.{!hasUsedTrial && " Includes a 7-day free trial."}
+                          Subscribe to download all {pack.samples.length} tracks.{!hasUsedTrial && " Includes a 3-day free trial."}
                         </p>
                       </div>
                     </div>

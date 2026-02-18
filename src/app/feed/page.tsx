@@ -230,7 +230,7 @@ export default async function FeedPage() {
                 <span className="text-sm text-white">
                   {hasUsedTrial
                     ? "Subscribe to download all packs"
-                    : "Subscribe to download — includes a 7-day free trial"}
+                    : "Subscribe to download — includes a 3-day free trial"}
                 </span>
                 <Link href="/account?tab=billing" className="text-sm text-white underline hover:no-underline ml-1">
                   Subscribe →

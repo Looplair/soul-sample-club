@@ -298,7 +298,7 @@ export default async function HomePage() {
                 {!(isLoggedIn && hasUsedTrial) && (
                   <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 mb-6 sm:mb-8">
                     <Sparkles className="w-4 h-4 text-white" />
-                    <span className="text-sm text-white font-medium">7-day free trial</span>
+                    <span className="text-sm text-white font-medium">3-day free trial</span>
                     <span className="text-sm text-white/60">• Cancel anytime</span>
                   </div>
                 )}
@@ -587,7 +587,7 @@ export default async function HomePage() {
                     <span className="text-text-muted text-lg">/month</span>
                   </div>
                   {!(isLoggedIn && hasUsedTrial) && (
-                    <p className="text-sm text-text-muted mt-2">7-day free trial included</p>
+                    <p className="text-sm text-text-muted mt-2">3-day free trial included</p>
                   )}
                 </div>
 
@@ -730,7 +730,7 @@ export default async function HomePage() {
                   <p className="text-text-muted">
                     {hasUsedTrial
                       ? "Subscribe to download all samples."
-                      : "Start your 7-day free trial to download all samples."}
+                      : "Start your 3-day free trial to download all samples."}
                   </p>
                 </div>
                 <SubscribeCTA

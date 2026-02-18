@@ -65,7 +65,7 @@ export async function notifyNewTrial(params: {
         </p>
         ${name ? `<p style="color: #333; font-size: 16px; margin-bottom: 10px;"><strong>Name:</strong> ${name}</p>` : ""}
         <p style="color: #666; font-size: 14px; margin-top: 20px;">
-          They've just started their 7-day free trial.
+          They've just started their 3-day free trial.
         </p>
       </div>
     `,
