@@ -491,11 +491,13 @@ export default async function HomePage() {
                 Preview any composition. Subscribe to save and download.
               </p>
               <div className="text-sm text-amber-400/80 space-y-1">
-                <p className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 shrink-0" />
-                  New producer packs drop on the <strong>1st of every month,</strong> bonus packs drop <strong>mid-month.</strong> Moving to weekly releases soon.
+                <p className="flex items-start gap-2">
+                  <Clock className="w-4 h-4 shrink-0 mt-0.5" />
+                  <span>
+                    New producer packs drop on the <strong>1st of every month,</strong> bonus packs drop <strong>mid-month.</strong> Moving to weekly releases soon.
+                  </span>
                 </p>
-                <p className="flex items-center gap-2 pl-6">
+                <p className="pl-6">
                   Packs are archived after 90 days. Grab them while they&apos;re live.
                 </p>
               </div>
