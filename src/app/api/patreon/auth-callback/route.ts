@@ -196,15 +196,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(`${appUrl}/login?error=user_create_failed`);
     }
 
-      // Create profile
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (adminSupabase as any).from("profiles").upsert({
-        id: userId,
-        email: patreonEmail,
-        full_name: patreonName,
-        avatar_url: patreonAvatar,
-      });
-    }
+    // Create/update profile (upsert handles both new and existing users)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (adminSupabase as any).from("profiles").upsert({
+      id: userId,
+      email: patreonEmail,
+      full_name: patreonName,
+      avatar_url: patreonAvatar,
+    });
 
     // Delete any existing link for this user or this patreon account
     // This handles reconnection scenarios and prevents duplicate key errors
