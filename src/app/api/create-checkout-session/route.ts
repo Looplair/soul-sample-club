@@ -139,7 +139,7 @@ export async function POST() {
       ],
       discounts: [
         {
-          coupon: "1cOp9VHv", // $0.99 first month ($2.99 off)
+          coupon: "cvoilDO6", // $0.99 first month ($3.00 off)
         },
       ],
       subscription_data: subscriptionData,
