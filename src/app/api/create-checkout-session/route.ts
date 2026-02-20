@@ -148,7 +148,6 @@ export async function POST() {
       metadata: {
         supabase_user_id: user.id,
       },
-      allow_promotion_codes: true,
       billing_address_collection: "auto",
       custom_text: {
         submit: {
