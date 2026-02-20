@@ -137,14 +137,19 @@ export async function GET(request: NextRequest) {
 
     const adminSupabase = createAdminClient();
 
-    // Check if a user already exists with this email using getUsersByEmail
-    let userId: string;
-    const { data: existingUserData } = await adminSupabase.auth.admin.getUsersByEmail(patreonEmail);
-    const existingUser = existingUserData?.users?.[0];
+    // Try to find existing user by querying the profiles table
+    let userId: string | undefined;
 
-    if (existingUser) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: existingProfile } = await (adminSupabase as any)
+      .from("profiles")
+      .select("id")
+      .eq("email", patreonEmail)
+      .single();
+
+    if (existingProfile) {
       // User exists - use their ID
-      userId = existingUser.id;
+      userId = existingProfile.id;
     } else {
       // Create new user via Supabase Auth
       const tempPassword = crypto.randomUUID(); // Random password they'll never use
@@ -161,12 +166,17 @@ export async function GET(request: NextRequest) {
 
       if (createError) {
         console.error("Failed to create user:", createError);
-        // If error is "email already exists", try to fetch the user one more time
+        // If error is "email already exists", try to fetch from profiles table
         if (createError.code === "email_exists") {
-          const { data: retryUserData } = await adminSupabase.auth.admin.getUsersByEmail(patreonEmail);
-          const retryUser = retryUserData?.users?.[0];
-          if (retryUser) {
-            userId = retryUser.id;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const { data: retryProfile } = await (adminSupabase as any)
+            .from("profiles")
+            .select("id")
+            .eq("email", patreonEmail)
+            .single();
+
+          if (retryProfile) {
+            userId = retryProfile.id;
           } else {
             return NextResponse.redirect(`${appUrl}/login?error=user_create_failed`);
           }
@@ -179,6 +189,12 @@ export async function GET(request: NextRequest) {
       } else {
         userId = newUser.user.id;
       }
+    }
+
+    if (!userId) {
+      console.error("Failed to determine userId");
+      return NextResponse.redirect(`${appUrl}/login?error=user_create_failed`);
+    }
 
       // Create profile
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
