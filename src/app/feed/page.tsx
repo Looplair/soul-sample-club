@@ -199,7 +199,7 @@ export default async function FeedPage() {
                 </Link>
                 <Link href="/signup">
                   <Button size="sm">
-                    <span className="hidden sm:inline">Start free</span>
+                    <span className="hidden sm:inline">Start for $0.99</span>
                     <span className="sm:hidden">Sign up</span>
                   </Button>
                 </Link>
@@ -230,7 +230,7 @@ export default async function FeedPage() {
                 <span className="text-sm text-white">
                   {hasUsedTrial
                     ? "Subscribe to download all packs"
-                    : "Subscribe to download — includes a 3-day free trial"}
+                    : "Subscribe to download, first month $0.99"}
                 </span>
                 <Link href="/account?tab=billing" className="text-sm text-white underline hover:no-underline ml-1">
                   Subscribe →

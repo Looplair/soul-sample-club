@@ -92,7 +92,7 @@ export function PremiumModal({ isOpen, onClose, hasUsedTrial, isLoggedIn }: Prem
                 className="flex items-center justify-center gap-2 w-full px-6 py-3.5 bg-white text-black font-semibold rounded-xl hover:bg-grey-100 transition-colors"
               >
                 <Sparkles className="w-4 h-4" />
-                {hasUsedTrial ? "Subscribe Now" : "Start 3-Day Free Trial"}
+                {hasUsedTrial ? "Subscribe Now" : "Start For $0.99"}
               </Link>
             ) : (
               <>
@@ -101,7 +101,7 @@ export function PremiumModal({ isOpen, onClose, hasUsedTrial, isLoggedIn }: Prem
                   className="flex items-center justify-center gap-2 w-full px-6 py-3.5 bg-white text-black font-semibold rounded-xl hover:bg-grey-100 transition-colors"
                 >
                   <Sparkles className="w-4 h-4" />
-                  Start 3-Day Free Trial
+                  Start For $0.99
                 </Link>
                 <Link
                   href="/login"

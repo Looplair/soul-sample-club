@@ -320,7 +320,7 @@ export default async function PackDetailPage({
                 </Link>
                 <Link href="/signup">
                   <Button size="sm">
-                    Sign up free
+                    Get started, $0.99
                   </Button>
                 </Link>
               </>
@@ -572,7 +572,7 @@ export default async function PackDetailPage({
                           Subscribe to download
                         </p>
                         <p className="text-body-sm text-text-muted mt-1">
-                          Subscribe to download all {pack.samples.length} tracks.{!hasUsedTrial && " Includes a 3-day free trial."}
+                          Subscribe to download all {pack.samples.length} tracks.{!hasUsedTrial && " First month just $0.99."}
                         </p>
                       </div>
                     </div>

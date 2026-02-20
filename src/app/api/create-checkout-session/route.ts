@@ -115,11 +115,10 @@ export async function POST() {
       }
     }
 
-    // Build subscription data - only include trial if user hasn't used one before
+    // Build subscription data
     const subscriptionData: {
       metadata: { supabase_user_id: string };
       description: string;
-      trial_period_days?: number;
     } = {
       metadata: {
         supabase_user_id: user.id,
@@ -127,12 +126,7 @@ export async function POST() {
       description: "Soul Sample Club Membership",
     };
 
-    // Only give trial if user has never had a subscription
-    if (!hasUsedTrialBefore) {
-      subscriptionData.trial_period_days = 3;
-    }
-
-    // Create checkout session
+    // Create checkout session with auto-applied $0.99 first month discount
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       mode: "subscription",
@@ -141,6 +135,11 @@ export async function POST() {
         {
           price: STRIPE_PRICE_ID,
           quantity: 1,
+        },
+      ],
+      discounts: [
+        {
+          coupon: "1cOp9VHv", // $0.99 first month ($2.99 off)
         },
       ],
       subscription_data: subscriptionData,
@@ -153,9 +152,7 @@ export async function POST() {
       billing_address_collection: "auto",
       custom_text: {
         submit: {
-          message: hasUsedTrialBefore
-            ? "Subscribe to Soul Sample Club"
-            : "Start your 3-day free trial. Cancel anytime.",
+          message: "Your first month is $0.99, then $3.99/month. Cancel anytime.",
         },
       },
     });

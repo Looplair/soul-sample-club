@@ -34,7 +34,7 @@ export function SubscribeCTA({
     return (
       <Link href="/signup">
         <Button className={className} size={size} variant={variant}>
-          {children || "Start free"}
+          {children || "Start for $0.99"}
           <ArrowRight className="w-4 h-4 ml-2" />
         </Button>
       </Link>

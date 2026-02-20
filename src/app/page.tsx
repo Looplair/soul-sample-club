@@ -260,7 +260,7 @@ export default async function HomePage() {
                 </Link>
                 <Link href="/signup">
                   <Button size="sm">
-                    <span className="hidden sm:inline">Start free</span>
+                    <span className="hidden sm:inline">Start for $0.99</span>
                     <span className="sm:hidden">Sign up</span>
                   </Button>
                 </Link>
@@ -298,7 +298,7 @@ export default async function HomePage() {
                 {!(isLoggedIn && hasUsedTrial) && (
                   <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 mb-6 sm:mb-8">
                     <Sparkles className="w-4 h-4 text-white" />
-                    <span className="text-sm text-white font-medium">3-day free trial</span>
+                    <span className="text-sm text-white font-medium">First month $0.99</span>
                     <span className="text-sm text-white/60">• Cancel anytime</span>
                   </div>
                 )}
@@ -337,7 +337,7 @@ export default async function HomePage() {
                     <>
                       <Link href="/signup">
                         <Button size="lg" className="w-full sm:w-auto" rightIcon={<ArrowRight className="w-4 h-4" />}>
-                          Start free
+                          Start for $0.99
                         </Button>
                       </Link>
                       <a href="#catalog">
@@ -587,7 +587,7 @@ export default async function HomePage() {
                     <span className="text-text-muted text-lg">/month</span>
                   </div>
                   {!(isLoggedIn && hasUsedTrial) && (
-                    <p className="text-sm text-text-muted mt-2">3-day free trial included</p>
+                    <p className="text-sm text-text-muted mt-2">First month just $0.99</p>
                   )}
                 </div>
 
@@ -700,7 +700,7 @@ export default async function HomePage() {
                   <div className="flex flex-col sm:flex-row gap-4 justify-center">
                     <Link href="/signup">
                       <Button size="lg" className="w-full sm:w-auto">
-                        Start free
+                        Start for $0.99
                         <ArrowRight className="w-4 h-4 ml-2" />
                       </Button>
                     </Link>
@@ -730,7 +730,7 @@ export default async function HomePage() {
                   <p className="text-text-muted">
                     {hasUsedTrial
                       ? "Subscribe to download all samples."
-                      : "Start your 3-day free trial to download all samples."}
+                      : "Start today, first month $0.99, then $3.99/month."}
                   </p>
                 </div>
                 <SubscribeCTA
