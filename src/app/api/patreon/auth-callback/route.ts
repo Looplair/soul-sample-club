@@ -137,13 +137,10 @@ export async function GET(request: NextRequest) {
 
     const adminSupabase = createAdminClient();
 
-    // Check if a user already exists with this email
-    const { data: existingUsers } = await adminSupabase.auth.admin.listUsers();
-    const existingUser = existingUsers?.users?.find(
-      (u) => u.email?.toLowerCase() === patreonEmail.toLowerCase()
-    );
-
+    // Check if a user already exists with this email using getUsersByEmail
     let userId: string;
+    const { data: existingUserData } = await adminSupabase.auth.admin.getUsersByEmail(patreonEmail);
+    const existingUser = existingUserData?.users?.[0];
 
     if (existingUser) {
       // User exists - use their ID
@@ -162,12 +159,26 @@ export async function GET(request: NextRequest) {
         },
       });
 
-      if (createError || !newUser.user) {
+      if (createError) {
         console.error("Failed to create user:", createError);
+        // If error is "email already exists", try to fetch the user one more time
+        if (createError.code === "email_exists") {
+          const { data: retryUserData } = await adminSupabase.auth.admin.getUsersByEmail(patreonEmail);
+          const retryUser = retryUserData?.users?.[0];
+          if (retryUser) {
+            userId = retryUser.id;
+          } else {
+            return NextResponse.redirect(`${appUrl}/login?error=user_create_failed`);
+          }
+        } else {
+          return NextResponse.redirect(`${appUrl}/login?error=user_create_failed`);
+        }
+      } else if (!newUser.user) {
+        console.error("No user returned from createUser");
         return NextResponse.redirect(`${appUrl}/login?error=user_create_failed`);
+      } else {
+        userId = newUser.user.id;
       }
-
-      userId = newUser.user.id;
 
       // Create profile
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
