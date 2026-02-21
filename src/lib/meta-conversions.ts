@@ -100,7 +100,7 @@ export async function sendMetaConversionEvent(data: MetaEventData): Promise<bool
 }
 
 /**
- * Send StartTrial event when a user starts a free trial
+ * Send StartTrial event when a user starts a subscription
  */
 export async function sendStartTrialEvent(params: {
   email: string;
@@ -115,8 +115,8 @@ export async function sendStartTrialEvent(params: {
       firstName: params.firstName,
     },
     customData: {
-      currency: "GBP",
-      value: 0,
+      currency: "USD",
+      value: 0.99,
       content_name: "Soul Sample Club Membership",
     },
     actionSource: "website",

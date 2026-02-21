@@ -31,8 +31,8 @@ export function MetaPixelCheckoutSuccess() {
     if (sessionStorage.getItem(STORAGE_KEY)) return;
 
     window.fbq("track", "StartTrial", {
-      currency: "GBP",
-      value: 0,
+      currency: "USD",
+      value: 0.99,
     });
 
     sessionStorage.setItem(STORAGE_KEY, "1");

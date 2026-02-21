@@ -131,15 +131,17 @@ export async function POST(request: Request) {
             subscriptionType: subType,
           }).catch((err) => console.error("Klaviyo sync error:", err));
 
-          // Send Meta Conversions API event for trial signups
-          if (subscription.status === "trialing") {
+          // Send Meta Conversions API event for new subscriptions (both trialing and active)
+          if (subscription.status === "trialing" || subscription.status === "active") {
             sendStartTrialEvent({
               email: profileData.email,
               userId,
               firstName: profileData.full_name?.split(" ")[0],
             }).catch((err) => console.error("Meta Conversions API error:", err));
+          }
 
-            // Notify admin of new trial signup
+          // Notify admin of new trial signup (only for old trial users)
+          if (subscription.status === "trialing") {
             notifyNewTrial({
               email: profileData.email,
               name: profileData.full_name,
