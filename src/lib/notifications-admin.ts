@@ -47,7 +47,7 @@ async function sendAdminEmail({ subject, html }: SendEmailParams): Promise<boole
 }
 
 /**
- * Notify when someone starts a free trial
+ * Notify when someone starts a new subscription
  */
 export async function notifyNewTrial(params: {
   email: string;
@@ -56,16 +56,16 @@ export async function notifyNewTrial(params: {
   const { email, name } = params;
 
   return sendAdminEmail({
-    subject: `🎉 New Trial: ${name || email}`,
+    subject: `🎉 New Subscriber: ${name || email}`,
     html: `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 20px;">
-        <h2 style="color: #1a1a1a; margin-bottom: 20px;">New Free Trial Signup</h2>
+        <h2 style="color: #1a1a1a; margin-bottom: 20px;">New Subscription</h2>
         <p style="color: #333; font-size: 16px; margin-bottom: 10px;">
           <strong>Email:</strong> ${email}
         </p>
         ${name ? `<p style="color: #333; font-size: 16px; margin-bottom: 10px;"><strong>Name:</strong> ${name}</p>` : ""}
         <p style="color: #666; font-size: 14px; margin-top: 20px;">
-          They've just started their subscription ($0.99 first month).
+          They've just subscribed! ($0.99 first month, then $3.99/month) 💰
         </p>
       </div>
     `,

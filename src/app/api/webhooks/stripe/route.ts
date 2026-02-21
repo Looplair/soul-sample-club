@@ -138,10 +138,8 @@ export async function POST(request: Request) {
               userId,
               firstName: profileData.full_name?.split(" ")[0],
             }).catch((err) => console.error("Meta Conversions API error:", err));
-          }
 
-          // Notify admin of new trial signup (only for old trial users)
-          if (subscription.status === "trialing") {
+            // Notify admin of new subscription
             notifyNewTrial({
               email: profileData.email,
               name: profileData.full_name,
