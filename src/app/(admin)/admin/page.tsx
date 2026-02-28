@@ -301,8 +301,9 @@ async function getArchivedPacksWithVotes(): Promise<ArchivedPackWithVotes[]> {
     return [];
   }
 
-  // Get all votes for these packs
-  const votesResult = await supabase
+  // Get all votes for these packs (use adminSupabase to bypass RLS)
+  const adminSupabase = createAdminClient();
+  const votesResult = await adminSupabase
     .from("pack_votes")
     .select("pack_id")
     .in("pack_id", packIds);
