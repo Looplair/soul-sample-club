@@ -127,9 +127,12 @@ function PackGridSkeleton() {
   );
 }
 
-// Helper to check if pack is archived (older than 3 months, and not returned)
+// Helper to check if pack is archived
+// Returned packs are only archived if they have an explicit end_date that has passed
 function isArchived(pack: PackWithSamples): boolean {
-  if (pack.is_returned) return false;
+  if (pack.is_returned) {
+    return pack.end_date ? new Date() > new Date(pack.end_date) : false;
+  }
   const threeMonthsAgo = new Date();
   threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
   return new Date(pack.release_date) < threeMonthsAgo;

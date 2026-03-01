@@ -253,7 +253,10 @@ export default async function PackDetailPage({
   const isBonus = pack.is_bonus ?? false;
   const isReturned = pack.is_returned ?? false;
   const endDate = pack.end_date ?? null;
-  const isExpired = isReturned ? false : isPackExpiredWithEndDate(pack.release_date, endDate);
+  // Returned packs expire if they have an explicit end_date set, otherwise they stay open
+  const isExpired = isReturned
+    ? (endDate ? isPackExpiredWithEndDate(pack.release_date, endDate) : false)
+    : isPackExpiredWithEndDate(pack.release_date, endDate);
   const isStaffPick = pack.is_staff_pick ?? false;
 
   // Calculate expiry countdown for non-expired packs

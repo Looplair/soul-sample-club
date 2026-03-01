@@ -22,7 +22,10 @@ export function PackCard({ pack, sampleCount }: PackCardProps) {
 
   const isNew = isPackNew(releaseDate);
   const isReturned = pack.is_returned ?? false;
-  const isExpired = isReturned ? false : isPackExpiredWithEndDate(releaseDate, endDate);
+  // Returned packs expire if they have an explicit end_date set, otherwise they stay open
+  const isExpired = isReturned
+    ? (endDate ? isPackExpiredWithEndDate(releaseDate, endDate) : false)
+    : isPackExpiredWithEndDate(releaseDate, endDate);
   const isStaffPick = pack.is_staff_pick ?? false;
   const isBonus = pack.is_bonus ?? false;
 
