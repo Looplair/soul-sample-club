@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import { SubscribeButton } from "@/components/subscription/SubscribeButton";
 import { ShareButtonsInline } from "@/components/social/ShareButtons";
 import { VoteBringBack } from "@/components/packs/VoteBringBack";
+import { DownloadAllButton } from "@/components/packs/DownloadAllButton";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { UserDropdown } from "@/components/layout/UserDropdown";
 import { getNotificationsForUser } from "@/lib/notifications";
@@ -585,7 +586,7 @@ export default async function PackDetailPage({
               ) : (
                 <div className="bg-success/10 border border-success/30 rounded-card p-4 flex items-start sm:items-center gap-3">
                   <Play className="w-5 h-5 text-success flex-shrink-0 mt-0.5 sm:mt-0" />
-                  <div>
+                  <div className="flex-1">
                     <p className="text-body text-text-secondary font-medium">
                       Ready to download
                     </p>
@@ -593,6 +594,9 @@ export default async function PackDetailPage({
                       All {pack.samples.length} tracks are available for download.
                     </p>
                   </div>
+                  {pack.pack_zip_path && (
+                    <DownloadAllButton packId={pack.id} />
+                  )}
                 </div>
               )}
             </div>

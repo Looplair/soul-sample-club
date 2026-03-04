@@ -164,6 +164,7 @@ export interface Database {
           description: string;
           cover_image_url: string | null;
           hero_image_url: string | null;
+          pack_zip_path?: string | null;
           release_date: string;
           end_date: string | null;
           is_published: boolean;
@@ -179,6 +180,7 @@ export interface Database {
           description: string;
           cover_image_url?: string | null;
           hero_image_url?: string | null;
+          pack_zip_path?: string | null;
           release_date: string;
           end_date?: string | null;
           is_published?: boolean;
@@ -194,6 +196,7 @@ export interface Database {
           description?: string;
           cover_image_url?: string | null;
           hero_image_url?: string | null;
+          pack_zip_path?: string | null;
           release_date?: string;
           end_date?: string | null;
           is_published?: boolean;

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useDropzone } from "react-dropzone";
-import { Upload, X, AlertCircle, CheckCircle, Gift, Calendar, RotateCcw } from "lucide-react";
+import { Upload, X, AlertCircle, CheckCircle, Gift, Calendar, RotateCcw, PackageOpen } from "lucide-react";
 // hero_image_url removed - cover image is used as hero by default
 import { createClient } from "@/lib/supabase/client";
 import { Button, Input, Card, CardContent } from "@/components/ui";
@@ -36,6 +36,13 @@ export function PackForm({ pack }: PackFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
+  // ZIP upload state
+  const [zipFile, setZipFile] = useState<File | null>(null);
+  const [zipPath, setZipPath] = useState<string | null>(pack?.pack_zip_path || null);
+  const [isUploadingZip, setIsUploadingZip] = useState(false);
+  const [zipUploadProgress, setZipUploadProgress] = useState(0);
+  const [zipError, setZipError] = useState<string | null>(null);
+
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: {
       "image/*": [".jpeg", ".jpg", ".png", ".webp"],
@@ -51,9 +58,83 @@ export function PackForm({ pack }: PackFormProps) {
     },
   });
 
+  const {
+    getRootProps: getZipRootProps,
+    getInputProps: getZipInputProps,
+    isDragActive: isZipDragActive,
+  } = useDropzone({
+    accept: { "application/zip": [".zip"], "application/x-zip-compressed": [".zip"] },
+    maxFiles: 1,
+    onDrop: (acceptedFiles) => {
+      if (acceptedFiles[0]) setZipFile(acceptedFiles[0]);
+    },
+  });
+
   const removeCover = () => {
     setCoverImage(null);
     setCoverPreview(pack?.cover_image_url || null);
+  };
+
+  const handleZipUpload = async () => {
+    if (!zipFile || !pack?.id) return;
+    setIsUploadingZip(true);
+    setZipUploadProgress(0);
+    setZipError(null);
+
+    try {
+      // Step 1: Presign
+      const presignRes = await fetch("/api/admin/pack-zip/presign", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ packId: pack.id }),
+      });
+      if (!presignRes.ok) {
+        const err = await presignRes.json();
+        throw new Error(err.error || "Failed to get upload URL");
+      }
+      const { token, path: uploadPath } = await presignRes.json();
+
+      // Step 2: Upload with fake progress
+      let fakeProgress = 0;
+      const progressInterval = setInterval(() => {
+        fakeProgress = Math.min(90, fakeProgress + (90 - fakeProgress) * 0.1);
+        setZipUploadProgress(fakeProgress);
+      }, 500);
+
+      try {
+        const { error: uploadError } = await supabase.storage
+          .from("samples")
+          .uploadToSignedUrl(uploadPath, token, zipFile);
+
+        clearInterval(progressInterval);
+        if (uploadError) throw new Error(`Upload failed: ${uploadError.message}`);
+      } catch (err) {
+        clearInterval(progressInterval);
+        throw err;
+      }
+
+      setZipUploadProgress(95);
+
+      // Step 3: Finalize
+      const finalizeRes = await fetch("/api/admin/pack-zip/finalize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ packId: pack.id, zipPath: uploadPath }),
+      });
+      if (!finalizeRes.ok) {
+        const err = await finalizeRes.json();
+        throw new Error(err.error || "Failed to save ZIP path");
+      }
+
+      setZipPath(uploadPath);
+      setZipFile(null);
+      setZipUploadProgress(100);
+      router.refresh();
+    } catch (err: any) {
+      setZipError(err.message || "ZIP upload failed");
+    } finally {
+      setIsUploadingZip(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -239,6 +320,80 @@ export function PackForm({ pack }: PackFormProps) {
               </div>
             )}
           </div>
+
+          {/* Full Pack ZIP - only shown when editing an existing pack */}
+          {isEditing && (
+            <div>
+              <label className="label">Full Pack ZIP</label>
+              <p className="text-caption text-snow/40 mb-8">
+                Optional — enables the &quot;Download All&quot; button on the pack page
+              </p>
+
+              {zipError && (
+                <div className="bg-error/10 border border-error/50 rounded-button p-8 text-error text-body-sm flex items-center gap-8 mb-8">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  {zipError}
+                </div>
+              )}
+
+              {zipPath && !zipFile ? (
+                <div className="flex items-center gap-12 p-12 bg-success/10 border border-success/30 rounded-button">
+                  <PackageOpen className="w-5 h-5 text-success flex-shrink-0" />
+                  <span className="text-body-sm text-success flex-1">ZIP uploaded</span>
+                  <button
+                    type="button"
+                    onClick={() => setZipPath(null)}
+                    className="text-body-sm text-snow/40 hover:text-snow underline"
+                  >
+                    Replace
+                  </button>
+                </div>
+              ) : zipFile ? (
+                <div className="space-y-8">
+                  <div className="flex items-center gap-12 p-12 bg-steel/30 border border-steel rounded-button">
+                    <PackageOpen className="w-5 h-5 text-snow/60 flex-shrink-0" />
+                    <span className="text-body-sm text-snow/80 flex-1 truncate">{zipFile.name}</span>
+                    <button type="button" onClick={() => setZipFile(null)}>
+                      <X className="w-4 h-4 text-snow/40 hover:text-snow" />
+                    </button>
+                  </div>
+
+                  {isUploadingZip && (
+                    <div className="w-full bg-steel rounded-full h-2">
+                      <div
+                        className="bg-velvet h-2 rounded-full transition-all duration-500"
+                        style={{ width: `${zipUploadProgress}%` }}
+                      />
+                    </div>
+                  )}
+
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={handleZipUpload}
+                    isLoading={isUploadingZip}
+                    disabled={isUploadingZip}
+                  >
+                    {isUploadingZip ? `Uploading... ${Math.round(zipUploadProgress)}%` : "Upload ZIP"}
+                  </Button>
+                </div>
+              ) : (
+                <div
+                  {...getZipRootProps()}
+                  className={`
+                    border-2 border-dashed rounded-button p-16 text-center cursor-pointer transition-colors
+                    ${isZipDragActive ? "border-velvet bg-velvet/10" : "border-steel hover:border-velvet/50"}
+                  `}
+                >
+                  <input {...getZipInputProps()} />
+                  <PackageOpen className="w-6 h-6 text-snow/30 mx-auto mb-8" />
+                  <p className="text-body-sm text-snow/60">
+                    {isZipDragActive ? "Drop ZIP here" : "Drag & drop or click to select ZIP"}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Name */}
           <Input
