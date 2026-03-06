@@ -10,7 +10,7 @@ import { UserDropdown } from "@/components/layout/UserDropdown";
 import { getNotificationsForUser } from "@/lib/notifications";
 import type { Announcement, Profile } from "@/types/database";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 export async function generateStaticParams() {
   const adminSupabase = createAdminClient();
