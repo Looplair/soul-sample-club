@@ -207,6 +207,41 @@ export interface Database {
           updated_at?: string;
         };
       };
+      announcements: {
+        Row: {
+          id: string;
+          title: string;
+          slug: string;
+          body: string;
+          cover_image_url: string | null;
+          is_published: boolean;
+          published_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          title: string;
+          slug: string;
+          body: string;
+          cover_image_url?: string | null;
+          is_published?: boolean;
+          published_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          title?: string;
+          slug?: string;
+          body?: string;
+          cover_image_url?: string | null;
+          is_published?: boolean;
+          published_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
       samples: {
         Row: {
           id: string;
@@ -411,6 +446,7 @@ export type Like = Database["public"]["Tables"]["likes"]["Row"];
 export type PackVote = Database["public"]["Tables"]["pack_votes"]["Row"];
 export type Notification = Database["public"]["Tables"]["notifications"]["Row"];
 export type NotificationRead = Database["public"]["Tables"]["notification_reads"]["Row"];
+export type Announcement = Database["public"]["Tables"]["announcements"]["Row"];
 
 export type NotificationWithReadStatus = Notification & {
   is_read: boolean;
