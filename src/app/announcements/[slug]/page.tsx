@@ -1,6 +1,8 @@
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ArrowLeft, Megaphone } from "lucide-react";
@@ -83,8 +85,6 @@ export default async function AnnouncementDetailPage({ params }: { params: { slu
   const profile = profileResult.data as Profile | null;
   const { notifications, unreadCount } = await getNotificationsForUser(user.id);
 
-  const paragraphs = announcement.body.split(/\n+/).filter(Boolean);
-
   return (
     <div className="min-h-screen bg-charcoal">
       <header className="border-b border-grey-700 bg-charcoal/90 backdrop-blur-xl sticky top-0 z-40">
@@ -136,12 +136,26 @@ export default async function AnnouncementDetailPage({ params }: { params: { slu
               </span>
             </div>
             <h1 className="text-h1 text-white mb-8">{announcement.title}</h1>
-            <div className="space-y-5">
-              {paragraphs.map((para, i) => (
-                <p key={i} className="text-body-lg text-text-secondary leading-relaxed">
-                  {para}
-                </p>
-              ))}
+            <div className="announcement-body">
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  p: ({ children }) => <p className="text-body-lg text-text-secondary leading-relaxed mb-5">{children}</p>,
+                  a: ({ href, children }) => <a href={href} target="_blank" rel="noopener noreferrer" className="text-velvet hover:text-velvet/80 underline underline-offset-2 transition-colors">{children}</a>,
+                  strong: ({ children }) => <strong className="text-white font-semibold">{children}</strong>,
+                  em: ({ children }) => <em className="text-text-secondary italic">{children}</em>,
+                  ul: ({ children }) => <ul className="list-disc list-outside pl-6 space-y-2 mb-5 text-body-lg text-text-secondary">{children}</ul>,
+                  ol: ({ children }) => <ol className="list-decimal list-outside pl-6 space-y-2 mb-5 text-body-lg text-text-secondary">{children}</ol>,
+                  li: ({ children }) => <li className="leading-relaxed">{children}</li>,
+                  h2: ({ children }) => <h2 className="text-h3 text-white mt-8 mb-4">{children}</h2>,
+                  h3: ({ children }) => <h3 className="text-h4 text-white mt-6 mb-3">{children}</h3>,
+                  blockquote: ({ children }) => <blockquote className="border-l-4 border-velvet pl-5 my-5 text-text-muted italic">{children}</blockquote>,
+                  hr: () => <hr className="border-grey-700 my-8" />,
+                  code: ({ children }) => <code className="bg-grey-800 text-snow px-2 py-0.5 rounded text-sm font-mono">{children}</code>,
+                }}
+              >
+                {announcement.body}
+              </ReactMarkdown>
             </div>
           </div>
         </div>

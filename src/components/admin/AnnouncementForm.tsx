@@ -220,12 +220,15 @@ export function AnnouncementForm({ announcement }: AnnouncementFormProps) {
           {/* Body */}
           <div>
             <label className="label">Body</label>
+            <p className="text-caption text-snow/40 mb-8">
+              Supports markdown — <code className="text-snow/60">**bold**</code>, <code className="text-snow/60">*italic*</code>, <code className="text-snow/60">[link text](url)</code>, blank line = new paragraph
+            </p>
             <textarea
               value={body}
               onChange={(e) => setBody(e.target.value)}
               placeholder="Write your announcement here..."
-              rows={10}
-              className="input resize-none"
+              rows={14}
+              className="textarea"
               required
             />
           </div>
