@@ -31,8 +31,8 @@ export function VaultButton() {
 
       {open && (
         <div
-          className="absolute right-0 top-full mt-2 z-50 rounded-xl border border-[#1E1E1E] bg-[#0C0C0C] shadow-2xl"
-          style={{ width: 260 }}
+          className="absolute top-full mt-2 z-50 rounded-xl border border-[#1E1E1E] bg-[#0C0C0C] shadow-2xl left-1/2 -translate-x-1/2 sm:translate-x-0 sm:left-auto sm:right-0"
+          style={{ width: 260, maxWidth: "calc(100vw - 1rem)" }}
         >
           {/* Header */}
           <div className="px-5 pt-4 pb-3 border-b border-[#141414]">
