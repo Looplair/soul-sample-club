@@ -242,6 +242,27 @@ export default async function FeedPage() {
             )}
           </div>
 
+          {/* Drum Vault teaser — only show to authenticated users */}
+          {isLoggedIn && (
+            <Link
+              href="/vault"
+              className="block mb-8 group rounded-xl overflow-hidden border border-grey-700 hover:border-grey-600 transition-all bg-grey-800/30 hover:bg-grey-800/50"
+            >
+              <div className="flex items-center justify-between p-5">
+                <div>
+                  <div className="text-[11px] font-semibold uppercase tracking-widest text-text-muted mb-1">
+                    Members Exclusive
+                  </div>
+                  <div className="text-white font-bold text-lg tracking-tight">Drum Vault</div>
+                  <div className="text-text-muted text-sm mt-0.5">
+                    Members-only drum breaks — collect yours forever.
+                  </div>
+                </div>
+                <div className="text-text-muted group-hover:text-white transition-colors text-xl">→</div>
+              </div>
+            </Link>
+          )}
+
           {/* Available Packs */}
           {(() => {
             const availablePacks = allPacks.filter(p => !isArchived(p) && !p.is_returned);
