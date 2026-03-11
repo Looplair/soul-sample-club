@@ -45,7 +45,7 @@ export function BreakWaveform({ peaks, seed, playedFraction, isCollected, onClic
   return (
     <div
       className="flex-1 flex items-center overflow-hidden cursor-pointer"
-      style={{ height: 48 }}
+      style={{ height: 48, justifyContent: "space-between" }}
       onClick={onClick}
     >
       {normalizedPeaks.map((p, i) => {

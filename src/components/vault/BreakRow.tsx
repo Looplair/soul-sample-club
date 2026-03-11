@@ -1,7 +1,7 @@
 // src/components/vault/BreakRow.tsx
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { BreakWaveform } from "./BreakWaveform";
 import type { DrumBreakWithStatus } from "@/types/database";
 
@@ -14,46 +14,80 @@ interface BreakRowProps {
 
 export function BreakRow({ drumBreak, index, onCollect, onDownload }: BreakRowProps) {
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [playedFraction, setPlayedFraction] = useState(0);
   const [isSweeping, setIsSweeping] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const rafRef = useRef<number>(0);
 
-  const stopAudio = useCallback(() => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-    }
-    cancelAnimationFrame(rafRef.current);
-    setIsPlaying(false);
-    setPlayedFraction(0);
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      cancelAnimationFrame(rafRef.current);
+      audioRef.current?.pause();
+    };
   }, []);
 
-  const handlePlay = useCallback(async () => {
-    if (isPlaying) { stopAudio(); return; }
-
-    const res = await fetch(`/api/drum-vault/${drumBreak.id}/preview`);
-    if (!res.ok) return;
-    const { url } = await res.json();
-
-    const audio = new Audio(url);
-    audioRef.current = audio;
-    audio.play().catch(console.error);
-    setIsPlaying(true);
-
+  const startRaf = useCallback(() => {
     const tick = () => {
+      const audio = audioRef.current;
+      if (!audio) return;
       if (!audio.duration) { rafRef.current = requestAnimationFrame(tick); return; }
       setPlayedFraction(audio.currentTime / audio.duration);
       if (!audio.paused && !audio.ended) {
         rafRef.current = requestAnimationFrame(tick);
-      } else {
-        setIsPlaying(false);
-        setPlayedFraction(0);
       }
     };
     rafRef.current = requestAnimationFrame(tick);
-    audio.onended = () => { setIsPlaying(false); setPlayedFraction(0); };
-  }, [isPlaying, stopAudio, drumBreak.id]);
+  }, []);
+
+  const handlePlay = useCallback(async () => {
+    // Ignore extra clicks while loading
+    if (isLoading) return;
+
+    // Currently playing → pause (keep position)
+    if (isPlaying) {
+      audioRef.current?.pause();
+      cancelAnimationFrame(rafRef.current);
+      setIsPlaying(false);
+      return;
+    }
+
+    // Audio loaded and paused mid-way → resume
+    const audio = audioRef.current;
+    if (audio && !audio.ended && audio.currentTime > 0) {
+      audio.play().catch(console.error);
+      setIsPlaying(true);
+      startRaf();
+      return;
+    }
+
+    // Fresh start — fetch preview URL then play
+    setIsLoading(true);
+    try {
+      const res = await fetch(`/api/drum-vault/${drumBreak.id}/preview`);
+      if (!res.ok) return;
+      const { url } = await res.json();
+
+      const newAudio = new Audio(url);
+      audioRef.current = newAudio;
+
+      newAudio.onended = () => {
+        setIsPlaying(false);
+        setPlayedFraction(0);
+        cancelAnimationFrame(rafRef.current);
+      };
+
+      await newAudio.play();
+      setIsLoading(false);
+      setIsPlaying(true);
+      startRaf();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [isLoading, isPlaying, startRaf, drumBreak.id]);
 
   const handleCollect = useCallback(() => {
     if (drumBreak.is_collected) return;
@@ -98,7 +132,7 @@ export function BreakRow({ drumBreak, index, onCollect, onDownload }: BreakRowPr
         <div className="text-[13px] font-semibold" style={{ color: drumBreak.is_collected ? "#aaa" : "#888" }}>
           {drumBreak.name}
         </div>
-        <div className="text-[11px] font-medium mt-0.5" style={{ color: "#252525" }}>
+        <div className="text-[11px] font-medium mt-0.5" style={{ color: "#444" }}>
           {drumBreak.bpm} BPM
         </div>
         {drumBreak.is_new && (
@@ -121,7 +155,17 @@ export function BreakRow({ drumBreak, index, onCollect, onDownload }: BreakRowPr
         className="flex-shrink-0 flex items-center justify-center rounded-full"
         style={{ width: 32, height: 32, border: "1px solid #1E1E1E", background: "#111" }}
       >
-        {isPlaying ? (
+        {isLoading ? (
+          <div
+            className="rounded-full border-t-white"
+            style={{
+              width: 12, height: 12,
+              border: "1.5px solid rgba(255,255,255,0.2)",
+              borderTopColor: "#fff",
+              animation: "spin 0.7s linear infinite",
+            }}
+          />
+        ) : isPlaying ? (
           <div className="flex gap-0.5">
             <div className="bg-white rounded-sm" style={{ width: 2.5, height: 9 }} />
             <div className="bg-white rounded-sm" style={{ width: 2.5, height: 9 }} />
@@ -171,6 +215,8 @@ export function BreakRow({ drumBreak, index, onCollect, onDownload }: BreakRowPr
           Collect
         </button>
       )}
+
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }

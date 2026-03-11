@@ -59,11 +59,14 @@ export async function GET(
       return NextResponse.json({ error: "File not available" }, { status: 404 });
     }
 
+    // Use original filename from storage path (preserves BPM etc. in the name)
+    const originalFilename = drumBreak.file_path.split("/").pop() ?? `${drumBreak.name}.wav`;
+
     // Generate signed download URL (valid 60 seconds)
     const { data: signedUrl, error: urlError } = await adminSupabase.storage
       .from("samples")
       .createSignedUrl(drumBreak.file_path, 60, {
-        download: `${drumBreak.name}.wav`,
+        download: originalFilename,
       });
 
     if (urlError || !signedUrl) {
