@@ -476,3 +476,31 @@ export type SampleWithLike = Sample & {
 export type ChatMessageWithUser = ChatMessage & {
   profile: Pick<Profile, "id" | "username" | "avatar_url">;
 };
+
+// ── Drum Vault ───────────────────────────────────────────────────────────────
+
+export type DrumBreak = {
+  id: string;
+  name: string;
+  bpm: number | null;
+  file_path: string | null;
+  preview_path: string | null;
+  waveform_peaks: number[] | null;
+  is_published: boolean;
+  is_exclusive: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type BreakCollection = {
+  id: string;
+  user_id: string;
+  break_id: string;
+  collected_at: string;
+};
+
+// DrumBreak with is_collected flag — returned by GET /api/drum-vault
+export type DrumBreakWithStatus = DrumBreak & {
+  is_collected: boolean;
+  is_new: boolean; // true if created_at > user's vault_last_visited
+};
