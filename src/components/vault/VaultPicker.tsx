@@ -88,7 +88,7 @@ export function VaultPicker({ breaks, onCollect, onDownload }: VaultPickerProps)
                   No breaks in the vault yet
                 </div>
                 <div className="text-[11px]" style={{ color: "#2A2A2A" }}>
-                  Check back soon — new breaks are added regularly.
+                  Check back soon. New breaks are added regularly.
                 </div>
               </div>
             </div>

@@ -48,7 +48,7 @@ export function VaultButton() {
           {/* Body */}
           <div className="px-5 py-3">
             <p className="text-[12px] text-[#444] leading-relaxed mb-4">
-              Members-only drum breaks — hand-picked and added regularly. Collect yours to keep forever.
+              Members-only drum breaks. Original, raw, dope. Collect yours to keep forever.
             </p>
             <Link
               href="/vault"

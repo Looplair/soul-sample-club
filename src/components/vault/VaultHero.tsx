@@ -1,11 +1,14 @@
 // src/components/vault/VaultHero.tsx
 "use client";
 
+import type { ReactNode } from "react";
+
 interface VaultHeroProps {
   stats: { collected: number; total: number };
+  backLink?: ReactNode;
 }
 
-export function VaultHero({ stats }: VaultHeroProps) {
+export function VaultHero({ stats, backLink }: VaultHeroProps) {
   const pct = stats.total > 0 ? Math.round((stats.collected / stats.total) * 100) : 0;
 
   return (
@@ -18,9 +21,9 @@ export function VaultHero({ stats }: VaultHeroProps) {
         }}
       />
       <div className="relative z-10 max-w-[860px] mx-auto">
-        <div className="text-[11px] font-semibold tracking-[0.18em] uppercase text-[#3A3A3A] mb-3">
-          Soul Sample Club
-        </div>
+        {backLink && (
+          <div className="flex justify-end mb-4">{backLink}</div>
+        )}
         <h1
           className="font-extrabold leading-none mb-3"
           style={{
@@ -38,8 +41,11 @@ export function VaultHero({ stats }: VaultHeroProps) {
         </h1>
         <style>{`@keyframes shimmer { from{background-position:100% 0} to{background-position:-100% 0} }`}</style>
 
-        <p className="text-sm text-[#3A3A3A] mb-5 max-w-[420px] leading-relaxed">
-          Members-only drum breaks, hand-picked and added to the vault regularly.
+        <p className="text-sm text-[#3A3A3A] mb-1.5 max-w-[420px] leading-relaxed">
+          Members-only drum breaks. Original, raw, dope.
+        </p>
+        <p className="text-[11px] text-[#2A2A2A] mb-5 max-w-[420px] leading-relaxed tracking-[0.02em]">
+          We&apos;ll notify you when new breaks drop.
         </p>
 
         {/* Stats */}
@@ -80,21 +86,6 @@ export function VaultHero({ stats }: VaultHeroProps) {
               style={{ boxShadow: "0 0 10px rgba(255,255,255,.7)" }}
             />
           </div>
-        </div>
-        <div className="flex gap-5 mt-2">
-          {[
-            { n: 10, label: "10 breaks" },
-            { n: 25, label: "25 breaks" },
-            { n: stats.total, label: "Complete the vault" },
-          ].map((m) => (
-            <div
-              key={m.n}
-              className="text-[10px] flex items-center gap-1"
-              style={{ color: stats.collected >= m.n ? "#22c55e" : "#282828" }}
-            >
-              ★ {m.label}{stats.collected >= m.n ? " — unlocked" : ""}
-            </div>
-          ))}
         </div>
       </div>
     </div>

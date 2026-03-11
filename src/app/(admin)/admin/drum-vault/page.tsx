@@ -10,6 +10,7 @@ import {
 import { formatDate } from "@/lib/utils";
 import { DeleteDrumBreakButton } from "@/components/admin/DeleteDrumBreakButton";
 import { PublishDrumBreakButton } from "@/components/admin/PublishDrumBreakButton";
+import { NotifyVaultButton } from "@/components/admin/NotifyVaultButton";
 
 export const metadata = {
   title: "Drum Vault | Soul Sample Club Admin",
@@ -71,9 +72,12 @@ export default async function AdminDrumVaultPage() {
             Manage your drum breaks
           </p>
         </div>
-        <Link href="/admin/drum-vault/new">
-          <Button leftIcon={<Plus className="w-4 h-4" />}>New Drum Break</Button>
-        </Link>
+        <div className="flex items-center gap-3">
+          <NotifyVaultButton />
+          <Link href="/admin/drum-vault/new">
+            <Button leftIcon={<Plus className="w-4 h-4" />}>New Drum Break</Button>
+          </Link>
+        </div>
       </div>
 
       <Card>

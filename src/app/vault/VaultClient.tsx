@@ -1,11 +1,10 @@
 // src/app/vault/VaultClient.tsx
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { VaultHero } from "@/components/vault/VaultHero";
 import { VaultPicker } from "@/components/vault/VaultPicker";
-import { VaultFooter } from "@/components/vault/VaultFooter";
 import { PremiumModal } from "@/components/subscription/PremiumModal";
 import type { DrumBreakWithStatus } from "@/types/database";
 
@@ -27,6 +26,12 @@ export function VaultClient({ breaks: initialBreaks, stats: initialStats, hasUse
   const [stats, setStats] = useState(initialStats);
   const [toast, setToast] = useState<Toast | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+
+  // Lock page scroll so the site footer never peeks through
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = ""; };
+  }, []);
 
   const showToast = useCallback((message: string, sub: string) => {
     setToast({ message, sub, key: Date.now() });
@@ -59,15 +64,9 @@ export function VaultClient({ breaks: initialBreaks, stats: initialStats, hasUse
 
       if (!res.ok) throw new Error("Collect failed");
 
-      const milestoneMsgs: Record<number, string> = {
-        [Math.min(10, stats.total)]: "Milestone — 10 breaks collected",
-        25: "Milestone — 25 breaks collected",
-        [stats.total]: "Vault complete.",
-      };
-      const milestoneMsg = milestoneMsgs[newCount];
       showToast(
-        milestoneMsg ?? `${drumBreak.name} collected`,
-        milestoneMsg ? "★ Milestone unlocked" : `${newCount} of ${stats.total} breaks collected`
+        `${drumBreak.name} collected`,
+        `${newCount} of ${stats.total} breaks collected`
       );
     } catch {
       setBreaks((prev) =>
@@ -90,14 +89,7 @@ export function VaultClient({ breaks: initialBreaks, stats: initialStats, hasUse
       className="flex flex-col bg-[#0C0C0C] text-white"
       style={{ height: "100dvh", overflow: "hidden" }}
     >
-      {/* Back to catalog */}
-      <div className="flex-shrink-0 px-10 pt-4 max-w-[860px] mx-auto w-full">
-        <Link href="/feed" className="text-[11px] text-[#333] hover:text-white transition-colors flex items-center gap-1.5">
-          <span>←</span> Catalog
-        </Link>
-      </div>
-
-      <VaultHero stats={stats} />
+      <VaultHero stats={stats} backLink={<Link href="/feed" className="text-[11px] font-medium text-[#444] hover:text-white transition-colors tracking-[0.04em]">← Back to Catalog</Link>} />
 
       <hr className="border-t border-[#141414] flex-shrink-0" />
 
@@ -105,7 +97,7 @@ export function VaultClient({ breaks: initialBreaks, stats: initialStats, hasUse
       <div className="flex-shrink-0 border-b border-[#141414]">
         <div className="max-w-[860px] mx-auto px-10 py-3 flex items-center justify-between">
           <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#2E2E2E]">
-            All Breaks — {stats.total} total
+            All Breaks · {stats.total} total
           </span>
           {breaks.some((b) => b.is_new) && (
             <span className="text-[11px] font-semibold text-[#22C55E] tracking-[0.06em]">
@@ -120,8 +112,6 @@ export function VaultClient({ breaks: initialBreaks, stats: initialStats, hasUse
         onCollect={handleCollect}
         onDownload={handleDownload}
       />
-
-      <VaultFooter />
 
       {/* Toast */}
       {toast && (
