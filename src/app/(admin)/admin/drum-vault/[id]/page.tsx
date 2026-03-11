@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { EditDrumBreakClient } from "./EditDrumBreakClient";
 
@@ -61,6 +62,12 @@ export default async function EditDrumBreakPage({
   return (
     <div className="space-y-48">
       <div>
+        <Link
+          href="/admin/drum-vault"
+          className="inline-block text-sm text-snow/40 hover:text-snow/80 transition-colors mb-16"
+        >
+          ← Back to Drum Vault
+        </Link>
         <h1 className="text-h1 text-snow mb-8">Edit Drum Break</h1>
         <p className="text-body-lg text-snow/60">
           Update drum break details and manage audio files

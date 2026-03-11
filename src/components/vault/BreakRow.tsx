@@ -10,9 +10,11 @@ interface BreakRowProps {
   index: number;
   onCollect: (id: string) => void;
   onDownload: (id: string) => void;
+  isActive: boolean;
+  onActivate: () => void;
 }
 
-export function BreakRow({ drumBreak, index, onCollect, onDownload }: BreakRowProps) {
+export function BreakRow({ drumBreak, index, onCollect, onDownload, isActive, onActivate }: BreakRowProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [playedFraction, setPlayedFraction] = useState(0);
@@ -27,6 +29,15 @@ export function BreakRow({ drumBreak, index, onCollect, onDownload }: BreakRowPr
       audioRef.current?.pause();
     };
   }, []);
+
+  // Another break became active — stop this one
+  useEffect(() => {
+    if (!isActive && isPlaying) {
+      audioRef.current?.pause();
+      cancelAnimationFrame(rafRef.current);
+      setIsPlaying(false);
+    }
+  }, [isActive, isPlaying]);
 
   const startRaf = useCallback(() => {
     const tick = () => {
@@ -56,6 +67,7 @@ export function BreakRow({ drumBreak, index, onCollect, onDownload }: BreakRowPr
     // Audio loaded and paused mid-way → resume
     const audio = audioRef.current;
     if (audio && !audio.ended && audio.currentTime > 0) {
+      onActivate();
       audio.play().catch(console.error);
       setIsPlaying(true);
       startRaf();
@@ -63,6 +75,7 @@ export function BreakRow({ drumBreak, index, onCollect, onDownload }: BreakRowPr
     }
 
     // Fresh start — fetch preview URL then play
+    onActivate();
     setIsLoading(true);
     try {
       const res = await fetch(`/api/drum-vault/${drumBreak.id}/preview`);
@@ -87,7 +100,7 @@ export function BreakRow({ drumBreak, index, onCollect, onDownload }: BreakRowPr
     } finally {
       setIsLoading(false);
     }
-  }, [isLoading, isPlaying, startRaf, drumBreak.id]);
+  }, [isLoading, isPlaying, startRaf, drumBreak.id, onActivate]);
 
   const handleCollect = useCallback(() => {
     if (drumBreak.is_collected) return;
@@ -98,7 +111,7 @@ export function BreakRow({ drumBreak, index, onCollect, onDownload }: BreakRowPr
 
   return (
     <div
-      className="flex items-center gap-5 relative overflow-hidden"
+      className="flex items-center gap-3 sm:gap-5 relative overflow-hidden"
       style={{
         padding: "18px 0",
         borderBottom: "1px solid #111",
@@ -121,15 +134,15 @@ export function BreakRow({ drumBreak, index, onCollect, onDownload }: BreakRowPr
 
       {/* Row number */}
       <div
-        className="flex-shrink-0 text-right font-black"
+        className="hidden sm:block flex-shrink-0 text-right font-black"
         style={{ width: 32, fontSize: 18, color: "#1C1C1C", letterSpacing: "-0.03em" }}
       >
         {String(index + 1).padStart(2, "0")}
       </div>
 
       {/* Info */}
-      <div className="flex-shrink-0" style={{ width: 120 }}>
-        <div className="text-[13px] font-semibold" style={{ color: drumBreak.is_collected ? "#aaa" : "#888" }}>
+      <div className="flex-shrink-0 w-[82px] sm:w-[120px]">
+        <div className="text-[11px] sm:text-[13px] font-semibold truncate" style={{ color: drumBreak.is_collected ? "#aaa" : "#888" }}>
           {drumBreak.name}
         </div>
         <div className="text-[11px] font-medium mt-0.5" style={{ color: "#444" }}>
@@ -137,7 +150,7 @@ export function BreakRow({ drumBreak, index, onCollect, onDownload }: BreakRowPr
         </div>
         {drumBreak.is_new && (
           <div className="text-[9px] font-bold uppercase tracking-[0.1em] rounded px-1.5 py-0.5 w-fit mt-1"
-            style={{ color: "#22c55e", background: "#22c55e0E", border: "1px solid #22c55e20" }}>
+            style={{ color: "#4ade80", background: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.4)" }}>
             New
           </div>
         )}
@@ -189,27 +202,33 @@ export function BreakRow({ drumBreak, index, onCollect, onDownload }: BreakRowPr
       {drumBreak.is_collected ? (
         <button
           onClick={() => onDownload(drumBreak.id)}
-          className="flex-shrink-0 text-[12px] font-semibold px-5 py-2 rounded-lg"
+          className="flex-shrink-0 text-[12px] font-semibold px-2 sm:px-5 py-2 rounded-lg"
           style={{ color: "#22c55e", border: "1px solid #22c55e18", background: "transparent",
             letterSpacing: "0.05em", whiteSpace: "nowrap" }}
         >
-          ↓ Download
+          <span className="sm:hidden">↓</span>
+          <span className="hidden sm:inline">↓ Download</span>
         </button>
       ) : (
         <button
           onClick={handleCollect}
-          className="flex-shrink-0 text-[12px] font-semibold px-5 py-2 rounded-lg transition-all"
-          style={{ color: "#2E2E2E", border: "1px solid #1A1A1A", background: "transparent",
-            letterSpacing: "0.05em", whiteSpace: "nowrap" }}
+          className="flex-shrink-0 text-[12px] font-semibold px-2 sm:px-5 py-2 rounded-lg transition-all"
+          style={{ color: "#666", border: "1px solid #2A2A2A", background: "transparent",
+            letterSpacing: "0.05em", whiteSpace: "nowrap",
+            boxShadow: "inset 0 0 12px rgba(255,255,255,0.03), 0 0 0 1px transparent" }}
           onMouseEnter={(e) => {
-            (e.target as HTMLButtonElement).style.background = "#fff";
-            (e.target as HTMLButtonElement).style.color = "#000";
-            (e.target as HTMLButtonElement).style.borderColor = "#fff";
+            const btn = e.currentTarget;
+            btn.style.background = "#fff";
+            btn.style.color = "#000";
+            btn.style.borderColor = "#fff";
+            btn.style.boxShadow = "0 0 18px rgba(255,255,255,0.25)";
           }}
           onMouseLeave={(e) => {
-            (e.target as HTMLButtonElement).style.background = "transparent";
-            (e.target as HTMLButtonElement).style.color = "#2E2E2E";
-            (e.target as HTMLButtonElement).style.borderColor = "#1A1A1A";
+            const btn = e.currentTarget;
+            btn.style.background = "transparent";
+            btn.style.color = "#666";
+            btn.style.borderColor = "#2A2A2A";
+            btn.style.boxShadow = "inset 0 0 12px rgba(255,255,255,0.03), 0 0 0 1px transparent";
           }}
         >
           Collect

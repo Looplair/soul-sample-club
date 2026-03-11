@@ -44,8 +44,14 @@ export function BreakWaveform({ peaks, seed, playedFraction, isCollected, onClic
 
   return (
     <div
-      className="flex-1 flex items-center overflow-hidden cursor-pointer"
-      style={{ height: 48, justifyContent: "space-between" }}
+      className="flex-1 min-w-0 overflow-hidden cursor-pointer"
+      style={{
+        height: 48,
+        display: "grid",
+        gridTemplateColumns: `repeat(${normalizedPeaks.length}, 1fr)`,
+        gap: "1px",
+        alignItems: "center",
+      }}
       onClick={onClick}
     >
       {normalizedPeaks.map((p, i) => {
@@ -59,8 +65,6 @@ export function BreakWaveform({ peaks, seed, playedFraction, isCollected, onClic
           <div
             key={i}
             style={{
-              flexShrink: 0,
-              width: 3,
               height,
               background: bg,
               boxShadow: isHead ? "0 0 6px rgba(255,255,255,.5)" : undefined,

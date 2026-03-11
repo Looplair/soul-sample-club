@@ -1,7 +1,7 @@
 // src/components/vault/VaultPicker.tsx
 "use client";
 
-import { useRef, useEffect, useCallback } from "react";
+import { useRef, useEffect, useCallback, useState } from "react";
 import { BreakRow } from "./BreakRow";
 import type { DrumBreakWithStatus } from "@/types/database";
 
@@ -15,6 +15,7 @@ export function VaultPicker({ breaks, onCollect, onDownload }: VaultPickerProps)
   const scrollRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number>(0);
+  const [activeBreakId, setActiveBreakId] = useState<string | null>(null);
 
   const updateFocal = useCallback(() => {
     const scroll = scrollRef.current;
@@ -80,7 +81,7 @@ export function VaultPicker({ breaks, onCollect, onDownload }: VaultPickerProps)
         className="h-full overflow-y-scroll scrollbar-hide"
         style={{ scrollSnapType: "y mandatory" } as React.CSSProperties}
       >
-        <div ref={listRef} className="max-w-[860px] mx-auto px-10">
+        <div ref={listRef} className="max-w-[860px] mx-auto px-4 sm:px-10">
           {breaks.length === 0 ? (
             <div className="flex items-center justify-center h-40 text-center">
               <div>
@@ -99,6 +100,8 @@ export function VaultPicker({ breaks, onCollect, onDownload }: VaultPickerProps)
                 index={i}
                 onCollect={onCollect}
                 onDownload={onDownload}
+                isActive={activeBreakId === b.id}
+                onActivate={() => setActiveBreakId(b.id)}
               />
             </div>
           ))}
