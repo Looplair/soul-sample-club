@@ -23,8 +23,8 @@ export default async function VaultPage() {
 
   const now = new Date().toISOString();
 
-  // Fetch breaks + collection status + profile + hasUsedTrial
-  const [breaksResult, collectionsResult, profileResult, anySubResult] = await Promise.all([
+  // Fetch breaks + collection status + hasUsedTrial
+  const [breaksResult, collectionsResult, anySubResult] = await Promise.all([
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (adminSupabase as any)
       .from("drum_breaks")
@@ -36,12 +36,6 @@ export default async function VaultPage() {
       .from("break_collections")
       .select("break_id")
       .eq("user_id", user.id),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (adminSupabase as any)
-      .from("profiles")
-      .select("vault_last_visited")
-      .eq("id", user.id)
-      .single(),
     // Check if user has ever had any subscription (for hasUsedTrial)
     adminSupabase
       .from("subscriptions")
@@ -49,9 +43,6 @@ export default async function VaultPage() {
       .eq("user_id", user.id)
       .limit(1),
   ]);
-
-  const lastVisited = (profileResult.data as { vault_last_visited: string | null } | null)
-    ?.vault_last_visited ?? null;
 
   const hasUsedTrial = (anySubResult.data?.length ?? 0) > 0;
 
@@ -66,7 +57,7 @@ export default async function VaultPage() {
   }) => ({
     ...b,
     is_collected: collectedIds.has(b.id),
-    is_new: lastVisited ? new Date(b.created_at) > new Date(lastVisited) : false,
+    is_new: new Date(b.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
   }));
 
   // Update vault_last_visited (fire and forget — don't block render)
