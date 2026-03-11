@@ -18,11 +18,13 @@ import {
   Megaphone,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { DrumIcon } from "@/components/icons/DrumIcon";
 
 const adminLinks = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard },
   { href: "/admin/subscriptions", label: "Subscriptions", icon: CreditCard },
   { href: "/admin/packs", label: "Packs", icon: Package },
+  { href: "/admin/drum-vault", label: "Drum Vault", icon: DrumIcon },
   { href: "/admin/users", label: "Users", icon: Users },
   { href: "/admin/notifications", label: "Notifications", icon: Bell },
   { href: "/admin/announcements", label: "Announcements", icon: Megaphone },
