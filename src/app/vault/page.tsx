@@ -21,30 +21,10 @@ export default async function VaultPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  // Subscription gate — do NOT add .gte("current_period_end") — matches canonical download route
-  const [stripeResult, patreonResult] = await Promise.all([
-    adminSupabase
-      .from("subscriptions")
-      .select("status")
-      .eq("user_id", user.id)
-      .in("status", ["active", "trialing", "past_due"])
-      .limit(1),
-    adminSupabase
-      .from("patreon_links")
-      .select("is_active")
-      .eq("user_id", user.id)
-      .eq("is_active", true)
-      .single(),
-  ]);
-
-  const hasAccess =
-    (stripeResult.data?.length ?? 0) > 0 || !!patreonResult.data;
-  if (!hasAccess) redirect("/subscribe");
-
   const now = new Date().toISOString();
 
-  // Fetch breaks + collection status
-  const [breaksResult, collectionsResult, profileResult] = await Promise.all([
+  // Fetch breaks + collection status + profile + hasUsedTrial
+  const [breaksResult, collectionsResult, profileResult, anySubResult] = await Promise.all([
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (adminSupabase as any)
       .from("drum_breaks")
@@ -62,10 +42,18 @@ export default async function VaultPage() {
       .select("vault_last_visited")
       .eq("id", user.id)
       .single(),
+    // Check if user has ever had any subscription (for hasUsedTrial)
+    adminSupabase
+      .from("subscriptions")
+      .select("id")
+      .eq("user_id", user.id)
+      .limit(1),
   ]);
 
   const lastVisited = (profileResult.data as { vault_last_visited: string | null } | null)
     ?.vault_last_visited ?? null;
+
+  const hasUsedTrial = (anySubResult.data?.length ?? 0) > 0;
 
   const collectedIds = new Set(
     (collectionsResult.data ?? []).map((c: { break_id: string }) => c.break_id)
@@ -95,5 +83,5 @@ export default async function VaultPage() {
     total: breaks.length,
   };
 
-  return <VaultClient breaks={breaks} stats={stats} />;
+  return <VaultClient breaks={breaks} stats={stats} hasUsedTrial={hasUsedTrial} isLoggedIn={true} />;
 }

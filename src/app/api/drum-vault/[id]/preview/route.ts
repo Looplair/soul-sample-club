@@ -19,31 +19,10 @@ export async function GET(
     const supabase = await createClient();
     const adminSupabase = createAdminClient();
 
-    // Auth + subscription check (subscribers can preview any break)
+    // Auth check — any logged-in user can preview
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const [stripeResult, patreonResult] = await Promise.all([
-      adminSupabase
-        .from("subscriptions")
-        .select("status")
-        .eq("user_id", user.id)
-        .in("status", ["active", "trialing", "past_due"])
-        .limit(1),
-      adminSupabase
-        .from("patreon_links")
-        .select("is_active")
-        .eq("user_id", user.id)
-        .eq("is_active", true)
-        .single(),
-    ]);
-
-    const hasAccess =
-      (stripeResult.data?.length ?? 0) > 0 || !!patreonResult.data;
-    if (!hasAccess) {
-      return NextResponse.json({ error: "Active subscription required" }, { status: 403 });
     }
 
     // Get break audio path (prefer preview_path for smaller file)

@@ -15,32 +15,6 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Subscription check (Stripe OR Patreon)
-    const [stripeResult, patreonResult] = await Promise.all([
-      adminSupabase
-        .from("subscriptions")
-        .select("status")
-        .eq("user_id", user.id)
-        .in("status", ["active", "trialing", "past_due"])
-        .limit(1),
-      adminSupabase
-        .from("patreon_links")
-        .select("is_active")
-        .eq("user_id", user.id)
-        .eq("is_active", true)
-        .single(),
-    ]);
-
-    const hasAccess =
-      (stripeResult.data?.length ?? 0) > 0 || !!patreonResult.data;
-
-    if (!hasAccess) {
-      return NextResponse.json(
-        { error: "Active subscription required" },
-        { status: 403 }
-      );
-    }
-
     // Fetch user's last vault visit (for "New" badge)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const profileResult = await (adminSupabase as any)

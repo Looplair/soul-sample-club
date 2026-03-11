@@ -2,14 +2,18 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import Link from "next/link";
 import { VaultHero } from "@/components/vault/VaultHero";
 import { VaultPicker } from "@/components/vault/VaultPicker";
 import { VaultFooter } from "@/components/vault/VaultFooter";
+import { PremiumModal } from "@/components/subscription/PremiumModal";
 import type { DrumBreakWithStatus } from "@/types/database";
 
 interface VaultClientProps {
   breaks: DrumBreakWithStatus[];
   stats: { collected: number; total: number };
+  hasUsedTrial: boolean;
+  isLoggedIn: boolean;
 }
 
 export interface Toast {
@@ -18,10 +22,11 @@ export interface Toast {
   key: number;
 }
 
-export function VaultClient({ breaks: initialBreaks, stats: initialStats }: VaultClientProps) {
+export function VaultClient({ breaks: initialBreaks, stats: initialStats, hasUsedTrial, isLoggedIn }: VaultClientProps) {
   const [breaks, setBreaks] = useState<DrumBreakWithStatus[]>(initialBreaks);
   const [stats, setStats] = useState(initialStats);
   const [toast, setToast] = useState<Toast | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
 
   const showToast = useCallback((message: string, sub: string) => {
     setToast({ message, sub, key: Date.now() });
@@ -41,6 +46,17 @@ export function VaultClient({ breaks: initialBreaks, stats: initialStats }: Vaul
 
     try {
       const res = await fetch(`/api/drum-vault/${breakId}/collect`, { method: "POST" });
+
+      if (res.status === 403) {
+        // Not subscribed — revert and show modal
+        setBreaks((prev) =>
+          prev.map((b) => (b.id === breakId ? { ...b, is_collected: false } : b))
+        );
+        setStats((prev) => ({ ...prev, collected: prev.collected - 1 }));
+        setModalOpen(true);
+        return;
+      }
+
       if (!res.ok) throw new Error("Collect failed");
 
       const milestoneMsgs: Record<number, string> = {
@@ -54,7 +70,6 @@ export function VaultClient({ breaks: initialBreaks, stats: initialStats }: Vaul
         milestoneMsg ? "★ Milestone unlocked" : `${newCount} of ${stats.total} breaks collected`
       );
     } catch {
-      // Revert on failure
       setBreaks((prev) =>
         prev.map((b) => (b.id === breakId ? { ...b, is_collected: false } : b))
       );
@@ -75,6 +90,13 @@ export function VaultClient({ breaks: initialBreaks, stats: initialStats }: Vaul
       className="flex flex-col bg-[#0C0C0C] text-white"
       style={{ height: "100dvh", overflow: "hidden" }}
     >
+      {/* Back to catalog */}
+      <div className="flex-shrink-0 px-10 pt-4 max-w-[860px] mx-auto w-full">
+        <Link href="/feed" className="text-[11px] text-[#333] hover:text-white transition-colors flex items-center gap-1.5">
+          <span>←</span> Catalog
+        </Link>
+      </div>
+
       <VaultHero stats={stats} />
 
       <hr className="border-t border-[#141414] flex-shrink-0" />
@@ -111,6 +133,13 @@ export function VaultClient({ breaks: initialBreaks, stats: initialStats }: Vaul
           <div className="text-[11px] text-[#444] mt-0.5">{toast.sub}</div>
         </div>
       )}
+
+      <PremiumModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        hasUsedTrial={hasUsedTrial}
+        isLoggedIn={isLoggedIn}
+      />
     </div>
   );
 }
