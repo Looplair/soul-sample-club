@@ -12,6 +12,7 @@ import { HowItWorksSection } from "@/components/sections/HowItWorksSection";
 import { Button } from "@/components/ui";
 import { SubscribeCTA } from "@/components/ui/SubscribeCTA";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { VaultButton } from "@/components/vault/VaultButton";
 import { getNotificationsForUser } from "@/lib/notifications";
 import {
   Music,
@@ -233,6 +234,7 @@ export default async function HomePage() {
           <div className="flex items-center gap-2 sm:gap-3">
             {isLoggedIn ? (
               <>
+                <VaultButton />
                 {userId && (
                   <NotificationBell
                     userId={userId}
@@ -253,6 +255,7 @@ export default async function HomePage() {
               </>
             ) : (
               <>
+                <VaultButton />
                 <Link href="/login">
                   <Button variant="ghost" size="sm">
                     Log in

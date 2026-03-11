@@ -20,6 +20,7 @@ import { VoteBringBack } from "@/components/packs/VoteBringBack";
 import { DownloadAllButton } from "@/components/packs/DownloadAllButton";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { UserDropdown } from "@/components/layout/UserDropdown";
+import { VaultButton } from "@/components/vault/VaultButton";
 import { getNotificationsForUser } from "@/lib/notifications";
 import type { Pack, Sample, NotificationWithReadStatus, Profile } from "@/types/database";
 
@@ -303,6 +304,7 @@ export default async function PackDetailPage({
                     Catalog
                   </Button>
                 </Link>
+                <VaultButton />
                 <NotificationBell
                   userId={userId}
                   initialNotifications={notifications}

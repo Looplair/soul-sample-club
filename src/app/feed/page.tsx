@@ -13,6 +13,7 @@ import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { MetaPixelCheckoutSuccess } from "@/components/analytics/MetaPixelEvents";
 import { getNotificationsForUser } from "@/lib/notifications";
 import { Music, LogIn, Archive, User, Sparkles, RotateCcw, Trophy } from "lucide-react";
+import { VaultButton } from "@/components/vault/VaultButton";
 import type { Sample, Subscription, NotificationWithReadStatus } from "@/types/database";
 
 const bebasNeue = Bebas_Neue({ weight: "400", subsets: ["latin"], display: "swap" });
@@ -179,13 +180,7 @@ export default async function FeedPage() {
           <div className="flex items-center gap-2 sm:gap-3">
             {isLoggedIn && userId ? (
               <>
-                <Link
-                  href="/vault"
-                  className="flex items-center justify-center w-9 h-9 rounded-full text-text-muted hover:text-white hover:bg-grey-800 transition-all duration-200"
-                  title="Drum Vault"
-                >
-                  <Trophy className="w-4 h-4" />
-                </Link>
+                <VaultButton />
                 <NotificationBell
                   userId={userId}
                   initialNotifications={notifications}

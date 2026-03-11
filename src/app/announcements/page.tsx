@@ -7,6 +7,7 @@ import { ArrowLeft, Megaphone } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { UserDropdown } from "@/components/layout/UserDropdown";
+import { VaultButton } from "@/components/vault/VaultButton";
 import { getNotificationsForUser } from "@/lib/notifications";
 import type { Announcement, Profile } from "@/types/database";
 
@@ -74,6 +75,7 @@ export default async function AnnouncementsPage() {
             <Link href="/feed" className="hidden sm:block">
               <button className="btn-secondary text-sm px-4 py-2">Catalog</button>
             </Link>
+            <VaultButton />
             <NotificationBell userId={user.id} initialNotifications={notifications} initialUnreadCount={unreadCount} />
             {profile && (
               <UserDropdown

@@ -19,6 +19,7 @@ import {
   Monitor,
   Trophy,
 } from "lucide-react";
+import { VaultButton } from "@/components/vault/VaultButton";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { Dropdown } from "@/components/ui";
@@ -116,18 +117,7 @@ export function Navbar({ user, notifications = [], unreadCount = 0 }: NavbarProp
           {user && (
             <>
               {/* Vault icon */}
-              <Link
-                href="/vault"
-                className={cn(
-                  "flex items-center justify-center w-9 h-9 rounded-full transition-all duration-200",
-                  pathname === "/vault"
-                    ? "text-white bg-white/10"
-                    : "text-text-muted hover:text-white hover:bg-grey-800"
-                )}
-                title="Drum Vault"
-              >
-                <Trophy className="w-4 h-4" />
-              </Link>
+              <VaultButton />
               <NotificationBell
                 userId={user.id}
                 initialNotifications={notifications}
