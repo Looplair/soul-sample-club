@@ -17,6 +17,7 @@ import {
   ChevronDown,
   Library,
   Monitor,
+  Trophy,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
@@ -43,6 +44,7 @@ export function Navbar({ user, notifications = [], unreadCount = 0 }: NavbarProp
   const navLinks = [
     { href: "/feed", label: "Catalog", icon: LayoutGrid },
     { href: "/library", label: "Library", icon: Library },
+    { href: "/vault", label: "Drum Vault", icon: Trophy },
     { href: "/app", label: "App", icon: Monitor },
     { href: "/account", label: "Account", icon: User },
   ];
@@ -113,6 +115,19 @@ export function Navbar({ user, notifications = [], unreadCount = 0 }: NavbarProp
         <div className="flex items-center gap-2">
           {user && (
             <>
+              {/* Vault icon */}
+              <Link
+                href="/vault"
+                className={cn(
+                  "flex items-center justify-center w-9 h-9 rounded-full transition-all duration-200",
+                  pathname === "/vault"
+                    ? "text-white bg-white/10"
+                    : "text-text-muted hover:text-white hover:bg-grey-800"
+                )}
+                title="Drum Vault"
+              >
+                <Trophy className="w-4 h-4" />
+              </Link>
               <NotificationBell
                 userId={user.id}
                 initialNotifications={notifications}
