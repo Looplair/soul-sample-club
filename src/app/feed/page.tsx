@@ -4,6 +4,7 @@ export const revalidate = 0;
 import { Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { Bebas_Neue } from "next/font/google";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { PackCard } from "@/components/packs/PackCard";
@@ -11,8 +12,10 @@ import { Button } from "@/components/ui";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { MetaPixelCheckoutSuccess } from "@/components/analytics/MetaPixelEvents";
 import { getNotificationsForUser } from "@/lib/notifications";
-import { Music, LogIn, Archive, User, Sparkles, RotateCcw } from "lucide-react";
+import { Music, LogIn, Archive, User, Sparkles, RotateCcw, Trophy } from "lucide-react";
 import type { Sample, Subscription, NotificationWithReadStatus } from "@/types/database";
+
+const bebasNeue = Bebas_Neue({ weight: "400", subsets: ["latin"], display: "swap" });
 
 export const metadata = {
   title: "Catalog | Soul Sample Club",
@@ -176,6 +179,13 @@ export default async function FeedPage() {
           <div className="flex items-center gap-2 sm:gap-3">
             {isLoggedIn && userId ? (
               <>
+                <Link
+                  href="/vault"
+                  className="flex items-center justify-center w-9 h-9 rounded-full text-text-muted hover:text-white hover:bg-grey-800 transition-all duration-200"
+                  title="Drum Vault"
+                >
+                  <Trophy className="w-4 h-4" />
+                </Link>
                 <NotificationBell
                   userId={userId}
                   initialNotifications={notifications}
@@ -242,23 +252,50 @@ export default async function FeedPage() {
             )}
           </div>
 
-          {/* Drum Vault teaser — only show to authenticated users */}
+          {/* Drum Vault teaser */}
           {isLoggedIn && (
             <Link
               href="/vault"
-              className="block mb-8 group rounded-xl overflow-hidden border border-grey-700 hover:border-grey-600 transition-all bg-grey-800/30 hover:bg-grey-800/50"
+              className="block mb-10 group relative overflow-hidden rounded-2xl border border-[#1A1A1A] hover:border-[#2A2A2A] transition-all"
+              style={{ background: "linear-gradient(135deg, #0A0A0A 0%, #111 50%, #0A0A0A 100%)" }}
             >
-              <div className="flex items-center justify-between p-5">
-                <div>
-                  <div className="text-[11px] font-semibold uppercase tracking-widest text-text-muted mb-1">
-                    Members Exclusive
-                  </div>
-                  <div className="text-white font-bold text-lg tracking-tight">Drum Vault</div>
-                  <div className="text-text-muted text-sm mt-0.5">
-                    Members-only drum breaks — collect yours forever.
-                  </div>
+              {/* Ambient glow */}
+              <div
+                className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                style={{ background: "radial-gradient(ellipse 60% 60% at 50% 50%, rgba(255,255,255,0.03) 0%, transparent 100%)" }}
+              />
+
+              <div className="relative z-10 flex flex-col items-center justify-center text-center py-10 px-6">
+                {/* Label */}
+                <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#333] mb-3">
+                  Members Only
                 </div>
-                <div className="text-text-muted group-hover:text-white transition-colors text-xl">→</div>
+
+                {/* Big title */}
+                <div
+                  className={`${bebasNeue.className} leading-none mb-3`}
+                  style={{
+                    fontSize: "clamp(64px, 12vw, 112px)",
+                    letterSpacing: "0.04em",
+                    background: "linear-gradient(180deg, #fff 0%, #555 100%)",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                    backgroundClip: "text",
+                  }}
+                >
+                  Drum Vault
+                </div>
+
+                {/* Tagline */}
+                <p className="text-[12px] text-[#333] tracking-[0.08em] uppercase mb-5">
+                  Hand-picked drum breaks — collect yours forever
+                </p>
+
+                {/* CTA */}
+                <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#444] group-hover:text-white transition-colors duration-300">
+                  Enter The Vault
+                  <span className="text-[14px] group-hover:translate-x-1 transition-transform duration-200 inline-block">→</span>
+                </div>
               </div>
             </Link>
           )}
@@ -383,6 +420,10 @@ export default async function FeedPage() {
                 <Link href="/library" className="flex flex-col items-center gap-1 py-2 px-4 text-text-muted">
                   <Archive className="w-5 h-5" />
                   <span className="text-[10px]">Library</span>
+                </Link>
+                <Link href="/vault" className="flex flex-col items-center gap-1 py-2 px-4 text-text-muted">
+                  <Trophy className="w-5 h-5" />
+                  <span className="text-[10px]">Vault</span>
                 </Link>
                 <Link href="/account" className="flex flex-col items-center gap-1 py-2 px-4 text-text-muted">
                   <User className="w-5 h-5" />
