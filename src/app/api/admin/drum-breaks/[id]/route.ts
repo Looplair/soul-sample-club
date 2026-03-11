@@ -35,11 +35,21 @@ export async function PUT(request: NextRequest, { params }: Params) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
 
   const body = await request.json();
+  const { name, bpm, file_path, preview_path, is_exclusive, is_published } = body;
+
   const adminSupabase = createAdminClient();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (adminSupabase as any)
     .from("drum_breaks")
-    .update({ ...body, updated_at: new Date().toISOString() })
+    .update({
+      name,
+      bpm,
+      file_path,
+      preview_path,
+      is_exclusive,
+      is_published,
+      updated_at: new Date().toISOString(),
+    })
     .eq("id", id)
     .select()
     .single();

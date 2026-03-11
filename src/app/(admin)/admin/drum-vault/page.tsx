@@ -9,6 +9,7 @@ import {
 } from "@/components/ui";
 import { formatDate } from "@/lib/utils";
 import { DeleteDrumBreakButton } from "@/components/admin/DeleteDrumBreakButton";
+import { PublishDrumBreakButton } from "@/components/admin/PublishDrumBreakButton";
 
 export const metadata = {
   title: "Drum Vault | Soul Sample Club Admin",
@@ -140,6 +141,11 @@ export default async function AdminDrumVaultPage() {
 
                       <td>
                         <div className="flex items-center justify-end gap-8">
+                          <PublishDrumBreakButton
+                            breakId={drumBreak.id}
+                            isPublished={drumBreak.is_published}
+                          />
+
                           <Link href={`/admin/drum-vault/${drumBreak.id}`}>
                             <Button variant="ghost" size="sm">
                               <Edit className="w-4 h-4" />
