@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Music, Archive, User } from "lucide-react";
+import { Music, Archive, User, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function MobileBottomNav() {
@@ -11,6 +11,7 @@ export function MobileBottomNav() {
   const navItems = [
     { href: "/feed", label: "Catalog", icon: Music },
     { href: "/library", label: "Library", icon: Archive },
+    { href: "/vault", label: "Vault", icon: Trophy },
     { href: "/account", label: "Account", icon: User },
   ];
 
