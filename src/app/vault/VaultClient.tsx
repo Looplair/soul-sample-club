@@ -80,9 +80,24 @@ export function VaultClient({ breaks: initialBreaks, stats: initialStats, hasUse
   const handleDownload = useCallback(async (breakId: string) => {
     const res = await fetch(`/api/drum-vault/${breakId}/download`);
     if (!res.ok) return;
-    const { url } = await res.json();
+    const { url, fileName } = await res.json();
+
+    // Desktop app: use Electron's download handler so files save to the
+    // user's chosen folder instead of opening in the system browser
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (typeof window !== "undefined" && (window as any).sscDesktop) {
+      const drumBreak = breaks.find((b) => b.id === breakId);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (window as any).sscDesktop.downloadFile({
+        url,
+        packName: "Drum Vault",
+        fileName: fileName || (drumBreak ? `${drumBreak.name}.wav` : "break.wav"),
+      });
+      return;
+    }
+
     window.location.href = url;
-  }, []);
+  }, [breaks]);
 
   return (
     <div

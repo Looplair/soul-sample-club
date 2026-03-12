@@ -74,7 +74,7 @@ export async function GET(
       return NextResponse.json({ error: "Failed to generate download URL" }, { status: 500 });
     }
 
-    return NextResponse.json({ url: signedUrl.signedUrl });
+    return NextResponse.json({ url: signedUrl.signedUrl, fileName: originalFilename });
   } catch (error) {
     console.error("Vault download error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
