@@ -212,28 +212,12 @@ export default async function AppPage() {
           <div className="container-app">
             <div className="relative max-w-5xl mx-auto">
               {/* Screenshot Container */}
-              <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden bg-grey-800 border border-grey-700 shadow-2xl">
-                {/* Gradient background with placeholder */}
-                <div className="aspect-[16/10] bg-gradient-to-br from-grey-700 via-grey-800 to-grey-900">
-                  {/* Placeholder UI */}
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="text-center">
-                      <div className="w-16 h-16 mx-auto mb-4 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
-                        <svg
-                          viewBox="0 0 24 24"
-                          className="w-8 h-8 text-white/30"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="1.5"
-                        >
-                          <rect x="2" y="3" width="20" height="14" rx="2" />
-                          <path d="M8 21h8M12 17v4" />
-                        </svg>
-                      </div>
-                      <p className="text-white/30 text-sm">App screenshot</p>
-                    </div>
-                  </div>
-                </div>
+              <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden border border-grey-700 shadow-2xl">
+                <img
+                  src="/app screenshot.png"
+                  alt="Soul Sample Club app"
+                  className="w-full h-auto block"
+                />
               </div>
 
               {/* Decorative elements */}
