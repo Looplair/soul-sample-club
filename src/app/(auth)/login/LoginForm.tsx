@@ -77,24 +77,35 @@ export function LoginForm() {
     setError(null);
 
     try {
-      // In the desktop app, redirect back via the custom protocol so the
-      // browser hands control back to the app after Google sign-in.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const isDesktop = typeof window !== "undefined" && !!(window as any).sscDesktop;
-      const callbackBase = isDesktop
-        ? "soulsampleclub://auth/callback"
-        : `${window.location.origin}/callback`;
 
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: `${callbackBase}?redirect=${encodeURIComponent(redirect)}`,
-        },
-      });
-
-      if (error) {
-        setError(error.message);
-        setOauthLoading(null);
+      if (isDesktop) {
+        // Desktop app: get the OAuth URL from Supabase without redirecting the
+        // Electron window (skipBrowserRedirect keeps the window on the login page),
+        // then open it in the system browser via IPC. The browser completes sign-in
+        // and redirects to soulsampleclub:// which macOS routes back to the app.
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: "google",
+          options: {
+            redirectTo: `soulsampleclub://auth/callback?redirect=${encodeURIComponent(redirect)}`,
+            skipBrowserRedirect: true,
+          },
+        });
+        if (error) { setError(error.message); setOauthLoading(null); return; }
+        if (data.url) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (window as any).sscDesktop.openExternal(data.url);
+        }
+      } else {
+        // Normal web flow
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: "google",
+          options: {
+            redirectTo: `${window.location.origin}/callback?redirect=${encodeURIComponent(redirect)}`,
+          },
+        });
+        if (error) { setError(error.message); setOauthLoading(null); }
       }
     } catch {
       setError("An unexpected error occurred");
