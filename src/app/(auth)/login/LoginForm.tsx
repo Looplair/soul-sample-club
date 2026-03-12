@@ -84,18 +84,19 @@ export function LoginForm() {
         // Desktop app: get the OAuth URL from Supabase without redirecting the
         // Electron window (skipBrowserRedirect keeps the window on the login page),
         // then open it in the system browser via IPC. The browser completes sign-in
-        // and redirects to soulsampleclub:// which macOS routes back to the app.
+        // and redirects to http://127.0.0.1:34523/callback which the Electron
+        // local HTTP server catches and loads the real /callback in the app window.
         const { data, error } = await supabase.auth.signInWithOAuth({
           provider: "google",
           options: {
-            redirectTo: `soulsampleclub://auth/callback?redirect=${encodeURIComponent(redirect)}`,
+            redirectTo: `http://127.0.0.1:34523/callback?redirect=${encodeURIComponent(redirect)}`,
             skipBrowserRedirect: true,
           },
         });
         if (error) { setError(error.message); setOauthLoading(null); return; }
         if (data.url) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (window as any).sscDesktop.openExternal(data.url);
+          (window as any).sscDesktop.openExternalOAuth(data.url);
         }
       } else {
         // Normal web flow
