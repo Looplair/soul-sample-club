@@ -77,10 +77,18 @@ export function LoginForm() {
     setError(null);
 
     try {
+      // In the desktop app, redirect back via the custom protocol so the
+      // browser hands control back to the app after Google sign-in.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const isDesktop = typeof window !== "undefined" && !!(window as any).sscDesktop;
+      const callbackBase = isDesktop
+        ? "soulsampleclub://auth/callback"
+        : `${window.location.origin}/callback`;
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/callback?redirect=${encodeURIComponent(redirect)}`,
+          redirectTo: `${callbackBase}?redirect=${encodeURIComponent(redirect)}`,
         },
       });
 
