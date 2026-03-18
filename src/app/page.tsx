@@ -161,7 +161,7 @@ const features = [
 ];
 
 const stats = [
-  { value: "1500+", label: "members" },
+  { value: "2000+", label: "members" },
   { value: "$3.99", label: "/month" },
   { value: "0", label: "restrictions" },
 ];
