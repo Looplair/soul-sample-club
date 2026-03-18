@@ -345,12 +345,19 @@ export default async function HomePage() {
                   )}
                 </div>
 
-                {!isLoggedIn && (
+                {!hasSubscription && (
                   <p className="text-sm text-text-muted text-center lg:text-left">
                     or{" "}
-                    <Link href="/subscribe?plan=yearly" className="text-white underline hover:text-grey-200 transition-colors">
+                    <SubscribeCTA
+                      isLoggedIn={isLoggedIn}
+                      hasSubscription={hasSubscription}
+                      plan="yearly"
+                      variant="ghost"
+                      size="sm"
+                      className="!p-0 !h-auto !font-normal !text-sm text-white underline hover:text-grey-200 !bg-transparent !border-0 !rounded-none inline"
+                    >
                       $29/year and lock in your rate
-                    </Link>
+                    </SubscribeCTA>
                   </p>
                 )}
 

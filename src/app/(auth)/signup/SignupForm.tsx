@@ -32,6 +32,7 @@ const benefits = [
 export function SignupForm() {
   const searchParams = useSearchParams();
   const errorParam = searchParams.get("error");
+  const redirect = searchParams.get("redirect") || "";
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -75,7 +76,7 @@ export function SignupForm() {
           data: {
             full_name: fullName,
           },
-          emailRedirectTo: `${window.location.origin}/callback`,
+          emailRedirectTo: `${window.location.origin}/callback${redirect ? `?redirect=${encodeURIComponent(redirect)}` : ""}`,
         },
       });
 
@@ -102,7 +103,7 @@ export function SignupForm() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/callback`,
+          redirectTo: `${window.location.origin}/callback${redirect ? `?redirect=${encodeURIComponent(redirect)}` : ""}`,
         },
       });
 

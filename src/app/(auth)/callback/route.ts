@@ -68,7 +68,7 @@ export async function GET(request: Request) {
 
     // Get the user to check subscription status
     const { data: { user } } = await supabase.auth.getUser();
-    let finalRedirectUrl = `${origin}/subscribe`;
+    let finalRedirectUrl = `${origin}${next.startsWith("/") ? next : "/subscribe"}`;
 
     if (user) {
       // Check for existing subscription
