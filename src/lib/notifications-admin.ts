@@ -73,6 +73,32 @@ export async function notifyNewTrial(params: {
 }
 
 /**
+ * Notify when someone subscribes to the annual plan
+ */
+export async function notifyNewAnnualSubscriber(params: {
+  email: string;
+  name?: string | null;
+}): Promise<boolean> {
+  const { email, name } = params;
+
+  return sendAdminEmail({
+    subject: `🌟 New Annual Subscriber: ${name || email}`,
+    html: `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 20px;">
+        <h2 style="color: #1a1a1a; margin-bottom: 20px;">New Annual Subscriber</h2>
+        <p style="color: #333; font-size: 16px; margin-bottom: 10px;">
+          <strong>Email:</strong> ${email}
+        </p>
+        ${name ? `<p style="color: #333; font-size: 16px; margin-bottom: 10px;"><strong>Name:</strong> ${name}</p>` : ""}
+        <p style="color: #666; font-size: 14px; margin-top: 20px;">
+          They just locked in the $29/year introductory rate! 💎
+        </p>
+      </div>
+    `,
+  });
+}
+
+/**
  * Notify when someone converts from trial to paid
  */
 export async function notifyTrialConverted(params: {

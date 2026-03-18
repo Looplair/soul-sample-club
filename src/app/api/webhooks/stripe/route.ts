@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import Stripe from "stripe";
-import { stripe } from "@/lib/stripe";
+import { stripe, STRIPE_YEARLY_PRICE_ID } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { syncUserToKlaviyo } from "@/lib/klaviyo";
 import { sendStartTrialEvent } from "@/lib/meta-conversions";
-import { notifyNewTrial, notifyTrialConverted } from "@/lib/notifications-admin";
+import { notifyNewTrial, notifyNewAnnualSubscriber, notifyTrialConverted } from "@/lib/notifications-admin";
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
@@ -139,11 +139,19 @@ export async function POST(request: Request) {
               firstName: profileData.full_name?.split(" ")[0],
             }).catch((err) => console.error("Meta Conversions API error:", err));
 
-            // Notify admin of new subscription
-            notifyNewTrial({
-              email: profileData.email,
-              name: profileData.full_name,
-            }).catch((err) => console.error("Admin notification error:", err));
+            // Notify admin of new subscription (annual vs monthly)
+            const isAnnual = subscription.items.data[0]?.price.id === STRIPE_YEARLY_PRICE_ID;
+            if (isAnnual) {
+              notifyNewAnnualSubscriber({
+                email: profileData.email,
+                name: profileData.full_name,
+              }).catch((err) => console.error("Admin notification error:", err));
+            } else {
+              notifyNewTrial({
+                email: profileData.email,
+                name: profileData.full_name,
+              }).catch((err) => console.error("Admin notification error:", err));
+            }
           }
         }
         break;
