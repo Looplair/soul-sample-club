@@ -234,38 +234,28 @@ export default async function FeedPage() {
 
             {/* Subscribe Banner - for non-subscribed users */}
             {isLoggedIn && !hasAccess && (
-              <div className="mt-6 flex flex-col sm:flex-row items-center gap-3">
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20">
-                  <Sparkles className="w-4 h-4 text-white" />
-                  <span className="text-sm text-white">
-                    {hasUsedTrial
-                      ? "Subscribe to download all packs"
-                      : "Subscribe to download, first month $0.99"}
-                  </span>
-                  <SubscribeCTA
-                    isLoggedIn={isLoggedIn}
-                    hasSubscription={hasAccess}
-                    plan="monthly"
-                    variant="ghost"
-                    size="sm"
-                    className="!p-0 !h-auto !font-normal !text-sm text-white underline hover:no-underline !bg-transparent !border-0 !rounded-none ml-1 inline"
-                  >
-                    Subscribe →
-                  </SubscribeCTA>
-                </div>
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10">
-                  <span className="text-sm text-text-muted">or lock in</span>
-                  <SubscribeCTA
-                    isLoggedIn={isLoggedIn}
-                    hasSubscription={hasAccess}
-                    plan="yearly"
-                    variant="ghost"
-                    size="sm"
-                    className="!p-0 !h-auto !font-normal !text-sm text-white underline hover:no-underline !bg-transparent !border-0 !rounded-none inline"
-                  >
-                    $29/year →
-                  </SubscribeCTA>
-                </div>
+              <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+                <SubscribeCTA
+                  isLoggedIn={isLoggedIn}
+                  hasSubscription={hasAccess}
+                  plan="monthly"
+                  variant="secondary"
+                  size="sm"
+                  className="rounded-full"
+                >
+                  <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+                  {hasUsedTrial ? "Subscribe to download" : "First month $0.99"}
+                </SubscribeCTA>
+                <SubscribeCTA
+                  isLoggedIn={isLoggedIn}
+                  hasSubscription={hasAccess}
+                  plan="yearly"
+                  variant="ghost"
+                  size="sm"
+                  className="rounded-full border border-white/20 hover:border-white/40"
+                >
+                  $29/year — lock in your rate
+                </SubscribeCTA>
               </div>
             )}
           </div>
