@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Loader2 } from "lucide-react";
 
-export default function SubscribePage() {
+function SubscribeContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const plan = searchParams.get("plan") === "yearly" ? "yearly" : "monthly";
   const [status, setStatus] = useState<"loading" | "redirecting" | "error">("loading");
   const [errorMessage, setErrorMessage] = useState<string>("");
 
@@ -14,16 +16,13 @@ export default function SubscribePage() {
     async function initiateCheckout() {
       const supabase = createClient();
 
-      // Check if user is logged in
       const { data: { user } } = await supabase.auth.getUser();
 
       if (!user) {
-        // Not logged in - redirect to login with return URL
-        router.push("/login?redirect=/subscribe");
+        router.push(`/login?redirect=/subscribe${plan === "yearly" ? "?plan=yearly" : ""}`);
         return;
       }
 
-      // Check if user already has a subscription
       const { data: subscription } = await supabase
         .from("subscriptions")
         .select("status")
@@ -32,26 +31,22 @@ export default function SubscribePage() {
         .single();
 
       if (subscription) {
-        // Already subscribed - go to feed
         router.push("/feed");
         return;
       }
 
-      // Create checkout session
       setStatus("redirecting");
 
       try {
         const response = await fetch("/api/create-checkout-session", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ plan }),
         });
 
         const data = await response.json();
 
         if (data.url) {
-          // Redirect to Stripe checkout
           window.location.href = data.url;
         } else {
           setStatus("error");
@@ -65,7 +60,7 @@ export default function SubscribePage() {
     }
 
     initiateCheckout();
-  }, [router]);
+  }, [router, plan]);
 
   return (
     <div className="min-h-screen bg-charcoal flex items-center justify-center">
@@ -76,14 +71,12 @@ export default function SubscribePage() {
             <p className="text-snow">Checking your account...</p>
           </>
         )}
-
         {status === "redirecting" && (
           <>
             <Loader2 className="w-8 h-8 text-velvet animate-spin mx-auto mb-4" />
             <p className="text-snow">Taking you to checkout...</p>
           </>
         )}
-
         {status === "error" && (
           <>
             <p className="text-red-400 mb-4">{errorMessage}</p>
@@ -97,5 +90,17 @@ export default function SubscribePage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function SubscribePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-charcoal flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-velvet animate-spin" />
+      </div>
+    }>
+      <SubscribeContent />
+    </Suspense>
   );
 }

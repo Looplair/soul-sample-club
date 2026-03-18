@@ -345,6 +345,15 @@ export default async function HomePage() {
                   )}
                 </div>
 
+                {!isLoggedIn && (
+                  <p className="text-sm text-text-muted text-center lg:text-left">
+                    or{" "}
+                    <Link href="/subscribe?plan=yearly" className="text-white underline hover:text-grey-200 transition-colors">
+                      $29/year and lock in your rate
+                    </Link>
+                  </p>
+                )}
+
                 {/* Stats */}
                 <div className="flex items-center justify-center lg:justify-start gap-8 pt-4">
                   {stats.map((stat) => (
