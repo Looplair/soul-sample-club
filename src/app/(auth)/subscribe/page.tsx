@@ -19,7 +19,8 @@ function SubscribeContent() {
       const { data: { user } } = await supabase.auth.getUser();
 
       if (!user) {
-        router.push(`/login?redirect=/subscribe${plan === "yearly" ? "?plan=yearly" : ""}`);
+        const redirectTo = plan === "yearly" ? "/subscribe?plan=yearly" : "/subscribe";
+        router.push(`/login?redirect=${encodeURIComponent(redirectTo)}`);
         return;
       }
 
