@@ -219,11 +219,13 @@ function BillingTab({ subscription, patreonLink }: { subscription: Subscription 
     }
   };
 
-  const handleSubscribe = async () => {
+  const handleSubscribe = async (plan: "monthly" | "yearly" = "monthly") => {
     setIsLoading(true);
     try {
       const response = await fetch("/api/create-checkout-session", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan }),
       });
       const data = await response.json();
       if (data.url) {
@@ -410,7 +412,7 @@ function BillingTab({ subscription, patreonLink }: { subscription: Subscription 
                 </Button>
                 {!isStripeActive && (
                   <Button
-                    onClick={handleSubscribe}
+                    onClick={() => handleSubscribe("monthly")}
                     isLoading={isLoading}
                   >
                     Subscribe Again
@@ -438,9 +440,18 @@ function BillingTab({ subscription, patreonLink }: { subscription: Subscription 
               <p className="text-sm text-text-muted mb-4">
                 You don&apos;t have an active subscription.
               </p>
-              <Button onClick={handleSubscribe} isLoading={isLoading}>
-                Subscribe to Download
-              </Button>
+              <div className="flex flex-col items-center gap-2">
+                <Button onClick={() => handleSubscribe("monthly")} isLoading={isLoading}>
+                  Subscribe to Download
+                </Button>
+                <button
+                  onClick={() => handleSubscribe("yearly")}
+                  disabled={isLoading}
+                  className="text-sm text-text-muted hover:text-white underline transition-colors disabled:opacity-50"
+                >
+                  or $29/year — lock in your rate
+                </button>
+              </div>
             </div>
           )}
         </CardContent>

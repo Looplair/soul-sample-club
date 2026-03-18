@@ -15,6 +15,7 @@ import { Button } from "@/components/ui";
 import { Badge } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import { SubscribeButton } from "@/components/subscription/SubscribeButton";
+import { SubscribeCTA } from "@/components/ui/SubscribeCTA";
 import { ShareButtonsInline } from "@/components/social/ShareButtons";
 import { VoteBringBack } from "@/components/packs/VoteBringBack";
 import { DownloadAllButton } from "@/components/packs/DownloadAllButton";
@@ -582,7 +583,20 @@ export default async function PackDetailPage({
                         </p>
                       </div>
                     </div>
-                    <SubscribeButton />
+                    <div className="flex flex-col items-end gap-1.5">
+                          <SubscribeButton />
+                          <SubscribeCTA
+                            isLoggedIn={true}
+                            hasSubscription={false}
+                            plan="yearly"
+                            variant="ghost"
+                            size="sm"
+                            hideArrow
+                            className="text-xs text-text-muted hover:text-white underline !bg-transparent !border-0 !p-0 !h-auto"
+                          >
+                            or $29/year
+                          </SubscribeCTA>
+                        </div>
                   </div>
                 </div>
               ) : (

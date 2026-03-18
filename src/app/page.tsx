@@ -321,11 +321,16 @@ export default async function HomePage() {
                         </Button>
                       </a>
                       {!hasSubscription && (
-                        <Link href="/account?tab=billing">
-                          <Button variant="secondary" size="lg" className="w-full sm:w-auto">
-                            Subscribe now
-                          </Button>
-                        </Link>
+                        <SubscribeCTA
+                          isLoggedIn={isLoggedIn}
+                          hasSubscription={hasSubscription}
+                          plan="monthly"
+                          variant="secondary"
+                          size="lg"
+                          className="w-full sm:w-auto"
+                        >
+                          {hasUsedTrial ? "Subscribe now" : "Start for $0.99"}
+                        </SubscribeCTA>
                       )}
                     </>
                   ) : (
@@ -354,6 +359,7 @@ export default async function HomePage() {
                       plan="yearly"
                       variant="ghost"
                       size="sm"
+                      hideArrow
                       className="!p-0 !h-auto !font-normal !text-sm text-white underline hover:text-grey-200 !bg-transparent !border-0 !rounded-none inline"
                     >
                       $29/year and lock in your rate
@@ -702,13 +708,27 @@ export default async function HomePage() {
                       : "Start today, first month $0.99, then $3.99/month."}
                   </p>
                 </div>
-                <SubscribeCTA
-                  isLoggedIn={isLoggedIn}
-                  hasSubscription={hasSubscription}
-                  size="md"
-                >
-                  Subscribe now
-                </SubscribeCTA>
+                <div className="flex flex-col sm:flex-row gap-2 items-center">
+                  <SubscribeCTA
+                    isLoggedIn={isLoggedIn}
+                    hasSubscription={hasSubscription}
+                    plan="monthly"
+                    size="md"
+                  >
+                    {hasUsedTrial ? "Subscribe now" : "Start for $0.99"}
+                  </SubscribeCTA>
+                  <SubscribeCTA
+                    isLoggedIn={isLoggedIn}
+                    hasSubscription={hasSubscription}
+                    plan="yearly"
+                    variant="ghost"
+                    size="sm"
+                    hideArrow
+                    className="text-text-muted hover:text-white underline text-sm !bg-transparent !border-0"
+                  >
+                    or $29/year
+                  </SubscribeCTA>
+                </div>
               </div>
             </div>
           </section>

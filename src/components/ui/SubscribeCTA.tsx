@@ -13,6 +13,7 @@ interface SubscribeCTAProps {
   variant?: "primary" | "secondary" | "ghost";
   children?: React.ReactNode;
   plan?: "monthly" | "yearly";
+  hideArrow?: boolean;
 }
 
 export function SubscribeCTA({
@@ -23,6 +24,7 @@ export function SubscribeCTA({
   variant = "primary",
   children,
   plan = "monthly",
+  hideArrow = false,
 }: SubscribeCTAProps) {
   const [isLoading, setIsLoading] = useState(false);
 
@@ -40,7 +42,7 @@ export function SubscribeCTA({
       <Link href={signupHref}>
         <Button className={className} size={size} variant={variant}>
           {children || "Start for $0.99"}
-          <ArrowRight className="w-4 h-4 ml-2" />
+          {!hideArrow && <ArrowRight className="w-4 h-4 ml-2" />}
         </Button>
       </Link>
     );
@@ -81,7 +83,7 @@ export function SubscribeCTA({
       ) : (
         <>
           {children || "Subscribe to download"}
-          <ArrowRight className="w-4 h-4 ml-2" />
+          {!hideArrow && <ArrowRight className="w-4 h-4 ml-2" />}
         </>
       )}
     </Button>

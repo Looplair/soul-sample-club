@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
-import { X, Download, Music2, Sparkles, Check } from "lucide-react";
+import { useEffect, useState } from "react";
+import { X, Download, Sparkles, Check, Loader2 } from "lucide-react";
 import Link from "next/link";
 
 interface PremiumModalProps {
@@ -12,7 +12,9 @@ interface PremiumModalProps {
 }
 
 export function PremiumModal({ isOpen, onClose, hasUsedTrial, isLoggedIn }: PremiumModalProps) {
-  // Close on escape key
+  const [monthlyLoading, setMonthlyLoading] = useState(false);
+  const [yearlyLoading, setYearlyLoading] = useState(false);
+
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -21,7 +23,6 @@ export function PremiumModal({ isOpen, onClose, hasUsedTrial, isLoggedIn }: Prem
     return () => document.removeEventListener("keydown", handleKey);
   }, [isOpen, onClose]);
 
-  // Prevent body scroll when open
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
@@ -30,6 +31,23 @@ export function PremiumModal({ isOpen, onClose, hasUsedTrial, isLoggedIn }: Prem
     }
     return () => { document.body.style.overflow = ""; };
   }, [isOpen]);
+
+  const handleCheckout = async (plan: "monthly" | "yearly") => {
+    const setLoading = plan === "monthly" ? setMonthlyLoading : setYearlyLoading;
+    setLoading(true);
+    try {
+      const response = await fetch("/api/create-checkout-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan }),
+      });
+      const data = await response.json();
+      if (data.url) window.location.href = data.url;
+    } catch (err) {
+      console.error("Checkout error:", err);
+      setLoading(false);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -87,13 +105,28 @@ export function PremiumModal({ isOpen, onClose, hasUsedTrial, isLoggedIn }: Prem
           {/* CTAs */}
           <div className="space-y-3">
             {isLoggedIn ? (
-              <Link
-                href="/subscribe"
-                className="flex items-center justify-center gap-2 w-full px-6 py-3.5 bg-white text-black font-semibold rounded-xl hover:bg-grey-100 transition-colors"
-              >
-                <Sparkles className="w-4 h-4" />
-                {hasUsedTrial ? "Subscribe Now" : "Start For $0.99"}
-              </Link>
+              <>
+                <button
+                  onClick={() => handleCheckout("monthly")}
+                  disabled={monthlyLoading || yearlyLoading}
+                  className="flex items-center justify-center gap-2 w-full px-6 py-3.5 bg-white text-black font-semibold rounded-xl hover:bg-grey-100 transition-colors disabled:opacity-60"
+                >
+                  {monthlyLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="w-4 h-4" />
+                  )}
+                  {hasUsedTrial ? "Subscribe Now" : "Start For $0.99"}
+                </button>
+                <button
+                  onClick={() => handleCheckout("yearly")}
+                  disabled={monthlyLoading || yearlyLoading}
+                  className="flex items-center justify-center gap-2 w-full px-6 py-3 text-text-muted text-sm hover:text-white transition-colors disabled:opacity-60"
+                >
+                  {yearlyLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  or $29/year — lock in your rate
+                </button>
+              </>
             ) : (
               <>
                 <Link
@@ -104,8 +137,14 @@ export function PremiumModal({ isOpen, onClose, hasUsedTrial, isLoggedIn }: Prem
                   Start For $0.99
                 </Link>
                 <Link
-                  href="/login"
+                  href={`/signup?redirect=${encodeURIComponent("/subscribe?plan=yearly")}`}
                   className="flex items-center justify-center w-full px-6 py-3 text-text-muted text-sm hover:text-white transition-colors"
+                >
+                  or $29/year — lock in your rate
+                </Link>
+                <Link
+                  href="/login"
+                  className="flex items-center justify-center w-full px-6 py-2 text-text-subtle text-xs hover:text-text-muted transition-colors"
                 >
                   Already have an account? Log in
                 </Link>
