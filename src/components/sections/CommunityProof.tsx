@@ -11,7 +11,7 @@ import { X } from "lucide-react";
 const BADGE_TEXT = "ACTIVE COMMUNITY";
 
 // The target count (static for now, can be wired to real data later)
-const TARGET_COUNT = 1500;
+const TARGET_COUNT = 2000;
 
 // Membership cap
 const MEMBERSHIP_CAP = 5000;
