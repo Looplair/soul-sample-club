@@ -12,6 +12,7 @@ interface SubscribeCTAProps {
   size?: "sm" | "md" | "lg";
   variant?: "primary" | "secondary" | "ghost";
   children?: React.ReactNode;
+  plan?: "monthly" | "yearly";
 }
 
 export function SubscribeCTA({
@@ -21,6 +22,7 @@ export function SubscribeCTA({
   size = "lg",
   variant = "primary",
   children,
+  plan = "monthly",
 }: SubscribeCTAProps) {
   const [isLoading, setIsLoading] = useState(false);
 
@@ -47,6 +49,8 @@ export function SubscribeCTA({
     try {
       const response = await fetch("/api/create-checkout-session", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan }),
       });
       const data = await response.json();
       if (data.url) {

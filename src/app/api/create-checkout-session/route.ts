@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
-import { stripe, STRIPE_PRICE_ID } from "@/lib/stripe";
+import { stripe, STRIPE_PRICE_ID, STRIPE_YEARLY_PRICE_ID } from "@/lib/stripe";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-export async function POST() {
+export async function POST(request: Request) {
+  const body = await request.json().catch(() => ({}));
+  const plan: "monthly" | "yearly" = body.plan === "yearly" ? "yearly" : "monthly";
+
   try {
     const supabase = await createClient();
     const adminSupabase = createAdminClient();
@@ -133,15 +136,13 @@ export async function POST() {
       payment_method_types: ["card"],
       line_items: [
         {
-          price: STRIPE_PRICE_ID,
+          price: plan === "yearly" ? STRIPE_YEARLY_PRICE_ID : STRIPE_PRICE_ID,
           quantity: 1,
         },
       ],
-      discounts: [
-        {
-          coupon: "cvoilDO6", // $0.99 first month ($3.00 off)
-        },
-      ],
+      ...(plan === "monthly" && {
+        discounts: [{ coupon: "cvoilDO6" }],
+      }),
       subscription_data: subscriptionData,
       success_url: `${process.env.NEXT_PUBLIC_APP_URL}/feed?success=true`,
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/feed?canceled=true`,
@@ -151,7 +152,9 @@ export async function POST() {
       billing_address_collection: "auto",
       custom_text: {
         submit: {
-          message: "Your first month is $0.99, then $3.99/month. Cancel anytime.",
+          message: plan === "yearly"
+            ? "Annual membership. No refunds on annual plans."
+            : "Your first month is $0.99, then $3.99/month. Cancel anytime.",
         },
       },
     });
