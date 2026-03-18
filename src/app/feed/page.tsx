@@ -14,6 +14,7 @@ import { MetaPixelCheckoutSuccess } from "@/components/analytics/MetaPixelEvents
 import { getNotificationsForUser } from "@/lib/notifications";
 import { Music, LogIn, Archive, User, Sparkles, RotateCcw, Trophy } from "lucide-react";
 import { VaultButton } from "@/components/vault/VaultButton";
+import { SubscribeCTA } from "@/components/ui/SubscribeCTA";
 import type { Sample, Subscription, NotificationWithReadStatus } from "@/types/database";
 
 const bebasNeue = Bebas_Neue({ weight: "400", subsets: ["latin"], display: "swap" });
@@ -233,16 +234,38 @@ export default async function FeedPage() {
 
             {/* Subscribe Banner - for non-subscribed users */}
             {isLoggedIn && !hasAccess && (
-              <div className="mt-6 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20">
-                <Sparkles className="w-4 h-4 text-white" />
-                <span className="text-sm text-white">
-                  {hasUsedTrial
-                    ? "Subscribe to download all packs"
-                    : "Subscribe to download, first month $0.99"}
-                </span>
-                <Link href="/account?tab=billing" className="text-sm text-white underline hover:no-underline ml-1">
-                  Subscribe →
-                </Link>
+              <div className="mt-6 flex flex-col sm:flex-row items-center gap-3">
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20">
+                  <Sparkles className="w-4 h-4 text-white" />
+                  <span className="text-sm text-white">
+                    {hasUsedTrial
+                      ? "Subscribe to download all packs"
+                      : "Subscribe to download, first month $0.99"}
+                  </span>
+                  <SubscribeCTA
+                    isLoggedIn={isLoggedIn}
+                    hasSubscription={hasAccess}
+                    plan="monthly"
+                    variant="ghost"
+                    size="sm"
+                    className="!p-0 !h-auto !font-normal !text-sm text-white underline hover:no-underline !bg-transparent !border-0 !rounded-none ml-1 inline"
+                  >
+                    Subscribe →
+                  </SubscribeCTA>
+                </div>
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10">
+                  <span className="text-sm text-text-muted">or lock in</span>
+                  <SubscribeCTA
+                    isLoggedIn={isLoggedIn}
+                    hasSubscription={hasAccess}
+                    plan="yearly"
+                    variant="ghost"
+                    size="sm"
+                    className="!p-0 !h-auto !font-normal !text-sm text-white underline hover:no-underline !bg-transparent !border-0 !rounded-none inline"
+                  >
+                    $29/year →
+                  </SubscribeCTA>
+                </div>
               </div>
             )}
           </div>

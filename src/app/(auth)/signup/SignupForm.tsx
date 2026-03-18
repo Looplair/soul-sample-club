@@ -293,7 +293,7 @@ export function SignupForm() {
 
       <p className="text-center text-body text-text-muted">
         Already have an account?{" "}
-        <Link href="/login" className="text-white hover:underline transition-colors">
+        <Link href={redirect ? `/login?redirect=${encodeURIComponent(redirect)}` : "/login"} className="text-white hover:underline transition-colors">
           Sign in
         </Link>
       </p>
