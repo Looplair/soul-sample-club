@@ -138,6 +138,9 @@ function isArchived(pack: PackWithSamples): boolean {
   if (pack.is_returned) {
     return pack.end_date ? new Date() > new Date(pack.end_date) : false;
   }
+  if (pack.end_date && new Date() > new Date(pack.end_date)) {
+    return true;
+  }
   const threeMonthsAgo = new Date();
   threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
   return new Date(pack.release_date) < threeMonthsAgo;

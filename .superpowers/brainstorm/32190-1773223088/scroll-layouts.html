@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scroll Layout Options</title>
+<script src="/helper.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0C0C0C; color: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    padding: 32px 28px 80px;
+    max-width: 960px; margin: 0 auto;
+  }
+  h2 { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+  .subtitle { color: #444; font-size: 13px; margin-bottom: 40px; line-height: 1.6; }
+
+  /* ─── OPTIONS ─── */
+  .options { display: flex; flex-direction: column; gap: 28px; }
+
+  .option {
+    border: 2px solid #1E1E1E; border-radius: 16px; overflow: hidden;
+    cursor: pointer; transition: border-color 0.2s, transform 0.15s;
+  }
+  .option:hover { border-color: #3A3A3A; transform: translateY(-2px); }
+  .option.selected { border-color: #fff; }
+
+  .opt-label {
+    padding: 16px 20px 12px;
+    display: flex; align-items: center; gap: 12px;
+    background: #141414;
+    border-bottom: 1px solid #1E1E1E;
+  }
+  .opt-letter {
+    width: 26px; height: 26px; border-radius: 50%; background: #fff; color: #000;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 12px; flex-shrink: 0;
+  }
+  .opt-title { font-size: 16px; font-weight: 700; }
+  .opt-desc { font-size: 12px; color: #555; margin-top: 2px; }
+
+  .preview-frame { background: #0A0A0A; padding: 20px; overflow: hidden; }
+
+  /* ═══ OPTION A: Horizontal Shelves ═══ */
+  .shelf { margin-bottom: 20px; }
+  .shelf:last-child { margin-bottom: 0; }
+  .shelf-header {
+    display: flex; align-items: baseline; gap-10px;
+    margin-bottom: 10px;
+    justify-content: space-between;
+  }
+  .shelf-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: #333; }
+  .shelf-new { font-size: 10px; color: #22c55e; letter-spacing: 0.08em; font-weight: 600; }
+  .shelf-scroll {
+    display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px;
+    /* show cards are horizontally scrollable */
+    -ms-overflow-style: none; scrollbar-width: none;
+  }
+  .shelf-scroll::-webkit-scrollbar { display: none; }
+  .shelf-card {
+    flex-shrink: 0; width: 150px;
+    background: #141414; border: 1px solid #1E1E1E; border-radius: 10px;
+    padding: 11px 10px; display: flex; flex-direction: column; gap: 6px;
+  }
+  .sc-name { font-size: 11px; font-weight: 600; color: #ccc; }
+  .sc-bpm { font-size: 10px; color: #2E2E2E; }
+  .sc-wf { height: 22px; display: flex; align-items: center; overflow: hidden; }
+  .sc-bar { width: 2px; background: #252525; border-radius: 0; flex-shrink: 0; }
+  .sc-collect { font-size: 10px; color: #3A3A3A; border: 1px solid #1E1E1E; border-radius: 5px; padding: 4px 0; text-align: center; font-weight: 600; }
+  .sc-collect.done { color: #22c55e; border-color: #22c55e1A; }
+  .scroll-hint { font-size: 10px; color: #333; margin-top: 6px; letter-spacing: 0.06em; }
+
+  /* ═══ OPTION B: Cinematic Vertical Rows ═══ */
+  .cine-row {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 0; border-bottom: 1px solid #161616;
+  }
+  .cine-row:last-child { border-bottom: none; }
+  .cine-num { font-size: 22px; font-weight: 800; color: #1E1E1E; width: 36px; flex-shrink: 0; letter-spacing: -0.03em; }
+  .cine-info { width: 110px; flex-shrink: 0; }
+  .cine-name { font-size: 12px; font-weight: 600; color: #ccc; line-height: 1.3; }
+  .cine-bpm  { font-size: 10px; color: #2E2E2E; margin-top: 2px; }
+  .cine-wf { flex: 1; height: 44px; display: flex; align-items: center; overflow: hidden; }
+  .cine-bar { width: 3px; background: #1E1E1E; border-radius: 0; flex-shrink: 0; }
+  .cine-btn {
+    flex-shrink: 0; padding: 7px 16px; border-radius: 7px;
+    border: 1px solid #1E1E1E; background: transparent;
+    color: #444; font-size: 11px; font-weight: 600;
+  }
+  .cine-btn.done { color: #22c55e; border-color: #22c55e1A; }
+  /* focal row — slightly highlighted */
+  .cine-row.focal { background: #111; border-radius: 10px; margin: 0 -8px; padding: 14px 8px; border-bottom: none; }
+  .cine-row.focal .cine-num { color: #383838; }
+  .cine-row.focal .cine-bar { background: #2A2A2A; }
+  .cine-row.focal .cine-name { color: #fff; }
+
+  /* ═══ OPTION C: Staggered Parallax Grid ═══ */
+  .para-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    position: relative;
+  }
+  .para-col { display: flex; flex-direction: column; gap: 8px; }
+  /* each column offset vertically to create stagger */
+  .para-col:nth-child(2) { margin-top: 24px; }
+  .para-col:nth-child(3) { margin-top: 12px; }
+  .para-card {
+    background: #131313; border: 1px solid #1E1E1E; border-radius: 11px;
+    padding: 12px 10px; display: flex; flex-direction: column; gap: 7px;
+  }
+  .para-name { font-size: 11px; font-weight: 600; color: #bbb; line-height: 1.3; }
+  .para-bpm  { font-size: 10px; color: #2A2A2A; }
+  .para-wf   { height: 26px; display: flex; align-items: center; overflow: hidden; }
+  .para-bar  { width: 2.5px; background: #202020; border-radius: 0; flex-shrink: 0; }
+  .para-btn  { font-size: 10px; color: #333; border: 1px solid #1A1A1A; border-radius: 5px; padding: 4px 0; text-align: center; font-weight: 600; }
+  .para-btn.done { color: #22c55e; border-color: #22c55e18; }
+  .para-scroll-note { font-size: 10px; color: #2E2E2E; text-align: center; margin-top: 6px; letter-spacing: 0.08em; }
+
+  /* floating bg element — simulates parallax layer */
+  .para-bg-layer {
+    position: absolute; top: -10px; right: -20px;
+    width: 120px; height: 120px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,255,255,0.025) 0%, transparent 70%);
+    pointer-events: none;
+    animation: para-float 4s ease-in-out infinite alternate;
+  }
+  @keyframes para-float { from{transform:translateY(0)} to{transform:translateY(-16px)} }
+</style>
+</head>
+<body>
+
+<h2>Scroll Layout — Which direction?</h2>
+<p class="subtitle">All three use the same v6 card design. The difference is how you move through them.<br>Click to select your preferred scroll feel.</p>
+
+<div class="options">
+
+  <!-- OPTION A -->
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="opt-label">
+      <div class="opt-letter">A</div>
+      <div>
+        <div class="opt-title">Horizontal Shelves — Apple Music style</div>
+        <div class="opt-desc">Loops grouped by drop date. Scroll DOWN the page, swipe RIGHT within each shelf row. Familiar, effortless.</div>
+      </div>
+    </div>
+    <div class="preview-frame">
+      <div class="shelf">
+        <div class="shelf-header">
+          <span class="shelf-title">March 2026</span>
+          <span class="shelf-new">↑ 3 new</span>
+        </div>
+        <div class="shelf-scroll" id="shelf1"></div>
+        <div class="scroll-hint">← swipe →</div>
+      </div>
+      <div class="shelf">
+        <div class="shelf-header">
+          <span class="shelf-title">January 2026</span>
+        </div>
+        <div class="shelf-scroll" id="shelf2"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OPTION B -->
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="opt-label">
+      <div class="opt-letter">B</div>
+      <div>
+        <div class="opt-title">Cinematic Vertical Rows — full-width waveform</div>
+        <div class="opt-desc">Each loop is a tall full-width row. The waveform is the star — wide and prominent. The focused row is slightly brighter as you scroll past it.</div>
+      </div>
+    </div>
+    <div class="preview-frame">
+      <div id="cine-list"></div>
+    </div>
+  </div>
+
+  <!-- OPTION C -->
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="opt-label">
+      <div class="opt-letter">C</div>
+      <div>
+        <div class="opt-title">Staggered Parallax Grid — columns offset + floating depth layer</div>
+        <div class="opt-desc">3 columns, each offset vertically. Background glow layer drifts at a different speed than cards as you scroll — creates depth. Feels alive.</div>
+      </div>
+    </div>
+    <div class="preview-frame" style="position:relative;overflow:hidden;">
+      <div class="para-bg-layer"></div>
+      <div class="para-grid" id="para-grid"></div>
+      <div class="para-scroll-note" style="margin-top:14px;">↑ columns stagger vertically · background drifts at different speed</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function lcg(seed){let s=seed;return()=>{s=(s*1664525+1013904223)&0x7fffffff;return s/0x7fffffff;};}
+function wfBars(el, cnt, seed, barW, maxH, bgColor){
+  const rng=lcg(seed);const raw=[];
+  for(let i=0;i<cnt;i++){const b=0.1+rng()*0.2;const h=rng()>0.65?0.4+rng()*0.6:rng()*0.1;raw.push(b+h);}
+  const s=raw.map((v,i)=>((raw[i-1]??v)+v+(raw[i+1]??v))/3);
+  const max=Math.max(...s);
+  s.forEach(h=>{const bar=document.createElement('div');bar.style.width=barW+'px';bar.style.height=Math.max(3,Math.round((h/max)*maxH))+'px';bar.style.background=bgColor;bar.style.borderRadius='0';bar.style.flexShrink='0';el.appendChild(bar);});
+}
+
+// SHELF A
+const s1=['Loop 01','Loop 02','Loop 03','Loop 04','Loop 05'];
+const s2=['Loop 06','Loop 07','Loop 08'];
+[s1,s2].forEach((names,si)=>{
+  const shelf=document.getElementById('shelf'+(si+1));
+  names.forEach((name,i)=>{
+    const card=document.createElement('div');card.className='shelf-card';
+    const isCol=i===0&&si===0;
+    card.innerHTML=`<div class="sc-name">${name}</div><div class="sc-bpm">${[140,90,120,100,85,130,95,75][i+si*5]} BPM</div><div class="sc-wf" id="swf${si}-${i}"></div><div class="sc-collect${isCol?' done':''}">${isCol?'✓ Collected':'Collect'}</div>`;
+    shelf.appendChild(card);
+    setTimeout(()=>wfBars(document.getElementById(`swf${si}-${i}`),36,((si+1)*(i+3))*1337,2,20,'#252525'),10);
+  });
+});
+
+// CINEMATIC B
+const cdata=[
+  {name:'Drum Loop 01',bpm:140,focal:false,done:true},
+  {name:'Drum Loop 02',bpm:90,focal:false,done:true},
+  {name:'Drum Loop 03',bpm:120,focal:true,done:false},
+  {name:'Drum Loop 04',bpm:140,focal:false,done:false},
+  {name:'Drum Loop 05',bpm:100,focal:false,done:false},
+];
+const cl=document.getElementById('cine-list');
+cdata.forEach((d,i)=>{
+  const row=document.createElement('div');
+  row.className='cine-row'+(d.focal?' focal':'');
+  row.innerHTML=`<div class="cine-num">0${i+1}</div><div class="cine-info"><div class="cine-name">${d.name}</div><div class="cine-bpm">${d.bpm} BPM</div></div><div class="cine-wf" id="cwf${i}"></div><div class="cine-btn${d.done?' done':''}">${d.done?'✓ Collected':'Collect'}</div>`;
+  cl.appendChild(row);
+  setTimeout(()=>wfBars(document.getElementById(`cwf${i}`),60,(i+1)*5113,3,40,d.focal?'#2A2A2A':'#1C1C1C'),10);
+});
+
+// PARALLAX GRID C
+const pdata=[
+  ['Loop 01','Loop 04','Loop 07'],
+  ['Loop 02','Loop 05','Loop 08'],
+  ['Loop 03','Loop 06','Loop 09'],
+];
+const pg=document.getElementById('para-grid');
+pdata.forEach((col,ci)=>{
+  const colEl=document.createElement('div');colEl.className='para-col';
+  col.forEach((name,ri)=>{
+    const card=document.createElement('div');card.className='para-card';
+    const done=ri===0&&ci===0;
+    card.innerHTML=`<div class="para-name">${name}</div><div class="para-bpm">${[140,90,120,100,85,130,95,75,160][ci*3+ri]} BPM</div><div class="para-wf" id="pwf${ci}-${ri}"></div><div class="para-btn${done?' done':''}">${done?'✓':' Collect'}</div>`;
+    colEl.appendChild(card);
+    setTimeout(()=>wfBars(document.getElementById(`pwf${ci}-${ri}`),(35),((ci+1)*(ri+2))*3701,2.5,24,'#202020'),10);
+  });
+  pg.appendChild(colEl);
+});
+</script>
+</body>
+</html>

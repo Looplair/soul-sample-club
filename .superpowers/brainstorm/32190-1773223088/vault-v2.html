@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Vault — Redesign</title>
+<script src="/helper.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #111;
+    color: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+    padding: 32px 24px 80px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  h2 { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+  .subtitle { color: #666; font-size: 13px; margin-bottom: 36px; }
+
+  /* ── PAGE HEADER ── */
+  .vault-header {
+    display: flex; align-items: flex-end; justify-content: space-between;
+    margin-bottom: 28px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #2A2A2A;
+  }
+  .vault-headline { font-size: 32px; font-weight: 700; letter-spacing: -0.02em; }
+  .vault-sub { font-size: 14px; color: #666; margin-top: 4px; }
+  .vault-stats {
+    display: flex; gap: 20px; text-align: right;
+  }
+  .stat-val { font-size: 22px; font-weight: 700; }
+  .stat-label { font-size: 11px; color: #555; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 1px; }
+
+  /* ── CATEGORY FILTER ── */
+  .filters {
+    display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap;
+  }
+  .filter-btn {
+    font-size: 12px; font-weight: 600;
+    padding: 6px 14px; border-radius: 20px;
+    border: 1px solid #3A3A3A;
+    color: #888; background: transparent; cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.02em;
+  }
+  .filter-btn.active { background: #fff; color: #111; border-color: #fff; }
+
+  /* ── GRID ── */
+  .vault-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+  }
+
+  /* ── CARD ── */
+  .drum-card {
+    background: #1A1A1A;
+    border: 1px solid #2A2A2A;
+    border-radius: 14px;
+    padding: 16px;
+    display: flex; flex-direction: column; gap: 12px;
+    transition: border-color 0.2s, transform 0.15s;
+    position: relative; overflow: hidden;
+  }
+  .drum-card:hover { border-color: #4A4A4A; transform: translateY(-1px); }
+
+  /* category accent — thin left border only */
+  .drum-card::before {
+    content: ''; position: absolute;
+    left: 0; top: 12px; bottom: 12px;
+    width: 3px; border-radius: 0 2px 2px 0;
+  }
+  .drum-card.kick::before  { background: #ef4444; }
+  .drum-card.snare::before { background: #f97316; }
+  .drum-card.hat::before   { background: #eab308; }
+  .drum-card.bass::before  { background: #22c55e; }
+  .drum-card.perc::before  { background: #aaaaaa; }
+
+  .card-top { display: flex; align-items: center; justify-content: space-between; }
+
+  .cat-tag {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase; border-radius: 4px;
+    padding: 2px 7px;
+  }
+  .cat-kick  { color: #ef4444; background: #ef444418; }
+  .cat-snare { color: #f97316; background: #f9731618; }
+  .cat-hat   { color: #eab308; background: #eab30818; }
+  .cat-bass  { color: #22c55e; background: #22c55e18; }
+  .cat-perc  { color: #aaa;    background: #aaaaaa18; }
+
+  .bpm-badge {
+    font-size: 11px; font-weight: 600; color: #555;
+    letter-spacing: 0.04em;
+  }
+
+  .card-name {
+    font-size: 14px; font-weight: 600; color: #e5e5e5;
+    line-height: 1.3;
+  }
+
+  /* ── COLLECT BUTTON ── */
+  .collect-btn {
+    width: 100%; padding: 9px 0;
+    border-radius: 8px;
+    border: 1px solid #3A3A3A;
+    background: transparent;
+    color: #ccc;
+    font-size: 12px; font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.04em;
+    position: relative; overflow: hidden;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .collect-btn:hover { background: #fff; color: #111; border-color: #fff; }
+
+  /* ── collected state ── */
+  .drum-card.collected { border-color: #22c55e40; }
+  .drum-card.collected .collect-btn {
+    background: #22c55e15; border-color: #22c55e40; color: #22c55e;
+    cursor: default;
+  }
+
+  /* ── collect animation overlay ── */
+  .collect-flash {
+    position: absolute; inset: 0;
+    background: radial-gradient(circle at center, rgba(255,255,255,0.15) 0%, transparent 70%);
+    border-radius: 14px;
+    pointer-events: none;
+    opacity: 0; transition: opacity 0.3s;
+  }
+  .drum-card.flash .collect-flash { opacity: 1; }
+
+  /* ── ANIMATION LEGEND ── */
+  .anim-legend {
+    margin-top: 32px;
+    padding: 20px;
+    background: #1A1A1A;
+    border: 1px solid #2A2A2A;
+    border-radius: 14px;
+  }
+  .anim-legend h3 { font-size: 14px; font-weight: 700; margin-bottom: 14px; color: #ccc; }
+  .anim-steps { display: flex; gap: 0; }
+  .anim-step {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    text-align: center; gap: 8px; padding: 0 8px;
+    position: relative;
+  }
+  .anim-step:not(:last-child)::after {
+    content: '→'; position: absolute; right: -6px; top: 16px;
+    color: #444; font-size: 14px;
+  }
+  .anim-icon {
+    width: 40px; height: 40px; border-radius: 10px;
+    background: #2A2A2A; border: 1px solid #3A3A3A;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .anim-label { font-size: 11px; color: #555; line-height: 1.3; }
+
+  /* ── ENTRY POINT SECTION ── */
+  .entry-section {
+    margin-top: 32px;
+    padding: 20px;
+    background: #1A1A1A;
+    border: 1px solid #2A2A2A;
+    border-radius: 14px;
+  }
+  .entry-section h3 { font-size: 14px; font-weight: 700; margin-bottom: 14px; color: #ccc; }
+  .entry-options { display: flex; flex-direction: column; gap: 10px; }
+  .entry-opt {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 14px;
+    border: 1px solid #3A3A3A; border-radius: 10px;
+    cursor: pointer; transition: border-color 0.15s;
+  }
+  .entry-opt:hover { border-color: #666; }
+  .entry-opt.selected { border-color: #fff; }
+  .entry-dot { width: 8px; height: 8px; border-radius: 50%; background: #3A3A3A; border: 2px solid #555; flex-shrink: 0; }
+  .entry-opt.selected .entry-dot { background: #fff; border-color: #fff; }
+  .entry-text { font-size: 13px; font-weight: 600; }
+  .entry-sub { font-size: 12px; color: #555; margin-top: 1px; }
+</style>
+</head>
+<body>
+
+<h2>The Vault — Redesigned</h2>
+<p class="subtitle">No waveforms, no purple, BPM only, drum loops. Click "Collect" to see the animation. Click your preferred entry point at the bottom.</p>
+
+<!-- PAGE HEADER -->
+<div class="vault-header">
+  <div>
+    <div class="vault-headline">Drum Vault</div>
+    <div class="vault-sub">Members-only drum loops — free to collect</div>
+  </div>
+  <div class="vault-stats">
+    <div>
+      <div class="stat-val">47</div>
+      <div class="stat-label">Loops</div>
+    </div>
+    <div>
+      <div class="stat-val">12</div>
+      <div class="stat-label">Collected</div>
+    </div>
+  </div>
+</div>
+
+<!-- FILTERS -->
+<div class="filters">
+  <div class="filter-btn active" onclick="setFilter(this,'all')">All</div>
+  <div class="filter-btn" onclick="setFilter(this,'kick')">Kicks</div>
+  <div class="filter-btn" onclick="setFilter(this,'snare')">Snares</div>
+  <div class="filter-btn" onclick="setFilter(this,'hat')">Hi-Hats</div>
+  <div class="filter-btn" onclick="setFilter(this,'bass')">808s / Bass</div>
+  <div class="filter-btn" onclick="setFilter(this,'perc')">Percs</div>
+</div>
+
+<!-- GRID -->
+<div class="vault-grid">
+  <div class="drum-card kick" id="card1">
+    <div class="collect-flash"></div>
+    <div class="card-top">
+      <span class="cat-tag cat-kick">Kick Loop</span>
+      <span class="bpm-badge">140 BPM</span>
+    </div>
+    <div class="card-name">808 Thump Loop 01</div>
+    <button class="collect-btn" onclick="collectCard('card1')">
+      <span class="btn-text">Collect</span>
+    </button>
+  </div>
+
+  <div class="drum-card snare" id="card2">
+    <div class="collect-flash"></div>
+    <div class="card-top">
+      <span class="cat-tag cat-snare">Snare Loop</span>
+      <span class="bpm-badge">90 BPM</span>
+    </div>
+    <div class="card-name">Crack &amp; Rim Loop 03</div>
+    <button class="collect-btn" onclick="collectCard('card2')">
+      <span class="btn-text">Collect</span>
+    </button>
+  </div>
+
+  <div class="drum-card hat" id="card3">
+    <div class="collect-flash"></div>
+    <div class="card-top">
+      <span class="cat-tag cat-hat">Hi-Hat Loop</span>
+      <span class="bpm-badge">120 BPM</span>
+    </div>
+    <div class="card-name">Open Hat Pattern 07</div>
+    <button class="collect-btn" onclick="collectCard('card3')">
+      <span class="btn-text">Collect</span>
+    </button>
+  </div>
+
+  <div class="drum-card bass" id="card4">
+    <div class="collect-flash"></div>
+    <div class="card-top">
+      <span class="cat-tag cat-bass">808 Loop</span>
+      <span class="bpm-badge">140 BPM · C#</span>
+    </div>
+    <div class="card-name">Sub Roll Loop C#</div>
+    <button class="collect-btn" onclick="collectCard('card4')">
+      <span class="btn-text">Collect</span>
+    </button>
+  </div>
+
+  <div class="drum-card perc" id="card5">
+    <div class="collect-flash"></div>
+    <div class="card-top">
+      <span class="cat-tag cat-perc">Perc Loop</span>
+      <span class="bpm-badge">100 BPM</span>
+    </div>
+    <div class="card-name">Shaker &amp; Rim Loop 2</div>
+    <button class="collect-btn" onclick="collectCard('card5')">
+      <span class="btn-text">Collect</span>
+    </button>
+  </div>
+
+  <div class="drum-card kick collected" id="card6">
+    <div class="collect-flash"></div>
+    <div class="card-top">
+      <span class="cat-tag cat-kick">Kick Loop</span>
+      <span class="bpm-badge">95 BPM</span>
+    </div>
+    <div class="card-name">Hard Kick Loop 808</div>
+    <button class="collect-btn">
+      <span class="btn-text">✓ Collected</span>
+    </button>
+  </div>
+</div>
+
+<!-- ANIMATION BREAKDOWN -->
+<div class="anim-legend">
+  <h3>Collect Animation Flow (on button click)</h3>
+  <div class="anim-steps">
+    <div class="anim-step">
+      <div class="anim-icon">👆</div>
+      <div class="anim-label">Tap<br>"Collect"</div>
+    </div>
+    <div class="anim-step">
+      <div class="anim-icon" style="background:#ffffff15;border-color:#ffffff30;">✨</div>
+      <div class="anim-label">White flash<br>radiates from card</div>
+    </div>
+    <div class="anim-step">
+      <div class="anim-icon" style="background:#22c55e15;border-color:#22c55e40;">⬇️</div>
+      <div class="anim-label">File downloads<br>in background</div>
+    </div>
+    <div class="anim-step">
+      <div class="anim-icon" style="background:#22c55e15;border-color:#22c55e40;color:#22c55e;font-size:14px;font-weight:700;">✓</div>
+      <div class="anim-label">Card turns green<br>"Collected" state</div>
+    </div>
+  </div>
+</div>
+
+<!-- ENTRY POINT OPTIONS -->
+<div class="entry-section">
+  <h3>Where should the Drum Vault live? (click to pick)</h3>
+  <div class="entry-options">
+    <div class="entry-opt" onclick="pickEntry(this,'nav')" data-choice="nav">
+      <div class="entry-dot"></div>
+      <div>
+        <div class="entry-text">Nav bar link — "Vault" in the top header next to Catalog</div>
+        <div class="entry-sub">Always visible, easy to find, one click from anywhere</div>
+      </div>
+    </div>
+    <div class="entry-opt" onclick="pickEntry(this,'homepage')" data-choice="homepage">
+      <div class="entry-dot"></div>
+      <div>
+        <div class="entry-text">Homepage section — teaser card with blurred preview for guests</div>
+        <div class="entry-sub">Drives conversions, non-members can see it exists but can't access</div>
+      </div>
+    </div>
+    <div class="entry-opt" onclick="pickEntry(this,'catalog')" data-choice="catalog">
+      <div class="entry-dot"></div>
+      <div>
+        <div class="entry-text">Catalog page — a tab or section alongside compositions</div>
+        <div class="entry-sub">Lives with the music content, natural discovery within the app</div>
+      </div>
+    </div>
+    <div class="entry-opt" onclick="pickEntry(this,'both')" data-choice="both">
+      <div class="entry-dot"></div>
+      <div>
+        <div class="entry-text">Both: nav link + homepage teaser section</div>
+        <div class="entry-sub">Maximum visibility and conversion potential</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function collectCard(id) {
+  const card = document.getElementById(id);
+  if (card.classList.contains('collected')) return;
+
+  // flash animation
+  card.classList.add('flash');
+  setTimeout(() => card.classList.remove('flash'), 400);
+
+  // after short delay, mark collected
+  setTimeout(() => {
+    card.classList.add('collected');
+    const btn = card.querySelector('.btn-text');
+    btn.textContent = '✓ Collected';
+  }, 350);
+
+  recordEvent('collect', id);
+}
+
+function setFilter(el, val) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  recordEvent('filter', val);
+}
+
+function pickEntry(el, val) {
+  document.querySelectorAll('.entry-opt').forEach(o => {
+    o.classList.remove('selected');
+    o.querySelector('.entry-dot').style.background = '#3A3A3A';
+    o.querySelector('.entry-dot').style.borderColor = '#555';
+  });
+  el.classList.add('selected');
+  el.querySelector('.entry-dot').style.background = '#fff';
+  el.querySelector('.entry-dot').style.borderColor = '#fff';
+  recordEvent('entry', val);
+  toggleSelect(el);
+}
+</script>
+
+</body>
+</html>

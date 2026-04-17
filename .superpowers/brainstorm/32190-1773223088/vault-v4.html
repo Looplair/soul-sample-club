@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Vault — v4</title>
+<script src="/helper.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #111;
+    color: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+    padding: 0 0 80px;
+  }
+
+  /* ══════════════════════════════════════
+     HERO HEADER — animated, not boring
+  ══════════════════════════════════════ */
+  .vault-hero {
+    position: relative;
+    padding: 40px 32px 36px;
+    overflow: hidden;
+    border-bottom: 1px solid #1E1E1E;
+  }
+
+  /* animated noise grain layer */
+  .vault-hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    background-size: 200px 200px;
+    opacity: 0.3;
+    pointer-events: none;
+  }
+
+  /* slow drifting gradient orbs */
+  .orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(60px);
+    opacity: 0.18;
+    pointer-events: none;
+    animation: drift 8s ease-in-out infinite alternate;
+  }
+  .orb1 { width: 300px; height: 300px; background: #fff; top: -120px; left: -60px; animation-delay: 0s; }
+  .orb2 { width: 200px; height: 200px; background: #aaa; top: -80px; right: 10%; animation-delay: -3s; }
+  @keyframes drift {
+    from { transform: translate(0, 0) scale(1); }
+    to   { transform: translate(20px, 10px) scale(1.05); }
+  }
+
+  .hero-content { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; }
+
+  .hero-label {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.14em;
+    text-transform: uppercase; color: #555;
+    margin-bottom: 10px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .hero-label::before {
+    content: ''; display: block;
+    width: 20px; height: 1px; background: #444;
+  }
+
+  .hero-title {
+    font-size: 48px; font-weight: 800;
+    letter-spacing: -0.035em; line-height: 1;
+    /* shimmer animation */
+    background: linear-gradient(90deg, #ffffff 0%, #ffffff 40%, #888888 50%, #ffffff 60%, #ffffff 100%);
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: shimmer 4s linear infinite;
+  }
+  @keyframes shimmer {
+    from { background-position: 100% 0; }
+    to   { background-position: -100% 0; }
+  }
+
+  .hero-sub {
+    font-size: 14px; color: #555; margin-top: 8px;
+    display: flex; align-items: center; gap: 16px;
+  }
+  .hero-stat {
+    display: flex; align-items: center; gap-6px;
+    color: #444; font-size: 13px;
+  }
+  .hero-dot { width: 3px; height: 3px; border-radius: 50%; background: #333; }
+
+  /* live pulse dot */
+  .pulse-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: #22c55e;
+    display: inline-block;
+    box-shadow: 0 0 0 0 #22c55e80;
+    animation: pulse-ring 2s ease-out infinite;
+    margin-right: 6px;
+  }
+  @keyframes pulse-ring {
+    0%   { box-shadow: 0 0 0 0 #22c55e80; }
+    70%  { box-shadow: 0 0 0 8px transparent; }
+    100% { box-shadow: 0 0 0 0 transparent; }
+  }
+
+  /* ══════════════════════════════════════
+     GRID
+  ══════════════════════════════════════ */
+  .grid-wrap { max-width: 860px; margin: 0 auto; padding: 24px 32px 0; }
+  .vault-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 10px;
+  }
+
+  /* ══════════════════════════════════════
+     CARD
+  ══════════════════════════════════════ */
+  .drum-card {
+    background: #161616;
+    border: 1px solid #252525;
+    border-radius: 14px;
+    padding: 16px 14px 13px;
+    display: flex; flex-direction: column; gap: 11px;
+    transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+    position: relative; overflow: hidden;
+    cursor: default;
+  }
+  .drum-card:hover {
+    border-color: #383838;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  }
+
+  .card-name {
+    font-size: 14px; font-weight: 600; color: #e0e0e0;
+    line-height: 1.3;
+  }
+  .bpm-badge {
+    font-size: 11px; font-weight: 500; color: #3E3E3E;
+    letter-spacing: 0.05em; margin-top: -5px;
+  }
+
+  /* ══════════════════════════════════════
+     WAVEFORM — chunky Tracklib style
+  ══════════════════════════════════════ */
+  .play-row { display: flex; align-items: center; gap: 8px; }
+
+  .play-btn {
+    width: 30px; height: 30px; border-radius: 50%;
+    border: 1px solid #333; background: #1E1E1E;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; flex-shrink: 0; transition: border-color 0.15s, background 0.15s;
+  }
+  .play-btn:hover { border-color: #fff; background: #2A2A2A; }
+  .play-icon { width: 0; height: 0; border-style: solid; border-width: 5px 0 5px 9px; border-color: transparent transparent transparent #ccc; margin-left: 2px; }
+  .pause-icon { display: flex; gap: 2.5px; }
+  .pause-bar { width: 2.5px; height: 9px; background: #fff; border-radius: 1px; }
+
+  .waveform {
+    flex: 1;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    gap: 2.5px;
+    overflow: hidden;
+    cursor: pointer;
+  }
+  /* chunky pill bars */
+  .waveform .bar {
+    flex-shrink: 0;
+    width: 3.5px;
+    border-radius: 99px; /* fully rounded = smooth pill */
+    background: #2E2E2E;
+    transition: background 0.06s;
+  }
+  .waveform .bar.played { background: #E0E0E0; }
+  .waveform .bar.head   { background: #FFFFFF; box-shadow: 0 0 5px rgba(255,255,255,0.5); }
+
+  /* playing: subtle breathing on unplayed bars */
+  .drum-card.playing .waveform .bar:not(.played) {
+    animation: breathe 0.8s ease-in-out infinite alternate;
+  }
+  @keyframes breathe {
+    from { opacity: 0.4; }
+    to   { opacity: 0.9; }
+  }
+
+  /* ══════════════════════════════════════
+     COLLECT BUTTON
+  ══════════════════════════════════════ */
+  .collect-btn {
+    width: 100%; padding: 9px 0;
+    border-radius: 8px;
+    border: 1px solid #282828;
+    background: transparent; color: #666;
+    font-size: 12px; font-weight: 600;
+    cursor: pointer; transition: all 0.15s;
+    letter-spacing: 0.04em;
+    display: flex; align-items: center; justify-content: center; gap: 5px;
+  }
+  .collect-btn:hover { background: #fff; color: #111; border-color: #fff; }
+
+  .drum-card.collected .collect-btn {
+    border-color: #22c55e28; color: #22c55e;
+    cursor: default; pointer-events: none;
+  }
+  .drum-card.collected { border-color: #22c55e18; }
+
+  /* collect flash */
+  .collect-flash {
+    position: absolute; inset: 0; border-radius: 14px;
+    background: radial-gradient(circle at 50% 60%, rgba(255,255,255,0.14) 0%, transparent 65%);
+    pointer-events: none; opacity: 0; transition: opacity 0.4s;
+  }
+  .drum-card.flash .collect-flash { opacity: 1; }
+
+  /* card entrance animation */
+  .drum-card {
+    animation: card-in 0.4s ease-out both;
+  }
+  @keyframes card-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+
+<!-- ANIMATED HERO -->
+<div class="vault-hero">
+  <div class="orb orb1"></div>
+  <div class="orb orb2"></div>
+  <div class="hero-content">
+    <div class="hero-label">Soul Sample Club</div>
+    <div class="hero-title">Drum Vault</div>
+    <div class="hero-sub">
+      <span><span class="pulse-dot"></span>Members only</span>
+      <span class="hero-dot"></span>
+      <span>47 loops</span>
+      <span class="hero-dot"></span>
+      <span>12 collected</span>
+    </div>
+  </div>
+</div>
+
+<!-- GRID -->
+<div class="grid-wrap">
+  <div class="vault-grid" id="grid"></div>
+</div>
+
+<script>
+const loops = [
+  { id:'c1', name:'Drum Loop 01', bpm:140 },
+  { id:'c2', name:'Drum Loop 02', bpm:90  },
+  { id:'c3', name:'Drum Loop 03', bpm:120 },
+  { id:'c4', name:'Drum Loop 04', bpm:140 },
+  { id:'c5', name:'Drum Loop 05', bpm:100 },
+  { id:'c6', name:'Drum Loop 06', bpm:95, collected: true },
+  { id:'c7', name:'Drum Loop 07', bpm:130 },
+  { id:'c8', name:'Drum Loop 08', bpm:110, collected: true },
+  { id:'c9', name:'Drum Loop 09', bpm:85 },
+];
+
+// deterministic pseudo-random
+function lcg(seed) {
+  let s = seed;
+  return () => { s = (s * 1664525 + 1013904223) & 0x7fffffff; return s / 0x7fffffff; };
+}
+
+function buildWaveform(wfEl, seed) {
+  const rng = lcg(seed);
+  const count = 36;
+  const raw = [];
+  for (let i = 0; i < count; i++) {
+    // drum loop energy: mix of transients and body
+    const base = 0.15 + rng() * 0.25;
+    const hit = rng() > 0.65 ? 0.4 + rng() * 0.6 : 0;
+    raw.push(base + hit);
+  }
+  // smooth (running avg of 3)
+  const smoothed = raw.map((v, i) => {
+    const l = raw[i-1] ?? v;
+    const r = raw[i+1] ?? v;
+    return (l + v + r) / 3;
+  });
+  const max = Math.max(...smoothed);
+  smoothed.forEach(h => {
+    const bar = document.createElement('div');
+    bar.className = 'bar';
+    const px = Math.max(5, Math.round((h / max) * 40));
+    bar.style.height = px + 'px';
+    wfEl.appendChild(bar);
+  });
+}
+
+let currentlyPlaying = null;
+let playTimer = null;
+
+function togglePlay(id) {
+  if (currentlyPlaying && currentlyPlaying !== id) stopCard(currentlyPlaying);
+  if (currentlyPlaying === id) { stopCard(id); return; }
+
+  currentlyPlaying = id;
+  const card = document.getElementById(id);
+  card.classList.add('playing');
+  const btn = card.querySelector('.play-btn');
+  btn.innerHTML = '<div class="pause-icon"><div class="pause-bar"></div><div class="pause-bar"></div></div>';
+
+  const bars = [...card.querySelectorAll('.bar')];
+  let idx = 0;
+  clearInterval(playTimer);
+  playTimer = setInterval(() => {
+    if (idx > 0) bars[idx-1].classList.remove('head');
+    if (idx < bars.length) {
+      bars[idx].classList.add('played', 'head');
+      idx++;
+    } else {
+      stopCard(id);
+    }
+  }, 70);
+}
+
+function stopCard(id) {
+  clearInterval(playTimer);
+  const card = document.getElementById(id);
+  if (!card) return;
+  card.classList.remove('playing');
+  card.querySelector('.play-btn').innerHTML = '<div class="play-icon"></div>';
+  card.querySelectorAll('.bar').forEach(b => b.classList.remove('played','head'));
+  if (currentlyPlaying === id) currentlyPlaying = null;
+}
+
+function collectCard(id) {
+  const card = document.getElementById(id);
+  if (card.classList.contains('collected')) return;
+  if (currentlyPlaying === id) stopCard(id);
+
+  card.classList.add('flash');
+  setTimeout(() => card.classList.remove('flash'), 500);
+  setTimeout(() => {
+    card.classList.add('collected');
+    card.querySelector('.collect-btn').textContent = '✓ Collected';
+  }, 300);
+}
+
+// Build cards with staggered entrance
+const grid = document.getElementById('grid');
+loops.forEach((loop, idx) => {
+  const card = document.createElement('div');
+  card.className = 'drum-card' + (loop.collected ? ' collected' : '');
+  card.id = loop.id;
+  card.style.animationDelay = (idx * 0.05) + 's';
+  card.innerHTML = `
+    <div class="collect-flash"></div>
+    <div class="card-name">${loop.name}</div>
+    <div class="bpm-badge">${loop.bpm} BPM</div>
+    <div class="play-row">
+      <div class="play-btn" onclick="togglePlay('${loop.id}')"><div class="play-icon"></div></div>
+      <div class="waveform" onclick="togglePlay('${loop.id}')"></div>
+    </div>
+    <button class="collect-btn" onclick="collectCard('${loop.id}')">
+      ${loop.collected ? '✓ Collected' : 'Collect'}
+    </button>
+  `;
+  grid.appendChild(card);
+  buildWaveform(card.querySelector('.waveform'), (idx + 1) * 8317);
+});
+</script>
+</body>
+</html>

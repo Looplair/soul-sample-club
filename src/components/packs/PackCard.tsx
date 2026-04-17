@@ -47,7 +47,7 @@ export function PackCard({ pack, sampleCount }: PackCardProps) {
       <div className={cn(
         "relative aspect-square rounded-2xl overflow-hidden bg-grey-800",
         "transition-transform duration-300 group-hover:scale-[1.02]",
-        isReturned && "ring-2 ring-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.3)]"
+        isReturned && !isExpired && "ring-2 ring-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.3)]"
       )}>
         {pack.cover_image_url ? (
           <Image
@@ -93,7 +93,7 @@ export function PackCard({ pack, sampleCount }: PackCardProps) {
                 Pick
               </span>
             )}
-            {isReturned && (
+            {isReturned && !isExpired && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500 text-charcoal text-[10px] font-bold tracking-wide uppercase">
                 <RotateCcw className="w-2.5 h-2.5" />
                 Back by Demand

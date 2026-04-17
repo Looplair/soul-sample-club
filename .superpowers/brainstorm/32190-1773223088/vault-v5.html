@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Drum Vault — Gamified</title>
+<script src="/helper.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0E0E0E;
+    color: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+    padding: 0 0 80px;
+    overflow-x: hidden;
+  }
+
+  /* ═══════════════════════════
+     HERO
+  ═══════════════════════════ */
+  .hero {
+    position: relative; overflow: hidden;
+    padding: 36px 28px 28px;
+    border-bottom: 1px solid #1A1A1A;
+  }
+  .orb { position: absolute; border-radius: 50%; filter: blur(80px); pointer-events: none; }
+  .orb1 { width: 400px; height: 280px; background: #fff; opacity: 0.06; top: -120px; left: -80px; animation: drift1 9s ease-in-out infinite alternate; }
+  .orb2 { width: 250px; height: 250px; background: #bbb; opacity: 0.05; top: -60px; right: 5%; animation: drift2 7s ease-in-out infinite alternate; }
+  @keyframes drift1 { from{transform:translate(0,0)} to{transform:translate(30px,15px)} }
+  @keyframes drift2 { from{transform:translate(0,0)} to{transform:translate(-20px,10px)} }
+
+  .hero-inner { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; }
+
+  .hero-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; }
+
+  .hero-label { font-size: 10px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: #444; margin-bottom: 8px; }
+
+  .hero-title {
+    font-size: 46px; font-weight: 800; letter-spacing: -0.035em; line-height: 1;
+    background: linear-gradient(90deg, #fff 0%, #fff 35%, #777 50%, #fff 65%, #fff 100%);
+    background-size: 250% 100%;
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    animation: shimmer 5s linear infinite;
+  }
+  @keyframes shimmer { from{background-position:100% 0} to{background-position:-100% 0} }
+
+  /* ── XP / progress block ── */
+  .xp-block { text-align: right; }
+  .xp-fraction { font-size: 28px; font-weight: 800; letter-spacing: -0.02em; }
+  .xp-label { font-size: 10px; color: #444; letter-spacing: 0.1em; text-transform: uppercase; margin-top: 1px; }
+
+  /* ── Progress bar ── */
+  .progress-wrap { margin-top: 4px; }
+  .progress-bar-bg {
+    height: 5px; background: #1E1E1E; border-radius: 99px; overflow: hidden;
+    margin-bottom: 8px;
+  }
+  .progress-bar-fill {
+    height: 100%; background: #fff; border-radius: 99px;
+    width: 26%; transition: width 0.6s cubic-bezier(0.4,0,0.2,1);
+    position: relative;
+  }
+  .progress-bar-fill::after {
+    content: ''; position: absolute; right: 0; top: 50%; transform: translateY(-50%);
+    width: 8px; height: 8px; border-radius: 50%; background: #fff;
+    box-shadow: 0 0 8px rgba(255,255,255,0.8);
+  }
+  .progress-milestones { display: flex; gap: 16px; }
+  .milestone {
+    font-size: 10px; color: #333; display: flex; align-items: center; gap: 4px;
+  }
+  .milestone.unlocked { color: #22c55e; }
+  .milestone-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+
+  /* ── Streak counter ── */
+  .streak-bar {
+    display: flex; align-items: center; gap: 8px; margin-top: 14px;
+    padding: 8px 14px; background: #1A1A1A; border: 1px solid #222;
+    border-radius: 10px; width: fit-content;
+  }
+  .streak-flame { font-size: 16px; animation: flame 0.5s ease-in-out infinite alternate; }
+  @keyframes flame { from{transform:scale(1)} to{transform:scale(1.2)} }
+  .streak-text { font-size: 12px; font-weight: 700; }
+  .streak-sub { font-size: 11px; color: #444; }
+
+  /* ═══════════════════════════
+     GRID
+  ═══════════════════════════ */
+  .grid-wrap { max-width: 860px; margin: 0 auto; padding: 22px 28px 0; }
+  .vault-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(215px, 1fr)); gap: 10px; }
+
+  /* ═══════════════════════════
+     CARD
+  ═══════════════════════════ */
+  .drum-card {
+    background: #141414;
+    border: 1px solid #222;
+    border-radius: 14px;
+    padding: 14px 13px 12px;
+    display: flex; flex-direction: column; gap: 10px;
+    position: relative; overflow: hidden;
+    transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+    animation: card-in 0.4s ease-out both;
+  }
+  .drum-card:hover { border-color: #333; transform: translateY(-2px); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+  @keyframes card-in { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+
+  /* rarity glow on border */
+  .drum-card.rare  { border-color: #D4AF3722; }
+  .drum-card.rare:hover  { border-color: #D4AF3766; box-shadow: 0 0 20px #D4AF3718; }
+  .drum-card.fire  { border-color: #ef444422; }
+  .drum-card.fire:hover  { border-color: #ef444466; box-shadow: 0 0 20px #ef444418; }
+
+  /* ── card top row ── */
+  .card-top { display: flex; align-items: center; justify-content: space-between; }
+  .card-name { font-size: 13px; font-weight: 600; color: #ddd; line-height: 1.3; }
+  .bpm { font-size: 11px; color: #383838; letter-spacing: 0.04em; margin-top: -4px; }
+
+  /* badges */
+  .badges { display: flex; gap: 4px; }
+  .badge {
+    font-size: 9px; font-weight: 800; letter-spacing: 0.08em;
+    text-transform: uppercase; border-radius: 4px; padding: 2px 6px;
+  }
+  .badge-new  { background: #22c55e18; color: #22c55e; border: 1px solid #22c55e30; }
+  .badge-rare { background: #D4AF3718; color: #D4AF37; border: 1px solid #D4AF3730; }
+  .badge-fire { background: #ef444418; color: #ef4444; border: 1px solid #ef444430;
+                animation: fire-pulse 1s ease-in-out infinite alternate; }
+  @keyframes fire-pulse { from{opacity:0.8} to{opacity:1} }
+
+  /* ── WAVEFORM — zero gap, packed solid ── */
+  .play-row { display: flex; align-items: center; gap: 8px; }
+  .play-btn {
+    width: 28px; height: 28px; border-radius: 50%;
+    border: 1px solid #2E2E2E; background: #1A1A1A;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; flex-shrink: 0; transition: all 0.15s;
+  }
+  .play-btn:hover { border-color: #fff; background: #252525; }
+  .play-icon { width:0; height:0; border-style:solid; border-width:4px 0 4px 8px; border-color:transparent transparent transparent #bbb; margin-left:2px; }
+  .pause-icon { display:flex; gap:2px; }
+  .pause-bar { width:2px; height:8px; background:#fff; border-radius:1px; }
+
+  .waveform {
+    flex: 1; height: 42px;
+    display: flex; align-items: center;
+    overflow: hidden; cursor: pointer;
+    /* NO gap — bars touch each other */
+  }
+  .waveform .bar {
+    flex-shrink: 0;
+    width: 3px;
+    border-radius: 0;        /* flat top/bottom — solid mass look */
+    background: #2A2A2A;
+    transition: background 0.05s;
+    /* no margin, no gap */
+  }
+  /* slight rounding only on very tall bars for natural shape */
+  .waveform .bar.tall { border-radius: 2px 2px 0 0; }
+  .waveform .bar.played { background: #D4D4D4; }
+  .waveform .bar.head   { background: #FFFFFF; box-shadow: 0 0 4px rgba(255,255,255,0.6); }
+  .drum-card.playing .waveform .bar:not(.played) { animation: wb 0.6s ease-in-out infinite alternate; }
+  @keyframes wb { from{opacity:0.35} to{opacity:0.75} }
+
+  /* ── COLLECT BTN ── */
+  .collect-btn {
+    width: 100%; padding: 9px 0;
+    border-radius: 8px; border: 1px solid #252525;
+    background: transparent; color: #555;
+    font-size: 12px; font-weight: 700; cursor: pointer;
+    transition: all 0.15s; letter-spacing: 0.05em;
+    display: flex; align-items: center; justify-content: center; gap: 5px;
+  }
+  .collect-btn:hover { background: #fff; color: #111; border-color: #fff; }
+  .drum-card.collected .collect-btn { border-color: #22c55e28; color: #22c55e; cursor:default; pointer-events:none; }
+  .drum-card.collected { border-color: #22c55e1A; }
+  .drum-card.rare.collected { border-color: #D4AF3730; }
+
+  /* flash */
+  .collect-flash {
+    position: absolute; inset: 0; border-radius: 14px;
+    background: radial-gradient(circle at 50% 55%, rgba(255,255,255,0.18) 0%, transparent 60%);
+    pointer-events: none; opacity: 0; transition: opacity 0.4s;
+  }
+  .drum-card.flash .collect-flash { opacity: 1; }
+
+  /* ── LOCKED CARD ── */
+  .drum-card.locked {
+    opacity: 0.5; cursor: default;
+    border-style: dashed; border-color: #2A2A2A;
+  }
+  .drum-card.locked:hover { transform: none; box-shadow: none; border-color: #2A2A2A; }
+  .lock-icon { font-size: 20px; text-align: center; margin: 8px 0 4px; }
+  .lock-msg { font-size: 11px; color: #444; text-align: center; line-height: 1.4; }
+
+  /* ── PARTICLE BURST ── */
+  .particle {
+    position: fixed; pointer-events: none; z-index: 999;
+    width: 5px; height: 5px; border-radius: 50%;
+    animation: particle-fly 0.7s ease-out forwards;
+  }
+  @keyframes particle-fly {
+    0%   { transform: translate(0,0) scale(1); opacity: 1; }
+    100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
+  }
+
+  /* streak popup */
+  .streak-popup {
+    position: fixed; top: 40%; left: 50%; transform: translate(-50%,-50%) scale(0);
+    background: #1A1A1A; border: 1px solid #333; border-radius: 16px;
+    padding: 16px 28px; text-align: center; z-index: 1000;
+    pointer-events: none;
+    transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1), opacity 0.2s;
+    opacity: 0;
+  }
+  .streak-popup.show { transform: translate(-50%,-50%) scale(1); opacity: 1; }
+  .streak-popup-num { font-size: 36px; font-weight: 800; letter-spacing: -0.02em; }
+  .streak-popup-label { font-size: 12px; color: #555; margin-top: 2px; letter-spacing: 0.1em; text-transform: uppercase; }
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="orb orb1"></div>
+  <div class="orb orb2"></div>
+  <div class="hero-inner">
+    <div class="hero-top">
+      <div>
+        <div class="hero-label">Soul Sample Club</div>
+        <div class="hero-title">Drum Vault</div>
+      </div>
+      <div class="xp-block">
+        <div class="xp-fraction" id="xp-fraction">12 <span style="font-size:16px;color:#333;font-weight:500">/ 47</span></div>
+        <div class="xp-label">Collected</div>
+      </div>
+    </div>
+
+    <!-- Progress bar -->
+    <div class="progress-wrap">
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="prog-fill" style="width:26%"></div>
+      </div>
+      <div class="progress-milestones">
+        <div class="milestone unlocked"><div class="milestone-dot"></div>10 — Bonus Loop unlocked ✓</div>
+        <div class="milestone"><div class="milestone-dot"></div>25 — Exclusive Kit</div>
+        <div class="milestone"><div class="milestone-dot"></div>47 — Complete ★</div>
+      </div>
+    </div>
+
+    <!-- Streak -->
+    <div class="streak-bar" id="streak-bar">
+      <span class="streak-flame">🔥</span>
+      <span class="streak-text" id="streak-num">3 streak</span>
+      <span class="streak-sub">— keep collecting</span>
+    </div>
+  </div>
+</div>
+
+<!-- GRID -->
+<div class="grid-wrap">
+  <div class="vault-grid" id="grid"></div>
+</div>
+
+<!-- Streak popup -->
+<div class="streak-popup" id="streak-popup">
+  <div class="streak-popup-num" id="popup-num">🔥 4</div>
+  <div class="streak-popup-label">Collect Streak!</div>
+</div>
+
+<script>
+let collected = 12;
+let total = 47;
+let streak = 3;
+
+const loops = [
+  { id:'c1', name:'Drum Loop 01', bpm:140, badge:'fire' },
+  { id:'c2', name:'Drum Loop 02', bpm:90 },
+  { id:'c3', name:'Drum Loop 03', bpm:120, badge:'new' },
+  { id:'c4', name:'Drum Loop 04', bpm:140, badge:'rare' },
+  { id:'c5', name:'Drum Loop 05', bpm:100 },
+  { id:'c6', name:'Drum Loop 06', bpm:95,  preCollected: true },
+  { id:'c7', name:'Drum Loop 07', bpm:130, badge:'new' },
+  { id:'c8', name:'Drum Loop 08', bpm:110, preCollected: true },
+  { id:'c9', name:'Drum Loop 09', bpm:85,  badge:'rare' },
+  { id:'c10', name:'Drum Loop 10', bpm:160 },
+  { id:'c11', name:'Drum Loop 11', bpm:72, badge:'fire' },
+  { locked: true, id:'locked1', unlockAt: 25 },
+];
+
+function lcg(seed) {
+  let s = seed;
+  return () => { s=(s*1664525+1013904223)&0x7fffffff; return s/0x7fffffff; };
+}
+function buildWaveform(wfEl, seed) {
+  const rng = lcg(seed);
+  const count = 48;
+  const raw = [];
+  for (let i=0; i<count; i++) {
+    const base = 0.1 + rng()*0.2;
+    const hit = rng()>0.65 ? 0.4+rng()*0.6 : rng()*0.1;
+    raw.push(base+hit);
+  }
+  // smooth pass
+  const s = raw.map((v,i)=>((raw[i-1]??v)+v+(raw[i+1]??v))/3);
+  const max = Math.max(...s);
+  s.forEach(h => {
+    const bar = document.createElement('div');
+    const px = Math.max(4, Math.round((h/max)*40));
+    bar.className = 'bar' + (px > 28 ? ' tall' : '');
+    bar.style.height = px+'px';
+    wfEl.appendChild(bar);
+  });
+}
+
+let currentlyPlaying=null, playTimer=null;
+function togglePlay(id) {
+  if (currentlyPlaying&&currentlyPlaying!==id) stopCard(currentlyPlaying);
+  if (currentlyPlaying===id){stopCard(id);return;}
+  currentlyPlaying=id;
+  const card=document.getElementById(id);
+  card.classList.add('playing');
+  card.querySelector('.play-btn').innerHTML='<div class="pause-icon"><div class="pause-bar"></div><div class="pause-bar"></div></div>';
+  const bars=[...card.querySelectorAll('.bar')];
+  let idx=0;
+  clearInterval(playTimer);
+  playTimer=setInterval(()=>{
+    if(idx>0) bars[idx-1].classList.remove('head');
+    if(idx<bars.length){bars[idx].classList.add('played','head');idx++;}
+    else stopCard(id);
+  },65);
+}
+function stopCard(id) {
+  clearInterval(playTimer);
+  const card=document.getElementById(id);if(!card)return;
+  card.classList.remove('playing');
+  card.querySelector('.play-btn').innerHTML='<div class="play-icon"></div>';
+  card.querySelectorAll('.bar').forEach(b=>b.classList.remove('played','head'));
+  if(currentlyPlaying===id)currentlyPlaying=null;
+}
+
+function spawnParticles(x, y) {
+  for (let i=0;i<12;i++) {
+    const p=document.createElement('div');
+    p.className='particle';
+    const angle=(i/12)*Math.PI*2;
+    const dist=40+Math.random()*40;
+    p.style.setProperty('--tx', Math.cos(angle)*dist+'px');
+    p.style.setProperty('--ty', Math.sin(angle)*dist+'px');
+    p.style.left=x+'px'; p.style.top=y+'px';
+    p.style.background=i%3===0?'#fff':i%3===1?'#888':'#22c55e';
+    p.style.animationDelay=(Math.random()*0.1)+'s';
+    document.body.appendChild(p);
+    setTimeout(()=>p.remove(),800);
+  }
+}
+
+function collectCard(id, evt) {
+  const card=document.getElementById(id);
+  if(card.classList.contains('collected'))return;
+  if(currentlyPlaying===id)stopCard(id);
+
+  // particles at click pos
+  const rect=card.getBoundingClientRect();
+  spawnParticles(rect.left+rect.width/2, rect.top+rect.height*0.7);
+
+  card.classList.add('flash');
+  setTimeout(()=>card.classList.remove('flash'),500);
+  setTimeout(()=>{
+    card.classList.add('collected');
+    card.querySelector('.collect-btn').textContent='✓ Collected';
+
+    // update counters
+    collected++;
+    streak++;
+    document.getElementById('xp-fraction').innerHTML=collected+' <span style="font-size:16px;color:#333;font-weight:500">/ '+total+'</span>';
+    const pct=Math.round((collected/total)*100);
+    document.getElementById('prog-fill').style.width=pct+'%';
+    document.getElementById('streak-num').textContent=streak+' streak';
+
+    // streak popup
+    if(streak>=2){
+      const pop=document.getElementById('streak-popup');
+      document.getElementById('popup-num').textContent='🔥 '+streak;
+      pop.classList.add('show');
+      setTimeout(()=>pop.classList.remove('show'),1400);
+    }
+  },280);
+}
+
+// Build cards
+const grid=document.getElementById('grid');
+loops.forEach((loop,idx)=>{
+  const card=document.createElement('div');
+  if(loop.locked){
+    card.className='drum-card locked';
+    card.id=loop.id;
+    card.style.animationDelay=(idx*0.05)+'s';
+    card.innerHTML=`<div class="lock-icon">🔒</div><div class="lock-msg">Collect ${loop.unlockAt} loops<br>to unlock</div>`;
+    grid.appendChild(card);
+    return;
+  }
+  card.className='drum-card'+(loop.badge&&loop.badge==='rare'?' rare':loop.badge==='fire'?' fire':'')+(loop.preCollected?' collected':'');
+  card.id=loop.id;
+  card.style.animationDelay=(idx*0.05)+'s';
+  const badgeHTML = loop.badge
+    ? `<div class="badges"><span class="badge badge-${loop.badge}">${loop.badge==='fire'?'🔥 Hot':loop.badge==='rare'?'★ Rare':'New'}</span></div>`
+    : '<div></div>';
+  card.innerHTML=`
+    <div class="collect-flash"></div>
+    <div class="card-top">
+      <div class="card-name">${loop.name}</div>
+      ${badgeHTML}
+    </div>
+    <div class="bpm">${loop.bpm} BPM</div>
+    <div class="play-row">
+      <div class="play-btn" onclick="togglePlay('${loop.id}')"><div class="play-icon"></div></div>
+      <div class="waveform" onclick="togglePlay('${loop.id}')"></div>
+    </div>
+    <button class="collect-btn" onclick="collectCard('${loop.id}',event)">
+      ${loop.preCollected?'✓ Collected':'Collect'}
+    </button>
+  `;
+  grid.appendChild(card);
+  buildWaveform(card.querySelector('.waveform'),(idx+1)*7331);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "soul-sample-club",
+      "runtimeExecutable": "/bin/bash",
+      "runtimeArgs": ["-c", "cd /Users/looplair/Documents/soul-sample-club && /usr/local/bin/npm run dev"],
+      "port": 3000
+    }
+  ]
+}

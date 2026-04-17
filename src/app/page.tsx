@@ -47,6 +47,7 @@ interface PackWithSamples {
   is_published: boolean;
   is_staff_pick?: boolean;
   is_bonus: boolean;
+  is_returned?: boolean;
   scheduled_publish_at: string | null;
   created_at: string;
   updated_at: string;
@@ -132,11 +133,17 @@ async function getUserState(): Promise<{
   }
 }
 
-// Helper to check if pack is archived (older than 3 months)
-function isArchived(releaseDate: string): boolean {
+// Helper to check if pack is archived
+function isArchived(pack: PackWithSamples): boolean {
+  if (pack.is_returned) {
+    return pack.end_date ? new Date() > new Date(pack.end_date) : false;
+  }
+  if (pack.end_date && new Date() > new Date(pack.end_date)) {
+    return true;
+  }
   const threeMonthsAgo = new Date();
   threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
-  return new Date(releaseDate) < threeMonthsAgo;
+  return new Date(pack.release_date) < threeMonthsAgo;
 }
 
 // ============================================
@@ -180,9 +187,9 @@ export default async function HomePage() {
     : { notifications: [] as NotificationWithReadStatus[], unreadCount: 0 };
 
   // Organize packs
-  const staffPicks = allPacks.filter((p) => p.is_staff_pick && !isArchived(p.release_date));
-  const recentPacks = allPacks.filter((p) => !isArchived(p.release_date));
-  const archivedPacks = allPacks.filter((p) => isArchived(p.release_date));
+  const staffPicks = allPacks.filter((p) => p.is_staff_pick && !isArchived(p));
+  const recentPacks = allPacks.filter((p) => !isArchived(p));
+  const archivedPacks = allPacks.filter((p) => isArchived(p));
 
   // Featured pack for hero - most recent with cover image
   const featuredPack = recentPacks.find((p) => p.cover_image_url) || recentPacks[0];

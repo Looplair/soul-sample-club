@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Drum Bank — Design Concepts</title>
+<script src="/helper.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #1A1A1A;
+    color: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+    padding: 32px 24px 80px;
+  }
+  h1 { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+  .subtitle { color: #888; font-size: 14px; margin-bottom: 40px; }
+
+  /* concept cards */
+  .concepts { display: flex; flex-direction: column; gap: 24px; }
+  .concept {
+    border: 2px solid #3A3A3A;
+    border-radius: 16px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color 0.2s, transform 0.15s;
+    background: #222;
+  }
+  .concept:hover { border-color: #8B5CF6; transform: translateY(-2px); }
+  .concept.selected { border-color: #8B5CF6; box-shadow: 0 0 0 1px #8B5CF6; }
+  .concept-label {
+    padding: 16px 20px 12px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .concept-letter {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: #8B5CF6; color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 13px; flex-shrink: 0;
+  }
+  .concept-title { font-size: 17px; font-weight: 700; }
+  .concept-desc { font-size: 13px; color: #aaa; margin-top: 2px; }
+  .concept-preview {
+    background: #111;
+    padding: 20px;
+    border-top: 1px solid #3A3A3A;
+  }
+
+  /* ── CONCEPT A: The Vault (grid of items) ── */
+  .vault-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+  .vault-item {
+    background: #1A1A1A;
+    border: 1px solid #3A3A3A;
+    border-radius: 12px;
+    padding: 12px;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .vault-item-tag {
+    font-size: 9px; font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase; color: #8B5CF6;
+    background: #8B5CF620; border-radius: 4px;
+    padding: 2px 6px; display: inline-block; width: fit-content;
+  }
+  .vault-item-name { font-size: 12px; font-weight: 600; color: #fff; }
+  .vault-waveform {
+    height: 28px; background: #2A2A2A; border-radius: 4px;
+    display: flex; align-items: center; gap: 1px; padding: 0 6px; overflow: hidden;
+  }
+  .vault-bar {
+    width: 2px; background: #8B5CF660; border-radius: 1px;
+    flex-shrink: 0;
+  }
+  .vault-item-footer { display: flex; align-items: center; justify-content: space-between; }
+  .vault-bpm { font-size: 10px; color: #666; }
+  .vault-collect {
+    font-size: 10px; font-weight: 700; background: #8B5CF6;
+    color: #fff; border: none; border-radius: 6px;
+    padding: 3px 8px; cursor: pointer;
+  }
+
+  /* ── CONCEPT B: Arcade / Loot Drop ── */
+  .arcade-header {
+    display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;
+  }
+  .arcade-title { font-size: 13px; font-weight: 700; color: #fff; letter-spacing: 0.04em; text-transform: uppercase; }
+  .arcade-count { font-size: 11px; color: #666; }
+  .arcade-category { margin-bottom: 16px; }
+  .arcade-cat-label {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+    color: #888; margin-bottom: 8px;
+  }
+  .arcade-row {
+    display: flex; align-items: center; gap: 10px;
+    background: #1A1A1A; border: 1px solid #3A3A3A;
+    border-radius: 10px; padding: 10px 12px; margin-bottom: 6px;
+  }
+  .arcade-play {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: #2A2A2A; border: 1px solid #3A3A3A;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .arcade-play-icon { width: 0; height: 0; border-style: solid; border-width: 5px 0 5px 9px; border-color: transparent transparent transparent #8B5CF6; margin-left: 2px; }
+  .arcade-info { flex: 1; }
+  .arcade-name { font-size: 12px; font-weight: 600; }
+  .arcade-meta { font-size: 10px; color: #666; }
+  .arcade-wave {
+    width: 80px; height: 20px; background: #2A2A2A;
+    border-radius: 3px; display: flex; align-items: center; gap: 1px; padding: 0 4px; overflow: hidden;
+  }
+  .arcade-grab {
+    font-size: 10px; font-weight: 700; color: #8B5CF6;
+    border: 1px solid #8B5CF640; border-radius: 6px;
+    padding: 4px 10px; background: transparent; cursor: pointer; white-space: nowrap;
+  }
+  .rarity-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+
+  /* ── CONCEPT C: Arsenal ── */
+  .arsenal-tabs {
+    display: flex; gap: 6px; margin-bottom: 16px;
+  }
+  .arsenal-tab {
+    font-size: 11px; font-weight: 600; padding: 5px 12px;
+    border-radius: 20px; border: 1px solid #3A3A3A;
+    color: #888; background: transparent; cursor: pointer;
+  }
+  .arsenal-tab.active { background: #8B5CF6; border-color: #8B5CF6; color: #fff; }
+  .arsenal-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 0; border-bottom: 1px solid #2A2A2A;
+  }
+  .arsenal-num { font-size: 11px; color: #555; width: 18px; flex-shrink: 0; }
+  .arsenal-play-btn {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: #2A2A2A; border: 1px solid #3A3A3A;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .arsenal-play-tri { width: 0; height: 0; border-style: solid; border-width: 5px 0 5px 10px; border-color: transparent transparent transparent #fff; margin-left: 2px; }
+  .arsenal-info { flex: 1; }
+  .arsenal-name { font-size: 13px; font-weight: 600; }
+  .arsenal-tags { display: flex; gap: 4px; margin-top: 3px; }
+  .arsenal-tag { font-size: 9px; padding: 1px 6px; border-radius: 3px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+  .tag-kick { background: #ef444420; color: #ef4444; }
+  .tag-snare { background: #f9731620; color: #f97316; }
+  .tag-hat { background: #eab30820; color: #eab308; }
+  .tag-perc { background: #22c55e20; color: #22c55e; }
+  .tag-808 { background: #8B5CF620; color: #8B5CF6; }
+  .arsenal-wave-full {
+    width: 120px; height: 24px; background: #2A2A2A;
+    border-radius: 3px; display: flex; align-items: center; gap: 1px; padding: 0 4px; overflow: hidden;
+  }
+  .arsenal-dl {
+    width: 30px; height: 30px; background: #8B5CF6; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0; cursor: pointer;
+  }
+  .dl-icon { font-size: 14px; }
+
+  /* waveform generator helper */
+  .wbar { display: inline-block; background: #8B5CF660; border-radius: 1px; }
+
+  /* selection indicator */
+  .select-hint { font-size: 12px; color: #666; text-align: center; margin-top: 24px; }
+
+  .recommended-badge {
+    font-size: 10px; font-weight: 700; background: #22c55e20; color: #22c55e;
+    border-radius: 4px; padding: 2px 7px; margin-left: 8px; text-transform: uppercase; letter-spacing: 0.06em;
+  }
+</style>
+</head>
+<body>
+
+<h1>Drum Bank — Design Direction</h1>
+<p class="subtitle">Three visual concepts for the "loot" feel. Click your favorite.</p>
+
+<div class="concepts">
+
+  <!-- CONCEPT A: The Vault -->
+  <div class="concept" data-choice="a" onclick="toggleSelect(this)">
+    <div class="concept-label">
+      <div class="concept-letter">A</div>
+      <div>
+        <div class="concept-title">The Vault <span class="recommended-badge">Recommended</span></div>
+        <div class="concept-desc">Grid of collectible drum items — feels like opening a pack, each sound is a card to claim</div>
+      </div>
+    </div>
+    <div class="concept-preview">
+      <div style="font-size:11px;color:#666;margin-bottom:12px;text-transform:uppercase;letter-spacing:0.08em;font-weight:700;">DRUM VAULT · 47 sounds available</div>
+      <div class="vault-grid">
+        <div class="vault-item">
+          <div class="vault-item-tag">Kick</div>
+          <div class="vault-item-name">808 Thump 01</div>
+          <div class="vault-waveform" id="wf1"></div>
+          <div class="vault-item-footer">
+            <span class="vault-bpm">140 BPM</span>
+            <button class="vault-collect">Collect ↓</button>
+          </div>
+        </div>
+        <div class="vault-item">
+          <div class="vault-item-tag">Snare</div>
+          <div class="vault-item-name">Crack Snap 03</div>
+          <div class="vault-waveform" id="wf2"></div>
+          <div class="vault-item-footer">
+            <span class="vault-bpm">—</span>
+            <button class="vault-collect">Collect ↓</button>
+          </div>
+        </div>
+        <div class="vault-item">
+          <div class="vault-item-tag">Hi-Hat</div>
+          <div class="vault-item-name">Open Hat 07</div>
+          <div class="vault-waveform" id="wf3"></div>
+          <div class="vault-item-footer">
+            <span class="vault-bpm">—</span>
+            <button class="vault-collect">Collect ↓</button>
+          </div>
+        </div>
+        <div class="vault-item">
+          <div class="vault-item-tag">808</div>
+          <div class="vault-item-name">Sub Roll C#</div>
+          <div class="vault-waveform" id="wf4"></div>
+          <div class="vault-item-footer">
+            <span class="vault-bpm">C#</span>
+            <button class="vault-collect">Collect ↓</button>
+          </div>
+        </div>
+        <div class="vault-item">
+          <div class="vault-item-tag">Perc</div>
+          <div class="vault-item-name">Shaker Rim 2</div>
+          <div class="vault-waveform" id="wf5"></div>
+          <div class="vault-item-footer">
+            <span class="vault-bpm">—</span>
+            <button class="vault-collect">Collect ↓</button>
+          </div>
+        </div>
+        <div class="vault-item" style="border:1px dashed #3A3A3A;opacity:0.4;justify-content:center;align-items:center;display:flex;font-size:11px;color:#666;">
+          + more
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONCEPT B: Arcade / Loot Drop -->
+  <div class="concept" data-choice="b" onclick="toggleSelect(this)">
+    <div class="concept-label">
+      <div class="concept-letter">B</div>
+      <div>
+        <div class="concept-title">The Drop</div>
+        <div class="concept-desc">Grouped by category, list rows with waveform — like scrolling a fresh sample pack drop</div>
+      </div>
+    </div>
+    <div class="concept-preview">
+      <div class="arcade-header">
+        <span class="arcade-title">🥁 Drum Bank</span>
+        <span class="arcade-count">47 sounds · members only</span>
+      </div>
+      <div class="arcade-category">
+        <div class="arcade-cat-label">── Kicks ──────────</div>
+        <div class="arcade-row">
+          <div class="arcade-play"><div class="arcade-play-icon"></div></div>
+          <div class="arcade-info">
+            <div class="arcade-name">808 Thump 01</div>
+            <div class="arcade-meta">0.8s</div>
+          </div>
+          <div class="arcade-wave" id="wf6"></div>
+          <div class="rarity-dot" style="background:#ef4444;"></div>
+          <button class="arcade-grab">Grab ↓</button>
+        </div>
+        <div class="arcade-row">
+          <div class="arcade-play"><div class="arcade-play-icon"></div></div>
+          <div class="arcade-info">
+            <div class="arcade-name">Hard Kick 808</div>
+            <div class="arcade-meta">1.2s</div>
+          </div>
+          <div class="arcade-wave" id="wf7"></div>
+          <div class="rarity-dot" style="background:#ef4444;"></div>
+          <button class="arcade-grab">Grab ↓</button>
+        </div>
+      </div>
+      <div class="arcade-category">
+        <div class="arcade-cat-label">── Snares ──────────</div>
+        <div class="arcade-row">
+          <div class="arcade-play"><div class="arcade-play-icon"></div></div>
+          <div class="arcade-info">
+            <div class="arcade-name">Crack Snap 03</div>
+            <div class="arcade-meta">0.3s</div>
+          </div>
+          <div class="arcade-wave" id="wf8"></div>
+          <div class="rarity-dot" style="background:#f97316;"></div>
+          <button class="arcade-grab">Grab ↓</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONCEPT C: Arsenal -->
+  <div class="concept" data-choice="c" onclick="toggleSelect(this)">
+    <div class="concept-label">
+      <div class="concept-letter">C</div>
+      <div>
+        <div class="concept-title">The Arsenal</div>
+        <div class="concept-desc">Tabbed by type, full waveform row — clean and professional, more like a DAW sample browser</div>
+      </div>
+    </div>
+    <div class="concept-preview">
+      <div class="arsenal-tabs">
+        <div class="arsenal-tab active">All</div>
+        <div class="arsenal-tab">Kicks</div>
+        <div class="arsenal-tab">Snares</div>
+        <div class="arsenal-tab">Hi-Hats</div>
+        <div class="arsenal-tab">808s</div>
+        <div class="arsenal-tab">Percs</div>
+      </div>
+      <div class="arsenal-item">
+        <div class="arsenal-num">01</div>
+        <div class="arsenal-play-btn"><div class="arsenal-play-tri"></div></div>
+        <div class="arsenal-info">
+          <div class="arsenal-name">808 Thump 01</div>
+          <div class="arsenal-tags"><span class="arsenal-tag tag-808">808</span><span class="arsenal-tag tag-kick">Kick</span></div>
+        </div>
+        <div class="arsenal-wave-full" id="wf9"></div>
+        <div class="arsenal-dl"><span class="dl-icon">↓</span></div>
+      </div>
+      <div class="arsenal-item">
+        <div class="arsenal-num">02</div>
+        <div class="arsenal-play-btn"><div class="arsenal-play-tri"></div></div>
+        <div class="arsenal-info">
+          <div class="arsenal-name">Crack Snap 03</div>
+          <div class="arsenal-tags"><span class="arsenal-tag tag-snare">Snare</span></div>
+        </div>
+        <div class="arsenal-wave-full" id="wf10"></div>
+        <div class="arsenal-dl"><span class="dl-icon">↓</span></div>
+      </div>
+      <div class="arsenal-item">
+        <div class="arsenal-num">03</div>
+        <div class="arsenal-play-btn"><div class="arsenal-play-tri"></div></div>
+        <div class="arsenal-info">
+          <div class="arsenal-name">Open Hat 07</div>
+          <div class="arsenal-tags"><span class="arsenal-tag tag-hat">Hi-Hat</span></div>
+        </div>
+        <div class="arsenal-wave-full" id="wf11"></div>
+        <div class="arsenal-dl"><span class="dl-icon">↓</span></div>
+      </div>
+      <div class="arsenal-item">
+        <div class="arsenal-num">04</div>
+        <div class="arsenal-play-btn"><div class="arsenal-play-tri"></div></div>
+        <div class="arsenal-info">
+          <div class="arsenal-name">Sub Roll C#</div>
+          <div class="arsenal-tags"><span class="arsenal-tag tag-808">808</span></div>
+        </div>
+        <div class="arsenal-wave-full" id="wf12"></div>
+        <div class="arsenal-dl"><span class="dl-icon">↓</span></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<p class="select-hint">Click a concept to select it · you can change your mind</p>
+
+<script>
+// Generate fake waveforms
+function makeBars(id, count, heightFn) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  for (let i = 0; i < count; i++) {
+    const h = heightFn(i, count);
+    const bar = document.createElement('div');
+    bar.className = 'wbar';
+    bar.style.width = '2px';
+    bar.style.height = h + 'px';
+    bar.style.marginRight = '1px';
+    el.appendChild(bar);
+  }
+}
+
+// Kick-style (big attack, decay)
+function kickShape(i, n) {
+  const x = i / n;
+  if (x < 0.05) return 18 + Math.random() * 4;
+  return Math.max(2, (1 - x) * 20 * (0.7 + Math.random() * 0.3));
+}
+// Snare (transient + body)
+function snareShape(i, n) {
+  const x = i / n;
+  if (x < 0.08) return 16 + Math.random() * 6;
+  return 4 + Math.random() * 10 * Math.exp(-x * 4);
+}
+// Hat (short, jittery)
+function hatShape(i, n) {
+  return 3 + Math.random() * 14 * Math.exp(-(i/n) * 5);
+}
+// 808 (long, rolling)
+function subShape(i, n) {
+  const x = i / n;
+  return 6 + Math.sin(x * 3.14) * 12 * (0.8 + Math.random() * 0.2);
+}
+// Perc (medium attack)
+function percShape(i, n) {
+  const x = i / n;
+  if (x < 0.12) return 10 + Math.random() * 8;
+  return 3 + Math.random() * 8 * Math.exp(-x * 3);
+}
+
+makeBars('wf1', 30, kickShape);
+makeBars('wf2', 30, snareShape);
+makeBars('wf3', 30, hatShape);
+makeBars('wf4', 30, subShape);
+makeBars('wf5', 30, percShape);
+makeBars('wf6', 22, kickShape);
+makeBars('wf7', 22, kickShape);
+makeBars('wf8', 22, snareShape);
+makeBars('wf9', 45, kickShape);
+makeBars('wf10', 45, snareShape);
+makeBars('wf11', 45, hatShape);
+makeBars('wf12', 45, subShape);
+</script>
+
+</body>
+</html>

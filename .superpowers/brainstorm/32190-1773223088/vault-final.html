@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Drum Vault — Final</title>
+<script src="/helper.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    background: #0C0C0C; color: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    height: 100vh; overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+
+  /* ════════════════════════════
+     HERO
+  ════════════════════════════ */
+  .hero {
+    position: relative; overflow: hidden; flex-shrink: 0;
+    padding: 44px 40px 32px;
+  }
+  .hero-ambient {
+    position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(ellipse 70% 40% at 50% 0%, rgba(255,255,255,0.05) 0%, transparent 100%);
+  }
+  .hero-inner { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; }
+
+  .hero-eyebrow {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.18em;
+    text-transform: uppercase; color: #3A3A3A; margin-bottom: 12px;
+  }
+  .hero-title {
+    font-size: clamp(48px, 8vw, 80px); font-weight: 800;
+    letter-spacing: -0.04em; line-height: 0.92;
+    background: linear-gradient(90deg,#fff 0%,#fff 35%,#666 50%,#fff 65%,#fff 100%);
+    background-size: 250% 100%; -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent; background-clip: text;
+    animation: shimmer 6s linear infinite; margin-bottom: 14px;
+  }
+  .hero-title em { font-style: normal; font-weight: 300; }
+  @keyframes shimmer { from{background-position:100% 0} to{background-position:-100% 0} }
+
+  .hero-sub { font-size: 14px; color: #3A3A3A; margin-bottom: 20px; max-width: 420px; line-height: 1.6; }
+
+  .hero-stats { display: flex; align-items: stretch; gap: 1px; background: #181818; border-radius: 13px; overflow: hidden; width: fit-content; border: 1px solid #181818; margin-bottom: 18px; }
+  .stat-block { padding: 10px 20px; background: #111; display: flex; flex-direction: column; gap: 2px; }
+  .stat-block+.stat-block { border-left: 1px solid #181818; }
+  .stat-n { font-size: 18px; font-weight: 700; letter-spacing: -0.02em; }
+  .stat-n span { font-size: 12px; font-weight: 400; color: #333; }
+  .stat-lbl { font-size: 10px; color: #333; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 500; }
+
+  .prog-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 7px; }
+  .prog-label { font-size: 11px; color: #2E2E2E; font-weight: 500; letter-spacing: 0.04em; }
+  .prog-pct { font-size: 12px; font-weight: 700; color: #444; }
+  .bar-track { height: 3px; background: #181818; border-radius: 99px; position: relative; max-width: 480px; }
+  .bar-fill { height: 100%; background: #fff; border-radius: 99px; transition: width 0.8s cubic-bezier(.4,0,.2,1); position: relative; }
+  .bar-fill::after { content:''; position:absolute; right:-1px; top:50%; transform:translateY(-50%); width:7px; height:7px; border-radius:50%; background:#fff; box-shadow:0 0 10px rgba(255,255,255,.7); }
+  .ms-row { display: flex; gap: 18px; margin-top: 8px; }
+  .ms { font-size: 10px; color: #282828; display: flex; align-items: center; gap: 4px; }
+  .ms.reached { color: #22c55e; }
+
+  .hero-divider { border: none; border-top: 1px solid #141414; flex-shrink: 0; }
+
+  /* ════════════════════════════
+     PICKER BAR — fixed label above scroll
+  ════════════════════════════ */
+  .picker-bar {
+    flex-shrink: 0;
+    padding: 13px 40px 11px;
+    border-bottom: 1px solid #141414;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .picker-bar-inner { max-width: 860px; margin: 0 auto; width: 100%; display: flex; align-items: center; justify-content: space-between; }
+  .section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.14em; color: #2E2E2E; }
+  .section-new { font-size: 11px; color: #22c55e; font-weight: 600; letter-spacing: 0.06em; }
+
+  /* ════════════════════════════
+     VAULT PICKER — the scroll container
+  ════════════════════════════ */
+  .vault-picker {
+    flex: 1; position: relative; overflow: hidden;
+  }
+
+  /* top + bottom fade masks */
+  .vault-picker::before, .vault-picker::after {
+    content: ''; position: absolute; left: 0; right: 0;
+    height: 28%; pointer-events: none; z-index: 2;
+  }
+  .vault-picker::before { top: 0; background: linear-gradient(to bottom, #0C0C0C 0%, transparent 100%); }
+  .vault-picker::after  { bottom: 0; background: linear-gradient(to top, #0C0C0C 0%, transparent 100%); }
+
+  /* center selection band — subtle lines like iOS picker */
+  .picker-focus-band {
+    position: absolute; left: 0; right: 0; top: 50%;
+    height: 68px; transform: translateY(-50%);
+    border-top: 1px solid rgba(255,255,255,0.055);
+    border-bottom: 1px solid rgba(255,255,255,0.055);
+    pointer-events: none; z-index: 3;
+  }
+
+  /* scrollable list */
+  .loops-scroll {
+    height: 100%; overflow-y: scroll;
+    scroll-snap-type: y mandatory;
+    -ms-overflow-style: none; scrollbar-width: none;
+  }
+  .loops-scroll::-webkit-scrollbar { display: none; }
+
+  .loops-inner { max-width: 860px; margin: 0 auto; padding: 0 40px; }
+
+  /* ════════════════════════════
+     THE ROW
+  ════════════════════════════ */
+  .loop-row {
+    display: flex; align-items: center; gap: 20px;
+    padding: 18px 0;
+    border-bottom: 1px solid #111;
+    position: relative; overflow: hidden;
+    background: #0C0C0C;
+    scroll-snap-align: center;
+    transform-origin: center center;
+    will-change: transform, opacity;
+    transition: transform 0.12s cubic-bezier(.4,0,.2,1), opacity 0.12s cubic-bezier(.4,0,.2,1);
+  }
+  .loop-row:not(.collected-row):hover .loop-name { color: #ddd; }
+  .loop-row:not(.collected-row):hover .row-num { color: #2E2E2E; }
+  .loop-row:not(.collected-row):hover .collect-btn { color: #666; border-color: #2E2E2E; }
+
+  .row-num {
+    font-size: 18px; font-weight: 800; color: #1C1C1C;
+    width: 32px; flex-shrink: 0; letter-spacing: -0.03em;
+    transition: color 0.2s; text-align: right;
+  }
+  .loop-info { width: 120px; flex-shrink: 0; }
+  .loop-name { font-size: 13px; font-weight: 600; color: #888; line-height: 1.3; transition: color 0.2s; }
+  .loop-bpm  { font-size: 11px; color: #252525; margin-top: 2px; font-weight: 500; letter-spacing: 0.03em; }
+
+  .loop-badge {
+    font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+    border-radius: 4px; padding: 2px 6px; width: fit-content; margin-top: 4px;
+  }
+  .badge-new  { color: #22c55e; background: #22c55e0E; border: 1px solid #22c55e20; }
+  .badge-excl { color: #C0A860; background: #C0A8600E; border: 1px solid #C0A86020; }
+
+  .play-btn {
+    width: 32px; height: 32px; border-radius: 50%;
+    border: 1px solid #1E1E1E; background: #111;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; flex-shrink: 0; transition: all 0.15s;
+  }
+  .play-btn:hover { border-color: #555; }
+  .collected-row .play-btn:hover { border-color: #fff; }
+  .play-icon { width:0; height:0; border-style:solid; border-width:4px 0 4px 8px; border-color:transparent transparent transparent #555; margin-left:2px; }
+  .collected-row .play-icon { border-color:transparent transparent transparent #888; }
+  .pause-icon { display:flex; gap:2px; }
+  .pause-bar { width:2.5px; height:9px; background:#fff; border-radius:1px; }
+
+  .waveform {
+    flex: 1; height: 48px;
+    display: flex; align-items: center;
+    overflow: hidden; cursor: pointer;
+  }
+  .waveform .bar {
+    flex-shrink: 0; width: 3px; border-radius: 0;
+    background: #111; transition: background 0.04s;
+  }
+  .waveform .bar.tall { border-radius: 1px 1px 0 0; }
+  .collected-row .waveform .bar { background: #1E1E1E; }
+  .waveform .bar.played { background: #C0C0C0; }
+  .waveform .bar.head { background: #fff; box-shadow: 0 0 6px rgba(255,255,255,.5); }
+  .playing .waveform .bar:not(.played) { animation: wb .7s ease-in-out infinite alternate; }
+  @keyframes wb { from{opacity:.3} to{opacity:.75} }
+
+  .collect-btn {
+    flex-shrink: 0; padding: 9px 20px;
+    border-radius: 9px; border: 1px solid #1A1A1A;
+    background: transparent; color: #2E2E2E;
+    font-size: 12px; font-weight: 600; cursor: pointer;
+    transition: all 0.18s; letter-spacing: 0.05em; white-space: nowrap;
+    position: relative; overflow: hidden;
+  }
+  .collect-btn:hover { background: #fff; color: #000; border-color: #fff; }
+  .collected-row .collect-btn { color: #22c55e; border-color: #22c55e18; cursor: default; pointer-events: none; }
+
+  .sweep-layer {
+    position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(105deg, transparent 20%, rgba(255,255,255,.15) 50%, transparent 80%);
+    transform: translateX(-100%); transition: none;
+  }
+  .loop-row.sweeping .sweep-layer { transform: translateX(200%); transition: transform .5s cubic-bezier(.4,0,.2,1); }
+
+  /* ════════════════════════════
+     VAULT FOOTER
+  ════════════════════════════ */
+  .vault-footer {
+    flex-shrink: 0;
+    border-top: 1px solid #111;
+    padding: 18px 40px 22px;
+  }
+  .vault-footer-inner {
+    max-width: 860px; margin: 0 auto;
+    display: flex; align-items: baseline; justify-content: space-between; gap: 24px;
+  }
+  .vault-footer-desc {
+    font-size: 11px; color: #222; line-height: 1.7; letter-spacing: 0.02em;
+  }
+  .vault-footer-desc strong { color: #2E2E2E; font-weight: 600; }
+  .vault-footer-tag {
+    font-size: 10px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.14em; color: #1C1C1C; white-space: nowrap; flex-shrink: 0;
+  }
+
+  .toast {
+    position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(16px);
+    background: #181818; border: 1px solid #2A2A2A; border-radius: 12px;
+    padding: 11px 20px; font-size: 13px; font-weight: 600; color: #fff;
+    opacity: 0; transition: opacity .2s, transform .25s cubic-bezier(.34,1.56,.64,1);
+    pointer-events: none; white-space: nowrap; z-index: 999; letter-spacing: -.01em;
+  }
+  .toast .toast-sub { font-size: 11px; color: #444; font-weight: 400; margin-top: 1px; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-ambient"></div>
+  <div class="hero-inner">
+    <div class="hero-eyebrow">Soul Sample Club</div>
+    <h1 class="hero-title">Drum<br><em>Vault.</em></h1>
+    <p class="hero-sub">Members-only drum breaks, hand-picked and added to the vault regularly. Preview any break before you collect.</p>
+
+    <div class="hero-stats">
+      <div class="stat-block">
+        <div class="stat-n" id="s-collected">12 <span>collected</span></div>
+        <div class="stat-lbl">Your haul</div>
+      </div>
+      <div class="stat-block">
+        <div class="stat-n">47 <span>total</span></div>
+        <div class="stat-lbl">In the vault</div>
+      </div>
+      <div class="stat-block">
+        <div class="stat-n" id="s-pct">26<span>%</span></div>
+        <div class="stat-lbl">Complete</div>
+      </div>
+    </div>
+
+    <div class="prog-row" style="max-width:480px">
+      <span class="prog-label">Collection progress</span>
+      <span class="prog-pct" id="prog-pct-lbl">26%</span>
+    </div>
+    <div class="bar-track" style="max-width:480px">
+      <div class="bar-fill" id="prog-fill" style="width:26%"></div>
+    </div>
+    <div class="ms-row">
+      <div class="ms reached">★ 10 breaks — unlocked</div>
+      <div class="ms" id="ms25">★ 25 breaks</div>
+      <div class="ms" id="ms47">★ Complete the vault</div>
+    </div>
+  </div>
+</div>
+
+<hr class="hero-divider">
+
+<!-- SECTION LABEL (fixed above picker) -->
+<div class="picker-bar">
+  <div class="picker-bar-inner">
+    <span class="section-title">All Breaks — 47 total</span>
+    <span class="section-new">↑ 3 new since your last visit</span>
+  </div>
+</div>
+
+<!-- SLOT MACHINE PICKER -->
+<div class="vault-picker">
+  <div class="picker-focus-band"></div>
+  <div class="loops-scroll" id="picker-scroll">
+    <div class="loops-inner">
+      <div id="loop-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="vault-footer">
+  <div class="vault-footer-inner">
+    <p class="vault-footer-desc">
+      <strong>Original drum breaks</strong> — sourced, cleaned and added to the vault on a rolling basis.<br>
+      Every break is yours to keep forever once collected.
+    </p>
+    <span class="vault-footer-tag">Updated regularly</span>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"><div id="toast-msg">Break collected</div><div class="toast-sub" id="toast-sub">Added to your vault</div></div>
+
+<script>
+let collectedCount = 12;
+const TOTAL = 47;
+
+const loops = [
+  { id:'r1',  name:'Drum Break 01', bpm:140, badge:'new',  pre:false },
+  { id:'r2',  name:'Drum Break 02', bpm:90,              pre:true  },
+  { id:'r3',  name:'Drum Break 03', bpm:120, badge:'new',  pre:false },
+  { id:'r4',  name:'Drum Break 04', bpm:140, badge:'excl', pre:false },
+  { id:'r5',  name:'Drum Break 05', bpm:100,              pre:true  },
+  { id:'r6',  name:'Drum Break 06', bpm:95,               pre:true  },
+  { id:'r7',  name:'Drum Break 07', bpm:130, badge:'new',  pre:false },
+  { id:'r8',  name:'Drum Break 08', bpm:110,              pre:false },
+  { id:'r9',  name:'Drum Break 09', bpm:85,  badge:'excl', pre:false },
+  { id:'r10', name:'Drum Break 10', bpm:160,              pre:false },
+  { id:'r11', name:'Drum Break 11', bpm:72,               pre:true  },
+  { id:'r12', name:'Drum Break 12', bpm:105,              pre:false },
+];
+
+function lcg(s){return()=>{s=(s*1664525+1013904223)&0x7fffffff;return s/0x7fffffff;};}
+function buildWf(el, seed){
+  const rng=lcg(seed); const cnt=80; const raw=[];
+  for(let i=0;i<cnt;i++){const b=.1+rng()*.2;const h=rng()>.65?.4+rng()*.6:rng()*.1;raw.push(b+h);}
+  const sm=raw.map((v,i)=>((raw[i-1]??v)+v+(raw[i+1]??v))/3);
+  const mx=Math.max(...sm);
+  sm.forEach(h=>{
+    const bar=document.createElement('div');
+    const px=Math.max(4,Math.round((h/mx)*46));
+    bar.className='bar'+(px>30?' tall':'');
+    bar.style.height=px+'px';
+    el.appendChild(bar);
+  });
+}
+
+let playing=null,timer=null;
+function togglePlay(id){
+  const row=document.getElementById(id);
+  if(playing&&playing!==id)stopRow(playing);
+  if(playing===id){stopRow(id);return;}
+  playing=id; row.classList.add('playing');
+  row.querySelector('.play-btn').innerHTML='<div class="pause-icon"><div class="pause-bar"></div><div class="pause-bar"></div></div>';
+  const bars=[...row.querySelectorAll('.bar')]; let idx=0;
+  clearInterval(timer);
+  timer=setInterval(()=>{
+    if(idx>0)bars[idx-1].classList.remove('head');
+    if(idx<bars.length){bars[idx].classList.add('played','head');idx++;}
+    else stopRow(id);
+  },55);
+}
+function stopRow(id){
+  clearInterval(timer);
+  const row=document.getElementById(id);if(!row)return;
+  row.classList.remove('playing');
+  row.querySelector('.play-btn').innerHTML='<div class="play-icon"></div>';
+  row.querySelectorAll('.bar').forEach(b=>b.classList.remove('played','head'));
+  if(playing===id)playing=null;
+}
+
+let toastTmr;
+function showToast(msg,sub){
+  const t=document.getElementById('toast');
+  document.getElementById('toast-msg').textContent=msg;
+  document.getElementById('toast-sub').textContent=sub;
+  t.classList.add('show'); clearTimeout(toastTmr);
+  toastTmr=setTimeout(()=>t.classList.remove('show'),2400);
+}
+function updateStats(){
+  const pct=Math.round((collectedCount/TOTAL)*100);
+  document.getElementById('s-collected').innerHTML=collectedCount+' <span>collected</span>';
+  document.getElementById('s-pct').innerHTML=pct+'<span>%</span>';
+  document.getElementById('prog-pct-lbl').textContent=pct+'%';
+  document.getElementById('prog-fill').style.width=pct+'%';
+  if(collectedCount>=25)document.getElementById('ms25').classList.add('reached');
+  if(collectedCount>=47)document.getElementById('ms47').classList.add('reached');
+}
+function collectRow(id){
+  const row=document.getElementById(id);
+  if(row.classList.contains('collected-row'))return;
+  if(playing===id)stopRow(id);
+  row.classList.add('sweeping');
+  setTimeout(()=>row.classList.remove('sweeping'),600);
+  setTimeout(()=>{
+    row.classList.add('collected-row');
+    row.querySelector('.collect-btn').textContent='✓ Collected';
+    collectedCount++;updateStats();
+    const ms=collectedCount===25?'Milestone — 25 breaks collected':collectedCount===TOTAL?'Vault complete.':null;
+    showToast(ms??row.querySelector('.loop-name').textContent+' collected', ms?'★ Milestone unlocked':collectedCount+' of '+TOTAL+' breaks collected');
+  },260);
+}
+
+// ── BUILD ROWS ──
+const list=document.getElementById('loop-list');
+loops.forEach((lp,i)=>{
+  const row=document.createElement('div');
+  row.id=lp.id;
+  row.className='loop-row'+(lp.pre?' collected-row':'');
+  const badgeHTML=lp.badge?`<div class="loop-badge badge-${lp.badge==='excl'?'excl':'new'}">${lp.badge==='excl'?'Exclusive':'New'}</div>`:'';
+  row.innerHTML=`
+    <div class="sweep-layer"></div>
+    <div class="row-num">${String(i+1).padStart(2,'0')}</div>
+    <div class="loop-info">
+      <div class="loop-name">${lp.name}</div>
+      <div class="loop-bpm">${lp.bpm} BPM</div>
+      ${badgeHTML}
+    </div>
+    <div class="play-btn" onclick="togglePlay('${lp.id}')"><div class="play-icon"></div></div>
+    <div class="waveform" onclick="togglePlay('${lp.id}')"></div>
+    <button class="collect-btn" onclick="collectRow('${lp.id}')">${lp.pre?'✓ Collected':'Collect'}</button>
+  `;
+  list.appendChild(row);
+  buildWf(row.querySelector('.waveform'),(i+1)*6113+9);
+});
+
+// ── SLOT MACHINE FOCAL ──
+let rafPending=false;
+const pickerScroll=document.getElementById('picker-scroll');
+
+function updateFocal(){
+  const rect=pickerScroll.getBoundingClientRect();
+  const center=rect.top+rect.height/2;
+  document.querySelectorAll('.loop-row').forEach(row=>{
+    const rc=row.getBoundingClientRect();
+    const rowCenter=rc.top+rc.height/2;
+    const dist=Math.abs(rowCenter-center);
+    const t=Math.min(dist/(rect.height*0.4),1);
+    row.style.transform=`scale(${(1-t*0.1).toFixed(4)})`;
+    row.style.opacity=(1-t*0.5).toFixed(4);
+  });
+}
+
+pickerScroll.addEventListener('scroll',()=>{
+  if(!rafPending){rafPending=true;requestAnimationFrame(()=>{updateFocal();rafPending=false;});}
+},{passive:true});
+
+// Set padding so first and last rows can snap to center
+function initPicker(){
+  const rows=document.querySelectorAll('.loop-row');
+  if(!rows.length)return;
+  const h=pickerScroll.clientHeight;
+  const rowH=rows[0].offsetHeight;
+  const pad=Math.max(0, h/2 - rowH/2);
+  list.style.paddingTop=pad+'px';
+  list.style.paddingBottom=pad+'px';
+  updateFocal();
+}
+setTimeout(initPicker, 60);
+</script>
+</body>
+</html>
