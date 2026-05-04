@@ -8,6 +8,7 @@ import { NavigationProgress } from "@/components/layout/NavigationProgress";
 import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
 import { KlaviyoTracking } from "@/components/analytics/KlaviyoTracking";
 import { MetaPixel } from "@/components/analytics/MetaPixel";
+import { FbclidCapture } from "@/components/analytics/FbclidCapture";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -67,6 +68,9 @@ export default function RootLayout({
         {gaId && <GoogleAnalytics gaId={gaId} />}
         <MetaPixel />
         <KlaviyoTracking />
+        <Suspense fallback={null}>
+          <FbclidCapture />
+        </Suspense>
         <Suspense fallback={null}>
           <NavigationProgress />
         </Suspense>

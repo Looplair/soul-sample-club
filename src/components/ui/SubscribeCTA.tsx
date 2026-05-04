@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui";
 import { ArrowRight, Loader2 } from "lucide-react";
+import { getStoredFbclid } from "@/components/analytics/FbclidCapture";
 
 interface SubscribeCTAProps {
   isLoggedIn: boolean;
@@ -52,10 +53,11 @@ export function SubscribeCTA({
   const handleCheckout = async () => {
     setIsLoading(true);
     try {
+      const fbclid = getStoredFbclid();
       const response = await fetch("/api/create-checkout-session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan }),
+        body: JSON.stringify({ plan, fbclid }),
       });
       const data = await response.json();
       if (data.url) {

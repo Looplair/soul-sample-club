@@ -15,8 +15,11 @@ export async function POST(request: Request) {
 
   // Capture Meta matching signals from browser before we lose context
   const cookieHeader = request.headers.get("cookie") || "";
-  const metaFbc = getCookieValue(cookieHeader, "_fbc");
   const metaFbp = getCookieValue(cookieHeader, "_fbp");
+  // fbc: prefer cookie, fall back to constructing from fbclid (survives iOS ITP cookie deletion)
+  const fbclid = body.fbclid as string | undefined;
+  const metaFbcFromCookie = getCookieValue(cookieHeader, "_fbc");
+  const metaFbc = metaFbcFromCookie || (fbclid ? `fb.1.${Date.now()}.${fbclid}` : "");
   const metaClientIp =
     request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
     request.headers.get("x-real-ip") ||

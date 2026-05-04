@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui";
+import { getStoredFbclid } from "@/components/analytics/FbclidCapture";
 
 interface SubscribeButtonProps {
   className?: string;
@@ -22,8 +23,11 @@ export function SubscribeButton({
   const handleSubscribe = async () => {
     setIsLoading(true);
     try {
+      const fbclid = getStoredFbclid();
       const response = await fetch("/api/create-checkout-session", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan: "monthly", fbclid }),
       });
       const data = await response.json();
       if (data.url) {
