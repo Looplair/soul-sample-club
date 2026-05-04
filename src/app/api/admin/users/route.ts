@@ -29,9 +29,14 @@ export async function GET() {
 
     const adminSupabase = createAdminClient();
 
-    // Fetch all data with admin client to bypass RLS
-    const [usersResult, downloadsResult, patreonResult] = await Promise.all([
-      adminSupabase
+    // Supabase PostgREST hard-caps responses at 1000 rows regardless of .limit().
+    // We paginate in batches of 1000 until we've fetched every profile.
+    const PAGE_SIZE = 1000;
+    let allUsers: Record<string, unknown>[] = [];
+    let page = 0;
+
+    while (true) {
+      const { data, error } = await adminSupabase
         .from("profiles")
         .select(
           `
@@ -44,15 +49,37 @@ export async function GET() {
         `
         )
         .order("created_at", { ascending: false })
-        .limit(5000),
-      adminSupabase.from("downloads").select("user_id"),
-      adminSupabase.from("patreon_links").select("user_id, is_active, tier_title"),
-    ]);
+        .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+
+      if (error || !data || data.length === 0) break;
+      allUsers = [...allUsers, ...(data as Record<string, unknown>[])];
+      if (data.length < PAGE_SIZE) break; // last page
+      page++;
+    }
+
+    // Downloads and patreon links — paginate these too so counts stay accurate
+    const PAGE_SIZE_DL = 1000;
+    let allDownloads: { user_id: string }[] = [];
+    let dlPage = 0;
+    while (true) {
+      const { data } = await adminSupabase
+        .from("downloads")
+        .select("user_id")
+        .range(dlPage * PAGE_SIZE_DL, (dlPage + 1) * PAGE_SIZE_DL - 1);
+      if (!data || data.length === 0) break;
+      allDownloads = [...allDownloads, ...(data as { user_id: string }[])];
+      if (data.length < PAGE_SIZE_DL) break;
+      dlPage++;
+    }
+
+    const { data: patreonData } = await adminSupabase
+      .from("patreon_links")
+      .select("user_id, is_active, tier_title");
 
     return NextResponse.json({
-      users: usersResult.data || [],
-      downloads: downloadsResult.data || [],
-      patreonLinks: patreonResult.data || [],
+      users: allUsers,
+      downloads: allDownloads,
+      patreonLinks: patreonData || [],
     });
   } catch (error) {
     console.error("Admin users fetch error:", error);
