@@ -57,18 +57,49 @@ interface UnifiedSubscription {
   joinedAt: string;
 }
 
+const PAGE = 1000;
+
 async function getSubscriptionData() {
   const adminSupabase = createAdminClient();
 
-  const [profilesResult, subscriptionsResult, patreonResult] = await Promise.all([
-    adminSupabase.from("profiles").select("id, email, full_name, created_at").order("created_at", { ascending: false }),
-    adminSupabase.from("subscriptions").select("user_id, status, current_period_end"),
-    adminSupabase.from("patreon_links").select("user_id, patreon_email, is_active, tier_title"),
-  ]);
+  // Supabase PostgREST hard-caps at 1000 rows — paginate each table individually
 
-  const profiles = (profilesResult.data || []) as Profile[];
-  const subscriptions = (subscriptionsResult.data || []) as Subscription[];
-  const patreonLinks = (patreonResult.data || []) as PatreonLink[];
+  // --- profiles ---
+  const profiles: Profile[] = [];
+  for (let p = 0; ; p++) {
+    const { data } = await adminSupabase
+      .from("profiles")
+      .select("id, email, full_name, created_at")
+      .order("created_at", { ascending: false })
+      .range(p * PAGE, (p + 1) * PAGE - 1);
+    if (!data || data.length === 0) break;
+    profiles.push(...(data as Profile[]));
+    if (data.length < PAGE) break;
+  }
+
+  // --- subscriptions ---
+  const subscriptions: Subscription[] = [];
+  for (let p = 0; ; p++) {
+    const { data } = await adminSupabase
+      .from("subscriptions")
+      .select("user_id, status, current_period_end")
+      .range(p * PAGE, (p + 1) * PAGE - 1);
+    if (!data || data.length === 0) break;
+    subscriptions.push(...(data as Subscription[]));
+    if (data.length < PAGE) break;
+  }
+
+  // --- patreon links ---
+  const patreonLinks: PatreonLink[] = [];
+  for (let p = 0; ; p++) {
+    const { data } = await adminSupabase
+      .from("patreon_links")
+      .select("user_id, patreon_email, is_active, tier_title")
+      .range(p * PAGE, (p + 1) * PAGE - 1);
+    if (!data || data.length === 0) break;
+    patreonLinks.push(...(data as PatreonLink[]));
+    if (data.length < PAGE) break;
+  }
 
   // Build lookup maps
   const subMap = new Map<string, Subscription>();
