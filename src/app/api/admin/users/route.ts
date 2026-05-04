@@ -43,7 +43,8 @@ export async function GET() {
           subscription:subscriptions(status, current_period_end)
         `
         )
-        .order("created_at", { ascending: false }),
+        .order("created_at", { ascending: false })
+        .limit(5000),
       adminSupabase.from("downloads").select("user_id"),
       adminSupabase.from("patreon_links").select("user_id, is_active, tier_title"),
     ]);

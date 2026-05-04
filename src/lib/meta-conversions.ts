@@ -10,11 +10,16 @@ const META_ACCESS_TOKEN = process.env.META_CONVERSIONS_API_TOKEN;
 interface MetaEventData {
   eventName: string;
   eventTime?: number;
+  eventId?: string; // For deduplication with browser pixel
   userData: {
     email?: string;
     firstName?: string;
     lastName?: string;
     externalId?: string;
+    fbc?: string;             // Facebook Click ID (_fbc cookie) - NOT hashed
+    fbp?: string;             // Facebook Browser ID (_fbp cookie) - NOT hashed
+    clientIpAddress?: string; // User IP at time of event - NOT hashed
+    clientUserAgent?: string; // User agent - NOT hashed
   };
   customData?: {
     currency?: string;
@@ -40,7 +45,7 @@ export async function sendMetaConversionEvent(data: MetaEventData): Promise<bool
   }
 
   try {
-    // Hash user data as required by Meta
+    // Hash PII fields as required by Meta
     const hashedUserData: Record<string, string> = {};
 
     if (data.userData.email) {
@@ -56,11 +61,18 @@ export async function sendMetaConversionEvent(data: MetaEventData): Promise<bool
       hashedUserData.external_id = await sha256(data.userData.externalId);
     }
 
+    // Non-hashed fields - sent as-is per Meta spec
+    if (data.userData.fbc) hashedUserData.fbc = data.userData.fbc;
+    if (data.userData.fbp) hashedUserData.fbp = data.userData.fbp;
+    if (data.userData.clientIpAddress) hashedUserData.client_ip_address = data.userData.clientIpAddress;
+    if (data.userData.clientUserAgent) hashedUserData.client_user_agent = data.userData.clientUserAgent;
+
     const eventPayload = {
       data: [
         {
           event_name: data.eventName,
           event_time: data.eventTime || Math.floor(Date.now() / 1000),
+          event_id: data.eventId, // Deduplication key — must match browser pixel event_id
           action_source: data.actionSource || "website",
           event_source_url: data.eventSourceUrl || "https://www.soulsampleclub.com/feed",
           user_data: hashedUserData,
@@ -90,6 +102,7 @@ export async function sendMetaConversionEvent(data: MetaEventData): Promise<bool
     console.log("Meta Conversions API success:", {
       eventName: data.eventName,
       eventsReceived: result.events_received,
+      eventId: data.eventId,
     });
 
     return true;
@@ -106,13 +119,24 @@ export async function sendStartTrialEvent(params: {
   email: string;
   userId: string;
   firstName?: string;
+  fbc?: string;
+  fbp?: string;
+  clientIpAddress?: string;
+  clientUserAgent?: string;
+  eventId?: string;
+  eventSourceUrl?: string;
 }): Promise<boolean> {
   return sendMetaConversionEvent({
     eventName: "StartTrial",
+    eventId: params.eventId,
     userData: {
       email: params.email,
       externalId: params.userId,
       firstName: params.firstName,
+      fbc: params.fbc,
+      fbp: params.fbp,
+      clientIpAddress: params.clientIpAddress,
+      clientUserAgent: params.clientUserAgent,
     },
     customData: {
       currency: "USD",
@@ -120,5 +144,6 @@ export async function sendStartTrialEvent(params: {
       content_name: "Soul Sample Club Membership",
     },
     actionSource: "website",
+    eventSourceUrl: params.eventSourceUrl,
   });
 }

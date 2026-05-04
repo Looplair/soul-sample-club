@@ -3,9 +3,27 @@ import { stripe, STRIPE_PRICE_ID, STRIPE_YEARLY_PRICE_ID } from "@/lib/stripe";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
+// Helper to extract a cookie value by name
+function getCookieValue(cookieHeader: string, name: string): string {
+  const match = cookieHeader.match(new RegExp(`(?:^|;\\s*)${name}=([^;]*)`));
+  return match ? decodeURIComponent(match[1]) : "";
+}
+
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
   const plan: "monthly" | "yearly" = body.plan === "yearly" ? "yearly" : "monthly";
+
+  // Capture Meta matching signals from browser before we lose context
+  const cookieHeader = request.headers.get("cookie") || "";
+  const metaFbc = getCookieValue(cookieHeader, "_fbc");
+  const metaFbp = getCookieValue(cookieHeader, "_fbp");
+  const metaClientIp =
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    request.headers.get("x-real-ip") ||
+    "";
+  const metaClientUa = request.headers.get("user-agent") || "";
+  // Generate a unique event ID for browser pixel / CAPI deduplication
+  const metaEventId = `startrial_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 
   try {
     const supabase = await createClient();
@@ -144,10 +162,15 @@ export async function POST(request: Request) {
         discounts: [{ coupon: "cvoilDO6" }],
       }),
       subscription_data: subscriptionData,
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/feed?success=true`,
+      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/feed?success=true&meta_event_id=${metaEventId}`,
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/feed?canceled=true`,
       metadata: {
         supabase_user_id: user.id,
+        meta_fbc: metaFbc,
+        meta_fbp: metaFbp,
+        meta_client_ip: metaClientIp,
+        meta_client_ua: metaClientUa,
+        meta_event_id: metaEventId,
       },
       billing_address_collection: "auto",
       custom_text: {

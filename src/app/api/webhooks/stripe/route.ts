@@ -137,6 +137,12 @@ export async function POST(request: Request) {
               email: profileData.email,
               userId,
               firstName: profileData.full_name?.split(" ")[0],
+              fbc: session.metadata?.meta_fbc || undefined,
+              fbp: session.metadata?.meta_fbp || undefined,
+              clientIpAddress: session.metadata?.meta_client_ip || undefined,
+              clientUserAgent: session.metadata?.meta_client_ua || undefined,
+              eventId: session.metadata?.meta_event_id || undefined,
+              eventSourceUrl: "https://www.soulsampleclub.com/feed",
             }).catch((err) => console.error("Meta Conversions API error:", err));
 
             // Notify admin of new subscription (annual vs monthly)
