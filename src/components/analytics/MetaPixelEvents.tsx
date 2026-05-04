@@ -45,6 +45,11 @@ export function MetaPixelCheckoutSuccess() {
     const fbc = getCookie("_fbc") || undefined;
     const fbp = getCookie("_fbp") || undefined;
 
+    // Pass eventID as explicit 4th arg so Meta can deduplicate this browser
+    // event against the CAPI server event fired in the Stripe webhook.
+    const pixelOptions: { eventID?: string } = {};
+    if (eventId) pixelOptions.eventID = eventId;
+
     window.fbq(
       "track",
       "StartTrial",
@@ -54,8 +59,7 @@ export function MetaPixelCheckoutSuccess() {
         ...(fbc && { fbc }),
         ...(fbp && { fbp }),
       },
-      // eventID enables deduplication with the CAPI server event
-      ...(eventId ? [{ eventID: eventId }] : [])
+      pixelOptions
     );
 
     sessionStorage.setItem(STORAGE_KEY, "1");

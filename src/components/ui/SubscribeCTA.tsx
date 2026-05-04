@@ -52,6 +52,14 @@ export function SubscribeCTA({
   // If logged in without subscription, go directly to Stripe checkout
   const handleCheckout = async () => {
     setIsLoading(true);
+    // Fire InitiateCheckout so Meta can optimise the full funnel, not just conversions
+    if (typeof window !== "undefined" && typeof (window as Window & { fbq?: (...a: unknown[]) => void }).fbq === "function") {
+      (window as Window & { fbq: (...a: unknown[]) => void }).fbq("track", "InitiateCheckout", {
+        currency: "USD",
+        value: 0.99,
+        content_name: "Soul Sample Club Membership",
+      });
+    }
     try {
       const fbclid = getStoredFbclid();
       const response = await fetch("/api/create-checkout-session", {

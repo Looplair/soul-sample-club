@@ -82,7 +82,7 @@ export async function sendMetaConversionEvent(data: MetaEventData): Promise<bool
     };
 
     const response = await fetch(
-      `https://graph.facebook.com/v18.0/${META_PIXEL_ID}/events?access_token=${META_ACCESS_TOKEN}`,
+      `https://graph.facebook.com/v21.0/${META_PIXEL_ID}/events?access_token=${META_ACCESS_TOKEN}`,
       {
         method: "POST",
         headers: {
