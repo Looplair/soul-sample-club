@@ -9,6 +9,16 @@ import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
 import { KlaviyoTracking } from "@/components/analytics/KlaviyoTracking";
 import { MetaPixel } from "@/components/analytics/MetaPixel";
 import { FbclidCapture } from "@/components/analytics/FbclidCapture";
+import { createClient } from "@/lib/supabase/server";
+
+/** SHA-256 hex digest — used for Meta Advanced Matching (server-side, safe) */
+async function sha256hex(value: string): Promise<string> {
+  const buf = new TextEncoder().encode(value.toLowerCase().trim());
+  const hash = await crypto.subtle.digest("SHA-256", buf);
+  return Array.from(new Uint8Array(hash))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
 
 const inter = Inter({
   subsets: ["latin"],
@@ -55,18 +65,32 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   const gaId = process.env.NEXT_PUBLIC_GA_ID;
 
+  // Hash email server-side for Meta Advanced Matching — gracefully skipped if not logged in
+  let hashedEmail: string | null = null;
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (user?.email) {
+      hashedEmail = await sha256hex(user.email);
+    }
+  } catch {
+    // Not logged in or auth unavailable — continue without advanced matching
+  }
+
   return (
     <html lang="en" className={`${inter.variable} ${bebasNeue.variable}`}>
       <body className="font-sans min-h-screen flex flex-col">
         {gaId && <GoogleAnalytics gaId={gaId} />}
-        <MetaPixel />
+        <MetaPixel hashedEmail={hashedEmail} />
         <KlaviyoTracking />
         <Suspense fallback={null}>
           <FbclidCapture />
