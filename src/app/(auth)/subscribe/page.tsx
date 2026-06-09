@@ -4,6 +4,7 @@ import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Loader2 } from "lucide-react";
+import { getStoredFbclid } from "@/components/analytics/FbclidCapture";
 
 function SubscribeContent() {
   const router = useRouter();
@@ -39,10 +40,11 @@ function SubscribeContent() {
       setStatus("redirecting");
 
       try {
+        const fbclid = getStoredFbclid();
         const response = await fetch("/api/create-checkout-session", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ plan }),
+          body: JSON.stringify({ plan, fbclid }),
         });
 
         const data = await response.json();
