@@ -163,7 +163,7 @@ export default async function FeedPage() {
     : { notifications: [] as NotificationWithReadStatus[], unreadCount: 0 };
 
   return (
-    <div className="min-h-screen bg-charcoal">
+    <div className="min-h-screen bg-charcoal overflow-x-hidden">
       {/* Meta Pixel conversion tracking */}
       <Suspense fallback={null}>
         <MetaPixelCheckoutSuccess />

@@ -198,7 +198,7 @@ export default async function HomePage() {
   const featuredPack = recentPacks.find((p) => p.cover_image_url) || recentPacks[0];
 
   return (
-    <div className="min-h-screen bg-charcoal">
+    <div className="min-h-screen bg-charcoal overflow-x-hidden">
       {/* ============================================
           HEADER
           ============================================ */}
