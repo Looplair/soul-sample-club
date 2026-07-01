@@ -508,6 +508,50 @@ export default async function HomePage() {
         </section>
 
         {/* ============================================
+            WEEKLY DROP CARD
+            ============================================ */}
+        {!hasSubscription && (
+          <div className="container-app py-2 sm:py-4">
+            <div
+              className="relative rounded-2xl overflow-hidden p-px animate-holo-shift"
+              style={{
+                backgroundSize: "300% 300%",
+                backgroundImage: "linear-gradient(135deg, #7c3aed, #ec4899, #f59e0b, #06b6d4, #7c3aed)",
+              }}
+            >
+              <div className="relative rounded-[calc(1rem-1px)] bg-charcoal px-5 py-4 sm:px-7 sm:py-5 flex items-center gap-4 overflow-hidden">
+                {/* inner glow */}
+                <div
+                  className="absolute inset-0 opacity-[0.07] animate-holo-shift pointer-events-none"
+                  style={{
+                    backgroundSize: "300% 300%",
+                    backgroundImage: "linear-gradient(135deg, #7c3aed, #ec4899, #f59e0b, #06b6d4, #7c3aed)",
+                  }}
+                />
+                {/* icon */}
+                <div
+                  className="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center relative z-10"
+                  style={{ background: "linear-gradient(135deg, #7c3aed, #ec4899)" }}
+                >
+                  <Sparkles className="w-5 h-5 text-white" />
+                </div>
+                {/* text */}
+                <div className="flex-1 min-w-0 relative z-10">
+                  <p className="text-white font-bold text-sm sm:text-base tracking-tight">New drop every week</p>
+                  <p className="text-white/50 text-xs sm:text-sm">Fresh soul compositions added regularly. Never the same catalog twice.</p>
+                </div>
+                {/* cta */}
+                {!isLoggedIn && (
+                  <Link href="/signup" className="flex-shrink-0 relative z-10">
+                    <Button size="sm" className="whitespace-nowrap">Start $0.99</Button>
+                  </Link>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ============================================
             CATALOG FEED
             ============================================ */}
         <section id="catalog" className="section scroll-mt-20">
