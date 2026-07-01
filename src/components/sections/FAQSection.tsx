@@ -41,7 +41,7 @@ const faqs = [
   {
     question: "How often is new content added",
     answer:
-      "New packs are added regularly. The focus is quality over quantity — each composition is crafted to be sample-worthy, not filler.\n\nPacks are archived after 90 days, so active members always have access to the freshest material.",
+      "New drop every single week. The focus is quality over quantity — each composition is crafted to be sample-worthy, not filler.",
   },
   {
     question: "Can I use the sounds in commercial releases",

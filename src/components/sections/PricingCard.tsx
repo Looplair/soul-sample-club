@@ -94,7 +94,7 @@ export function PricingCard({ isLoggedIn, hasSubscription, hasUsedTrial }: Prici
             </div>
             <div>
               <p className="text-sm font-medium text-white">Quality over quantity</p>
-              <p className="text-xs text-text-muted">New packs added regularly. Quality over quantity, always.</p>
+              <p className="text-xs text-text-muted">New drop every single week.</p>
             </div>
           </div>
         </div>

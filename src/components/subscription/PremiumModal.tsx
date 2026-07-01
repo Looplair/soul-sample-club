@@ -124,7 +124,7 @@ export function PremiumModal({ isOpen, onClose, hasUsedTrial, isLoggedIn }: Prem
                   className="flex items-center justify-center gap-2 w-full px-6 py-3 text-text-muted text-sm hover:text-white transition-colors disabled:opacity-60"
                 >
                   {yearlyLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                  or $29/year — lock in your rate
+                  or $49/year — lock in your rate
                 </button>
               </>
             ) : (
@@ -140,7 +140,7 @@ export function PremiumModal({ isOpen, onClose, hasUsedTrial, isLoggedIn }: Prem
                   href={`/signup?redirect=${encodeURIComponent("/subscribe?plan=yearly")}`}
                   className="flex items-center justify-center w-full px-6 py-3 text-text-muted text-sm hover:text-white transition-colors"
                 >
-                  or $29/year — lock in your rate
+                  or $49/year — lock in your rate
                 </Link>
                 <Link
                   href="/login"
