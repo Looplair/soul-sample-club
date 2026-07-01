@@ -295,7 +295,7 @@ export default async function FeedPage() {
 
                 {/* ACTIVE PACKS GRID */}
                 {gridPacks.length > 0 && (
-                  <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5">
+                  <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5 [&>*:last-child:nth-child(odd)]:max-sm:col-span-2 [&>*:last-child:nth-child(odd)]:max-sm:max-w-[calc(50%-6px)] [&>*:last-child:nth-child(odd)]:max-sm:mx-auto">
                     {gridPacks.map(pack => (
                       <PackCard
                         key={pack.id}
