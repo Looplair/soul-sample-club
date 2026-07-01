@@ -102,7 +102,7 @@ export function PackCard({ pack, sampleCount }: PackCardProps) {
           </div>
           {/* Expiry Warning Badge */}
           {expiryBadgeText && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-500/90 text-white text-[10px] font-medium tracking-wide backdrop-blur-sm">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/60 text-white/80 text-[10px] font-medium tracking-wide backdrop-blur-sm border border-white/20">
               <Clock className="w-2.5 h-2.5" />
               {expiryBadgeText}
             </span>

@@ -3,6 +3,7 @@ import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { CatalogSearch } from "@/components/catalog/CatalogSearch";
+import { PackCard } from "@/components/packs/PackCard";
 import { CreatorHeroStrip } from "@/components/sections/CreatorHeroStrip";
 import { CompleteControlSection } from "@/components/sections/CompleteControlSection";
 import { CommunityProof } from "@/components/sections/CommunityProof";
@@ -10,6 +11,7 @@ import { MemberTestimonials } from "@/components/sections/MemberTestimonials";
 import { FAQSection } from "@/components/sections/FAQSection";
 import { PricingCard } from "@/components/sections/PricingCard";
 import { ScarcityBanner } from "@/components/layout/ScarcityBanner";
+import { ArchivedPacksSection } from "@/components/catalog/ArchivedPacksSection";
 import { HowItWorksSection } from "@/components/sections/HowItWorksSection";
 import { Button } from "@/components/ui";
 import { SubscribeCTA } from "@/components/ui/SubscribeCTA";
@@ -506,31 +508,100 @@ export default async function HomePage() {
         </section>
 
         {/* ============================================
-            CATALOG FEED - Single unified view (Netflix style)
+            CATALOG FEED
             ============================================ */}
         <section id="catalog" className="section scroll-mt-20">
           <div className="container-app">
-            {/* Section header */}
-            <div className="mb-8">
-              <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">Catalog</h2>
-              <p className="text-text-muted mb-3">
-                Preview any composition. Subscribe to save and download.
-              </p>
-              <div className="text-sm text-amber-400/80 space-y-1">
-                <p className="flex items-start gap-2">
-                  <Clock className="w-4 h-4 shrink-0 mt-0.5" />
-                  <span>
-                    New packs drop <strong>regularly.</strong> Grab them before they archive.
-                  </span>
-                </p>
-                <p className="pl-6">
-                  Packs are archived after 90 days. Grab them while they&apos;re live.
-                </p>
-              </div>
-            </div>
 
-            {/* Searchable Catalog */}
-            <CatalogSearch packs={allPacks} hasSubscription={hasSubscription} />
+            {/* LOGGED-OUT: premium editorial layout */}
+            {!isLoggedIn && (() => {
+              const gridPacks = recentPacks.filter(p => p.id !== featuredPack?.id);
+              return (
+                <div className="space-y-5 sm:space-y-7">
+
+                  {/* HERO */}
+                  {featuredPack && (
+                    <Link
+                      href={`/packs/${featuredPack.id}`}
+                      className="group block relative rounded-2xl overflow-hidden"
+                      style={{ aspectRatio: "21/9", minHeight: "220px" }}
+                    >
+                      {featuredPack.cover_image_url && (
+                        <Image
+                          src={featuredPack.cover_image_url}
+                          alt={featuredPack.name}
+                          fill
+                          className="object-cover transition-transform duration-700 group-hover:scale-[1.03]"
+                          sizes="100vw"
+                          priority
+                        />
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/25 to-transparent" />
+                      <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-transparent" />
+
+                      <div className="absolute top-4 sm:top-6 left-4 sm:left-6">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white text-charcoal text-[10px] font-bold tracking-[0.12em] uppercase">
+                          <Sparkles className="w-2.5 h-2.5" />
+                          Latest Drop
+                        </span>
+                      </div>
+
+                      <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-8 lg:p-10">
+                        <h2 className="text-2xl sm:text-4xl lg:text-5xl font-bold text-white mb-1.5 sm:mb-3 leading-tight tracking-tight">
+                          {featuredPack.name}
+                        </h2>
+                        {featuredPack.description && (
+                          <p className="text-white/60 text-sm sm:text-base mb-4 max-w-lg line-clamp-2 hidden sm:block">
+                            {featuredPack.description}
+                          </p>
+                        )}
+                        <div className="flex items-center gap-3">
+                          <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-white text-charcoal text-sm font-semibold group-hover:bg-white/90 transition-colors">
+                            <Play className="w-3 h-3" fill="currentColor" />
+                            Preview
+                          </span>
+                          <span className="text-white/40 text-xs sm:text-sm">
+                            {Array.isArray(featuredPack.samples) ? featuredPack.samples.length : 0} tracks
+                          </span>
+                        </div>
+                      </div>
+                    </Link>
+                  )}
+
+                  {/* ACTIVE PACKS GRID */}
+                  {gridPacks.length > 0 && (
+                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5">
+                      {gridPacks.map(pack => (
+                        <PackCard
+                          key={pack.id}
+                          pack={pack}
+                          sampleCount={Array.isArray(pack.samples) ? pack.samples.length : 0}
+                          hasSubscription={false}
+                        />
+                      ))}
+                    </div>
+                  )}
+
+                  {/* ARCHIVE BLUR WALL */}
+                  {archivedPacks.length > 0 && (
+                    <ArchivedPacksSection archivedPacks={archivedPacks} />
+                  )}
+
+                </div>
+              );
+            })()}
+
+            {/* LOGGED-IN: searchable catalog */}
+            {isLoggedIn && (
+              <>
+                <div className="mb-8">
+                  <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">Catalog</h2>
+                  <p className="text-text-muted">Preview any composition. Subscribe to save and download.</p>
+                </div>
+                <CatalogSearch packs={allPacks} hasSubscription={hasSubscription} />
+              </>
+            )}
+
           </div>
         </section>
 

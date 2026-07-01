@@ -12,7 +12,9 @@ import { Button } from "@/components/ui";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { MetaPixelCheckoutSuccess } from "@/components/analytics/MetaPixelEvents";
 import { getNotificationsForUser } from "@/lib/notifications";
-import { Music, LogIn, Archive, User, Sparkles, RotateCcw, Trophy } from "lucide-react";
+import { Music, LogIn, Archive, User, Sparkles, RotateCcw, Trophy, Play } from "lucide-react";
+import { ScarcityBanner } from "@/components/layout/ScarcityBanner";
+import { ArchivedPacksSection } from "@/components/catalog/ArchivedPacksSection";
 import { VaultButton } from "@/components/vault/VaultButton";
 import { SubscribeCTA } from "@/components/ui/SubscribeCTA";
 import type { Sample, Subscription, NotificationWithReadStatus } from "@/types/database";
@@ -169,6 +171,7 @@ export default async function FeedPage() {
 
       {/* Header */}
       <header className="border-b border-grey-700 bg-charcoal/90 backdrop-blur-xl sticky top-0 z-40">
+        {!hasAccess && <ScarcityBanner />}
         <div className="container-app h-14 sm:h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center group">
             <Image
@@ -221,228 +224,254 @@ export default async function FeedPage() {
         </div>
       </header>
 
-      {/* Main Content - extra padding on mobile for bottom nav + now playing bar */}
-      <main className={`section ${isLoggedIn ? 'pb-32 sm:pb-0' : ''}`}>
+      {/* Main Content */}
+      <main className={`${isLoggedIn ? 'section pb-32 sm:pb-0' : 'pt-6 sm:pt-10 pb-16'}`}>
         <div className="container-app">
-          {/* Hero Section */}
-          <div className="text-center mb-8 sm:mb-12">
-            <h1 className="text-h1 sm:text-display text-white mb-3 sm:mb-4">
-              Explore the Catalog
-            </h1>
-            <p className="text-body sm:text-body-lg text-text-muted max-w-2xl mx-auto">
-              Browse all releases. Preview any track.
-              {!isLoggedIn && " Sign up free to save favorites."}
-              {isLoggedIn && !hasAccess && " Subscribe or link Patreon to download."}
-            </p>
 
-            {/* Subscribe Banner - for non-subscribed users */}
-            {isLoggedIn && !hasAccess && (
-              <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-                <SubscribeCTA
-                  isLoggedIn={isLoggedIn}
-                  hasSubscription={hasAccess}
-                  plan="monthly"
-                  variant="secondary"
-                  size="sm"
-                  className="rounded-full"
-                >
-                  <Sparkles className="w-3.5 h-3.5 mr-1.5" />
-                  {hasUsedTrial ? "Subscribe to download" : "First month $0.99"}
-                </SubscribeCTA>
-                <SubscribeCTA
-                  isLoggedIn={isLoggedIn}
-                  hasSubscription={hasAccess}
-                  plan="yearly"
-                  variant="ghost"
-                  size="sm"
-                  className="rounded-full border border-white/20 hover:border-white/40"
-                >
-                  $49/year — lock in your rate
-                </SubscribeCTA>
-              </div>
-            )}
-          </div>
-
-          {/* Drum Vault teaser */}
-          {isLoggedIn && (
-            <Link
-              href="/vault"
-              className="block mb-10 group relative overflow-hidden rounded-2xl border border-[#1A1A1A] hover:border-[#2A2A2A] transition-all"
-              style={{ background: "linear-gradient(135deg, #0A0A0A 0%, #111 50%, #0A0A0A 100%)" }}
-            >
-              {/* Ambient glow */}
-              <div
-                className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-                style={{ background: "radial-gradient(ellipse 60% 60% at 50% 50%, rgba(255,255,255,0.03) 0%, transparent 100%)" }}
-              />
-
-              <div className="relative z-10 flex flex-col items-center justify-center text-center py-10 px-6">
-                {/* Label */}
-                <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#333] mb-3">
-                  Members Only
-                </div>
-
-                {/* Big title */}
-                <div
-                  className={`${bebasNeue.className} leading-none mb-3`}
-                  style={{
-                    fontSize: "clamp(64px, 12vw, 112px)",
-                    letterSpacing: "0.04em",
-                    background: "linear-gradient(180deg, #fff 0%, #555 100%)",
-                    WebkitBackgroundClip: "text",
-                    WebkitTextFillColor: "transparent",
-                    backgroundClip: "text",
-                  }}
-                >
-                  Drum Vault
-                </div>
-
-                {/* Tagline */}
-                <p className="text-[12px] text-[#333] tracking-[0.08em] uppercase mb-5">
-                  Hand-picked drum breaks — collect yours forever
-                </p>
-
-                {/* CTA */}
-                <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#444] group-hover:text-white transition-colors duration-300">
-                  Enter The Vault
-                  <span className="text-[14px] group-hover:translate-x-1 transition-transform duration-200 inline-block">→</span>
-                </div>
-              </div>
-            </Link>
-          )}
-
-          {/* Available Packs */}
-          {(() => {
-            const availablePacks = allPacks.filter(p => !isArchived(p) && !p.is_returned);
+          {/* ============================================================
+              LOGGED-OUT VIEW — Premium editorial layout
+              ============================================================ */}
+          {!isLoggedIn && (() => {
+            const activePacks = allPacks.filter(p => !isArchived(p) && !p.is_returned);
             const returnedPacks = allPacks.filter(p => p.is_returned && !isArchived(p));
             const archivedPacks = allPacks.filter(p => isArchived(p));
+            const heroPack = activePacks[0];
+            const gridPacks = [...activePacks.slice(1), ...returnedPacks];
 
             return (
-              <>
-                {availablePacks.length > 0 && (
-                  <section className="mb-12 sm:mb-16">
-                    <div className="flex items-center gap-2 mb-4 sm:mb-6">
-                      <Music className="w-5 h-5 text-white" />
-                      <h2 className="text-h3 sm:text-h2 text-white">Available Packs</h2>
-                      <span className="text-caption text-text-muted ml-2">
-                        {availablePacks.length} packs
+              <div className="space-y-5 sm:space-y-7">
+
+                {/* HERO — Latest drop */}
+                {heroPack && (
+                  <Link
+                    href={`/packs/${heroPack.id}`}
+                    className="group block relative rounded-2xl overflow-hidden"
+                    style={{ aspectRatio: "21/9", minHeight: "220px" }}
+                  >
+                    {heroPack.cover_image_url && (
+                      <Image
+                        src={heroPack.cover_image_url}
+                        alt={heroPack.name}
+                        fill
+                        className="object-cover transition-transform duration-700 group-hover:scale-[1.03]"
+                        sizes="100vw"
+                        priority
+                      />
+                    )}
+                    {/* Gradients */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/25 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-transparent" />
+
+                    {/* Badge */}
+                    <div className="absolute top-4 sm:top-6 left-4 sm:left-6">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white text-charcoal text-[10px] font-bold tracking-[0.12em] uppercase">
+                        <Sparkles className="w-2.5 h-2.5" />
+                        Latest Drop
                       </span>
                     </div>
-                    <Suspense fallback={<PackGridSkeleton />}>
-                      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-                        {availablePacks.map((pack) => (
-                          <PackCard
-                            key={pack.id}
-                            pack={pack}
-                            sampleCount={Array.isArray(pack.samples) ? pack.samples.length : 0}
-                            hasSubscription={hasAccess}
-                          />
-                        ))}
-                      </div>
-                    </Suspense>
-                  </section>
-                )}
 
-                {returnedPacks.length > 0 && (
-                  <section className="mb-12 sm:mb-16">
-                    <div className="flex items-center gap-2 mb-4 sm:mb-6">
-                      <RotateCcw className="w-5 h-5 text-emerald-400" />
-                      <h2 className="text-h3 sm:text-h2 text-white">Back by Popular Demand</h2>
+                    {/* Content */}
+                    <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-8 lg:p-10">
+                      <h2 className="text-2xl sm:text-4xl lg:text-5xl font-bold text-white mb-1.5 sm:mb-3 leading-tight tracking-tight">
+                        {heroPack.name}
+                      </h2>
+                      {heroPack.description && (
+                        <p className="text-white/60 text-sm sm:text-base mb-4 max-w-lg line-clamp-2 hidden sm:block">
+                          {heroPack.description}
+                        </p>
+                      )}
+                      <div className="flex items-center gap-3">
+                        <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-white text-charcoal text-sm font-semibold group-hover:bg-white/90 transition-colors">
+                          <Play className="w-3 h-3" fill="currentColor" />
+                          Preview
+                        </span>
+                        <span className="text-white/40 text-xs sm:text-sm">
+                          {Array.isArray(heroPack.samples) ? heroPack.samples.length : 0} tracks
+                        </span>
+                      </div>
                     </div>
-                    <Suspense fallback={<PackGridSkeleton />}>
-                      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-                        {returnedPacks.map((pack) => (
-                          <PackCard
-                            key={pack.id}
-                            pack={pack}
-                            sampleCount={Array.isArray(pack.samples) ? pack.samples.length : 0}
-                            hasSubscription={hasAccess}
-                          />
-                        ))}
-                      </div>
-                    </Suspense>
-                  </section>
+                  </Link>
                 )}
 
+                {/* ACTIVE PACKS GRID */}
+                {gridPacks.length > 0 && (
+                  <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5">
+                    {gridPacks.map(pack => (
+                      <PackCard
+                        key={pack.id}
+                        pack={pack}
+                        sampleCount={Array.isArray(pack.samples) ? pack.samples.length : 0}
+                        hasSubscription={false}
+                      />
+                    ))}
+                  </div>
+                )}
+
+                {/* ARCHIVE BLUR WALL */}
                 {archivedPacks.length > 0 && (
-                  <section className="mb-12 sm:mb-16">
-                    <div className="flex items-center gap-2 mb-4 sm:mb-6">
-                      <Archive className="w-5 h-5 text-text-muted" />
-                      <h2 className="text-h3 sm:text-h2 text-text-muted">Archive</h2>
-                      <span className="text-caption text-text-subtle ml-2">
-                        Past releases (preview only)
-                      </span>
-                    </div>
-                    <Suspense fallback={<PackGridSkeleton />}>
-                      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-                        {archivedPacks.map((pack) => (
-                          <div key={pack.id} className="opacity-60 hover:opacity-100 transition-opacity duration-200">
-                            <PackCard
-                              pack={pack}
-                              sampleCount={Array.isArray(pack.samples) ? pack.samples.length : 0}
-                              hasSubscription={hasAccess}
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    </Suspense>
-                  </section>
+                  <ArchivedPacksSection archivedPacks={archivedPacks} />
                 )}
-              </>
+
+              </div>
             );
           })()}
 
-          {/* CTA Section for non-logged-in users */}
-          {!isLoggedIn && (
-            <section className="text-center">
-              <div className="bg-gradient-to-r from-white/5 to-transparent border border-white/10 rounded-2xl p-6 sm:p-8 lg:p-12">
-                <Music className="w-10 h-10 sm:w-12 sm:h-12 text-white mx-auto mb-3 sm:mb-4" />
-                <h2 className="text-h3 sm:text-h2 text-white mb-2 sm:mb-3">
-                  Ready to start creating?
-                </h2>
-                <p className="text-body sm:text-body-lg text-text-muted mb-4 sm:mb-6 max-w-lg mx-auto">
-                  Sign up for free and preview every track in the catalog.
-                  Subscribe or link your Patreon to download.
+          {/* ============================================================
+              LOGGED-IN VIEW — Existing experience (unchanged)
+              ============================================================ */}
+          {isLoggedIn && (
+            <>
+              {/* Page header */}
+              <div className="text-center mb-8 sm:mb-12">
+                <h1 className="text-h1 sm:text-display text-white mb-3 sm:mb-4">
+                  Explore the Catalog
+                </h1>
+                <p className="text-body sm:text-body-lg text-text-muted max-w-2xl mx-auto">
+                  Browse all releases. Preview any track.
+                  {!hasAccess && " Subscribe or link Patreon to download."}
                 </p>
-                <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                  <Link href="/signup">
-                    <Button size="lg" className="w-full sm:w-auto">
-                      Create free account
-                    </Button>
+                {!hasAccess && (
+                  <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+                    <SubscribeCTA
+                      isLoggedIn={isLoggedIn}
+                      hasSubscription={hasAccess}
+                      plan="monthly"
+                      variant="secondary"
+                      size="sm"
+                      className="rounded-full"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+                      {hasUsedTrial ? "Subscribe to download" : "First month $0.99"}
+                    </SubscribeCTA>
+                    <SubscribeCTA
+                      isLoggedIn={isLoggedIn}
+                      hasSubscription={hasAccess}
+                      plan="yearly"
+                      variant="ghost"
+                      size="sm"
+                      className="rounded-full border border-white/20 hover:border-white/40"
+                    >
+                      $49/year — lock in your rate
+                    </SubscribeCTA>
+                  </div>
+                )}
+              </div>
+
+              {/* Drum Vault teaser */}
+              <Link
+                href="/vault"
+                className="block mb-10 group relative overflow-hidden rounded-2xl border border-[#1A1A1A] hover:border-[#2A2A2A] transition-all"
+                style={{ background: "linear-gradient(135deg, #0A0A0A 0%, #111 50%, #0A0A0A 100%)" }}
+              >
+                <div
+                  className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                  style={{ background: "radial-gradient(ellipse 60% 60% at 50% 50%, rgba(255,255,255,0.03) 0%, transparent 100%)" }}
+                />
+                <div className="relative z-10 flex flex-col items-center justify-center text-center py-10 px-6">
+                  <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#333] mb-3">Members Only</div>
+                  <div
+                    className={`${bebasNeue.className} leading-none mb-3`}
+                    style={{
+                      fontSize: "clamp(64px, 12vw, 112px)",
+                      letterSpacing: "0.04em",
+                      background: "linear-gradient(180deg, #fff 0%, #555 100%)",
+                      WebkitBackgroundClip: "text",
+                      WebkitTextFillColor: "transparent",
+                      backgroundClip: "text",
+                    }}
+                  >
+                    Drum Vault
+                  </div>
+                  <p className="text-[12px] text-[#333] tracking-[0.08em] uppercase mb-5">
+                    Hand-picked drum breaks — collect yours forever
+                  </p>
+                  <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#444] group-hover:text-white transition-colors duration-300">
+                    Enter The Vault
+                    <span className="text-[14px] group-hover:translate-x-1 transition-transform duration-200 inline-block">→</span>
+                  </div>
+                </div>
+              </Link>
+
+              {/* Pack sections */}
+              {(() => {
+                const availablePacks = allPacks.filter(p => !isArchived(p) && !p.is_returned);
+                const returnedPacks = allPacks.filter(p => p.is_returned && !isArchived(p));
+                const archivedPacks = allPacks.filter(p => isArchived(p));
+                return (
+                  <>
+                    {availablePacks.length > 0 && (
+                      <section className="mb-12 sm:mb-16">
+                        <div className="flex items-center gap-2 mb-4 sm:mb-6">
+                          <Music className="w-5 h-5 text-white" />
+                          <h2 className="text-h3 sm:text-h2 text-white">Available Packs</h2>
+                          <span className="text-caption text-text-muted ml-2">{availablePacks.length} packs</span>
+                        </div>
+                        <Suspense fallback={<PackGridSkeleton />}>
+                          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+                            {availablePacks.map(pack => (
+                              <PackCard key={pack.id} pack={pack} sampleCount={Array.isArray(pack.samples) ? pack.samples.length : 0} hasSubscription={hasAccess} />
+                            ))}
+                          </div>
+                        </Suspense>
+                      </section>
+                    )}
+                    {returnedPacks.length > 0 && (
+                      <section className="mb-12 sm:mb-16">
+                        <div className="flex items-center gap-2 mb-4 sm:mb-6">
+                          <RotateCcw className="w-5 h-5 text-emerald-400" />
+                          <h2 className="text-h3 sm:text-h2 text-white">Back by Popular Demand</h2>
+                        </div>
+                        <Suspense fallback={<PackGridSkeleton />}>
+                          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+                            {returnedPacks.map(pack => (
+                              <PackCard key={pack.id} pack={pack} sampleCount={Array.isArray(pack.samples) ? pack.samples.length : 0} hasSubscription={hasAccess} />
+                            ))}
+                          </div>
+                        </Suspense>
+                      </section>
+                    )}
+                    {archivedPacks.length > 0 && (
+                      <section className="mb-12 sm:mb-16">
+                        <div className="flex items-center gap-2 mb-4 sm:mb-6">
+                          <Archive className="w-5 h-5 text-text-muted" />
+                          <h2 className="text-h3 sm:text-h2 text-text-muted">Archive</h2>
+                          <span className="text-caption text-text-subtle ml-2">Past releases (preview only)</span>
+                        </div>
+                        <Suspense fallback={<PackGridSkeleton />}>
+                          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+                            {archivedPacks.map(pack => (
+                              <div key={pack.id} className="opacity-60 hover:opacity-100 transition-opacity duration-200">
+                                <PackCard pack={pack} sampleCount={Array.isArray(pack.samples) ? pack.samples.length : 0} hasSubscription={hasAccess} />
+                              </div>
+                            ))}
+                          </div>
+                        </Suspense>
+                      </section>
+                    )}
+                  </>
+                );
+              })()}
+
+              {/* Mobile bottom nav */}
+              <nav className="sm:hidden fixed bottom-0 left-0 right-0 bg-charcoal-elevated/95 backdrop-blur-xl border-t border-grey-700 z-40 safe-area-bottom">
+                <div className="flex items-center justify-around h-14">
+                  <Link href="/" className="flex flex-col items-center gap-1 py-2 px-4 text-white">
+                    <Music className="w-5 h-5" /><span className="text-[10px]">Catalog</span>
                   </Link>
-                  <Link href="/login">
-                    <Button variant="secondary" size="lg" className="w-full sm:w-auto">
-                      Log in
-                    </Button>
+                  <Link href="/library" className="flex flex-col items-center gap-1 py-2 px-4 text-text-muted">
+                    <Archive className="w-5 h-5" /><span className="text-[10px]">Library</span>
+                  </Link>
+                  <Link href="/vault" className="flex flex-col items-center gap-1 py-2 px-4 text-text-muted">
+                    <Trophy className="w-5 h-5" /><span className="text-[10px]">Vault</span>
+                  </Link>
+                  <Link href="/account" className="flex flex-col items-center gap-1 py-2 px-4 text-text-muted">
+                    <User className="w-5 h-5" /><span className="text-[10px]">Account</span>
                   </Link>
                 </div>
-              </div>
-            </section>
+              </nav>
+            </>
           )}
 
-          {/* Mobile-only bottom nav for logged in users */}
-          {isLoggedIn && (
-            <nav className="sm:hidden fixed bottom-0 left-0 right-0 bg-charcoal-elevated/95 backdrop-blur-xl border-t border-grey-700 z-40 safe-area-bottom">
-              <div className="flex items-center justify-around h-14">
-                <Link href="/" className="flex flex-col items-center gap-1 py-2 px-4 text-white">
-                  <Music className="w-5 h-5" />
-                  <span className="text-[10px]">Catalog</span>
-                </Link>
-                <Link href="/library" className="flex flex-col items-center gap-1 py-2 px-4 text-text-muted">
-                  <Archive className="w-5 h-5" />
-                  <span className="text-[10px]">Library</span>
-                </Link>
-                <Link href="/vault" className="flex flex-col items-center gap-1 py-2 px-4 text-text-muted">
-                  <Trophy className="w-5 h-5" />
-                  <span className="text-[10px]">Vault</span>
-                </Link>
-                <Link href="/account" className="flex flex-col items-center gap-1 py-2 px-4 text-text-muted">
-                  <User className="w-5 h-5" />
-                  <span className="text-[10px]">Account</span>
-                </Link>
-              </div>
-            </nav>
-          )}
         </div>
       </main>
 
