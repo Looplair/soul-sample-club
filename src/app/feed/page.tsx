@@ -245,8 +245,7 @@ export default async function FeedPage() {
                 {heroPack && (
                   <Link
                     href={`/packs/${heroPack.id}`}
-                    className="group block relative rounded-2xl overflow-hidden"
-                    style={{ aspectRatio: "21/9", minHeight: "220px" }}
+                    className="group block relative rounded-2xl overflow-hidden aspect-square sm:aspect-[21/9]"
                   >
                     {heroPack.cover_image_url && (
                       <Image
@@ -254,7 +253,7 @@ export default async function FeedPage() {
                         alt={heroPack.name}
                         fill
                         className="object-cover transition-transform duration-700 group-hover:scale-[1.03]"
-                        sizes="100vw"
+                        sizes="(max-width: 640px) 100vw, 100vw"
                         priority
                       />
                     )}
