@@ -9,6 +9,7 @@ import { CommunityProof } from "@/components/sections/CommunityProof";
 import { MemberTestimonials } from "@/components/sections/MemberTestimonials";
 import { FAQSection } from "@/components/sections/FAQSection";
 import { PricingCard } from "@/components/sections/PricingCard";
+import { ScarcityBanner } from "@/components/layout/ScarcityBanner";
 import { HowItWorksSection } from "@/components/sections/HowItWorksSection";
 import { Button } from "@/components/ui";
 import { SubscribeCTA } from "@/components/ui/SubscribeCTA";
@@ -169,7 +170,7 @@ const features = [
 
 const stats = [
   { value: "2000+", label: "members" },
-  { value: "$3.99", label: "/month" },
+  { value: "$6.99", label: "/month" },
   { value: "0", label: "restrictions" },
 ];
 
@@ -200,6 +201,7 @@ export default async function HomePage() {
           HEADER
           ============================================ */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-charcoal/80 backdrop-blur-xl border-b border-grey-700/50">
+        {!hasSubscription && <ScarcityBanner />}
         <div className="container-app h-14 sm:h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center group">
             <Image
@@ -272,7 +274,7 @@ export default async function HomePage() {
         </div>
       </header>
 
-      <main className="pt-14 sm:pt-16">
+      <main className={!hasSubscription ? "pt-24 sm:pt-[104px]" : "pt-14 sm:pt-16"}>
         {/* ============================================
             HERO SECTION - Tracklib inspired
             ============================================ */}
@@ -369,7 +371,7 @@ export default async function HomePage() {
                       hideArrow
                       className="!p-0 !h-auto !font-normal !text-sm text-white underline hover:text-grey-200 !bg-transparent !border-0 !rounded-none inline"
                     >
-                      $29/year and lock in your rate
+                      $49/year and lock in your rate
                     </SubscribeCTA>
                   </p>
                 )}
@@ -518,7 +520,7 @@ export default async function HomePage() {
                 <p className="flex items-start gap-2">
                   <Clock className="w-4 h-4 shrink-0 mt-0.5" />
                   <span>
-                    New producer packs drop on the <strong>1st of every month,</strong> bonus packs drop <strong>mid-month.</strong> Moving to weekly releases soon.
+                    New packs drop <strong>regularly.</strong> Grab them before they archive.
                   </span>
                 </p>
                 <p className="pl-6">
@@ -712,7 +714,7 @@ export default async function HomePage() {
                   <p className="text-text-muted">
                     {hasUsedTrial
                       ? "Subscribe to download all samples."
-                      : "Start today, first month $0.99, then $3.99/month."}
+                      : "Start today, first month $0.99, then $6.99/month."}
                   </p>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-2 items-center">
@@ -733,7 +735,7 @@ export default async function HomePage() {
                     hideArrow
                     className="text-text-muted hover:text-white underline text-sm !bg-transparent !border-0"
                   >
-                    or $29/year
+                    or $49/year
                   </SubscribeCTA>
                 </div>
               </div>

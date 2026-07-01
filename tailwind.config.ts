@@ -176,6 +176,9 @@ const config: Config = {
         "slide-left": "slideLeft 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
         "slide-right": "slideRight 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
 
+        // Holographic banner
+        "holo-shift": "holoShift 5s ease infinite",
+
         // Glow animations - white
         "pulse-glow": "pulseGlow 2s ease-in-out infinite",
         "glow-soft": "glowSoft 3s ease-in-out infinite",
@@ -246,6 +249,11 @@ const config: Config = {
         hoverScale: {
           "0%": { transform: "scale(1)" },
           "100%": { transform: "scale(1.02)" },
+        },
+        holoShift: {
+          "0%": { backgroundPosition: "0% 50%" },
+          "50%": { backgroundPosition: "100% 50%" },
+          "100%": { backgroundPosition: "0% 50%" },
         },
       },
       backgroundImage: {

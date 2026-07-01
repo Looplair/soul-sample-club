@@ -136,12 +136,16 @@ export async function POST(request: Request) {
             sendStartTrialEvent({
               email: profileData.email,
               userId,
-              firstName: profileData.full_name?.split(" ")[0],
+              firstName: profileData.full_name?.split(" ")[0] || undefined,
+              lastName: profileData.full_name?.split(" ").slice(1).join(" ") || undefined,
               fbc: session.metadata?.meta_fbc || undefined,
               fbp: session.metadata?.meta_fbp || undefined,
               clientIpAddress: session.metadata?.meta_client_ip || undefined,
               clientUserAgent: session.metadata?.meta_client_ua || undefined,
               eventId: session.metadata?.meta_event_id || undefined,
+              country: session.metadata?.meta_country || undefined,
+              city: session.metadata?.meta_city || undefined,
+              state: session.metadata?.meta_state || undefined,
               eventSourceUrl: "https://www.soulsampleclub.com/feed",
             }).catch((err) => console.error("Meta Conversions API error:", err));
 

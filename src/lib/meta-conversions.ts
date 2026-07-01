@@ -16,6 +16,9 @@ interface MetaEventData {
     firstName?: string;
     lastName?: string;
     externalId?: string;
+    country?: string;         // ISO 3166-1 alpha-2 lowercase (e.g. "us") - hashed
+    city?: string;            // Lowercase, no punctuation - hashed
+    state?: string;           // Lowercase state/region code - hashed
     fbc?: string;             // Facebook Click ID (_fbc cookie) - NOT hashed
     fbp?: string;             // Facebook Browser ID (_fbp cookie) - NOT hashed
     clientIpAddress?: string; // User IP at time of event - NOT hashed
@@ -59,6 +62,15 @@ export async function sendMetaConversionEvent(data: MetaEventData): Promise<bool
     }
     if (data.userData.externalId) {
       hashedUserData.external_id = await sha256(data.userData.externalId);
+    }
+    if (data.userData.country) {
+      hashedUserData.country = await sha256(data.userData.country);
+    }
+    if (data.userData.city) {
+      hashedUserData.ct = await sha256(data.userData.city);
+    }
+    if (data.userData.state) {
+      hashedUserData.st = await sha256(data.userData.state);
     }
 
     // Non-hashed fields - sent as-is per Meta spec
@@ -119,6 +131,10 @@ export async function sendStartTrialEvent(params: {
   email: string;
   userId: string;
   firstName?: string;
+  lastName?: string;
+  country?: string;
+  city?: string;
+  state?: string;
   fbc?: string;
   fbp?: string;
   clientIpAddress?: string;
@@ -133,6 +149,10 @@ export async function sendStartTrialEvent(params: {
       email: params.email,
       externalId: params.userId,
       firstName: params.firstName,
+      lastName: params.lastName,
+      country: params.country,
+      city: params.city,
+      state: params.state,
       fbc: params.fbc,
       fbp: params.fbp,
       clientIpAddress: params.clientIpAddress,

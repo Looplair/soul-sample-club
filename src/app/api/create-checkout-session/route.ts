@@ -25,6 +25,11 @@ export async function POST(request: Request) {
     request.headers.get("x-real-ip") ||
     "";
   const metaClientUa = request.headers.get("user-agent") || "";
+  // Vercel geo headers — used for Meta CAPI country/city/state matching
+  const metaCountry = (request.headers.get("x-vercel-ip-country") || "").toLowerCase();
+  const metaCityEncoded = request.headers.get("x-vercel-ip-city") || "";
+  const metaCity = decodeURIComponent(metaCityEncoded).toLowerCase().trim();
+  const metaState = (request.headers.get("x-vercel-ip-region") || "").toLowerCase();
   // Generate a unique event ID for browser pixel / CAPI deduplication
   const metaEventId = `startrial_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 
@@ -162,7 +167,7 @@ export async function POST(request: Request) {
         },
       ],
       ...(plan === "monthly" && {
-        discounts: [{ coupon: "cvoilDO6" }],
+        discounts: [{ coupon: "ktZFClXu" }],
       }),
       subscription_data: subscriptionData,
       success_url: `${process.env.NEXT_PUBLIC_APP_URL}/feed?success=true&meta_event_id=${metaEventId}`,
@@ -174,6 +179,9 @@ export async function POST(request: Request) {
         meta_client_ip: metaClientIp,
         meta_client_ua: metaClientUa,
         meta_event_id: metaEventId,
+        meta_country: metaCountry,
+        meta_city: metaCity,
+        meta_state: metaState,
       },
       billing_address_collection: "auto",
       custom_text: {

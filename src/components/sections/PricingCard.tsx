@@ -55,7 +55,7 @@ export function PricingCard({ isLoggedIn, hasSubscription, hasUsedTrial }: Prici
           {plan === "monthly" ? (
             <>
               <div className="flex items-baseline justify-center gap-1">
-                <span className="text-5xl font-bold text-white">$3.99</span>
+                <span className="text-5xl font-bold text-white">$6.99</span>
                 <span className="text-text-muted text-lg">/month</span>
               </div>
               {!(isLoggedIn && hasUsedTrial) && (
@@ -65,11 +65,11 @@ export function PricingCard({ isLoggedIn, hasSubscription, hasUsedTrial }: Prici
           ) : (
             <>
               <div className="flex items-baseline justify-center gap-1">
-                <span className="text-5xl font-bold text-white">$29</span>
+                <span className="text-5xl font-bold text-white">$49</span>
                 <span className="text-text-muted text-lg">/year</span>
               </div>
               <p className="text-sm text-text-muted mt-2 max-w-xs mx-auto">
-                Special introductory offer for the first 250 annual members only. Lock in this rate and it&apos;s yours for life, even if we raise prices later.
+                Save over 40% vs monthly. Lock in your rate for life — even if we raise prices again.
               </p>
             </>
           )}
@@ -94,7 +94,7 @@ export function PricingCard({ isLoggedIn, hasSubscription, hasUsedTrial }: Prici
             </div>
             <div>
               <p className="text-sm font-medium text-white">Quality over quantity</p>
-              <p className="text-xs text-text-muted">New pack every month, minimum. Weekly drops coming.</p>
+              <p className="text-xs text-text-muted">New packs added regularly. Quality over quantity, always.</p>
             </div>
           </div>
         </div>
@@ -106,7 +106,7 @@ export function PricingCard({ isLoggedIn, hasSubscription, hasUsedTrial }: Prici
           size="lg"
           plan={plan}
         >
-          {plan === "yearly" ? "Start for $29/year" : undefined}
+          {plan === "yearly" ? "Start for $49/year" : undefined}
         </SubscribeCTA>
 
         {hasSubscription && (
