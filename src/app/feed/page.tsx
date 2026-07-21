@@ -14,6 +14,7 @@ import { MetaPixelCheckoutSuccess } from "@/components/analytics/MetaPixelEvents
 import { getNotificationsForUser } from "@/lib/notifications";
 import { Music, LogIn, Archive, User, Sparkles, RotateCcw, Trophy, Play } from "lucide-react";
 import { ScarcityBanner } from "@/components/layout/ScarcityBanner";
+import { YearlyOfferBanner } from "@/components/layout/YearlyOfferBanner";
 import { ArchivedPacksSection } from "@/components/catalog/ArchivedPacksSection";
 import { VaultButton } from "@/components/vault/VaultButton";
 import { SubscribeCTA } from "@/components/ui/SubscribeCTA";
@@ -171,7 +172,8 @@ export default async function FeedPage() {
 
       {/* Header */}
       <header className="border-b border-grey-700 bg-charcoal/90 backdrop-blur-xl sticky top-0 z-40">
-        {!hasAccess && <ScarcityBanner />}
+        {!isLoggedIn && <YearlyOfferBanner />}
+        {isLoggedIn && !hasAccess && <ScarcityBanner />}
         <div className="container-app h-14 sm:h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center group">
             <Image
