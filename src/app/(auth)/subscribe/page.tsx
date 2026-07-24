@@ -3,7 +3,6 @@ import Link from "next/link";
 import { Check } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { SubscribeCTA } from "@/components/ui/SubscribeCTA";
-import { Button } from "@/components/ui";
 
 async function getUserState() {
   try {
@@ -55,109 +54,137 @@ export default async function SubscribePage() {
     redirect("/feed");
   }
 
+  const monthlyHref = isLoggedIn ? null : "/signup?redirect=/checkout";
+  const yearlyHref = isLoggedIn
+    ? null
+    : `/signup?redirect=${encodeURIComponent("/checkout?plan=yearly")}`;
+
   return (
     <div className="min-h-screen bg-charcoal">
-      <div className="container-app py-16 sm:py-24">
+      <div className="container-app py-16 sm:py-24 max-w-4xl">
 
         {/* Hero */}
-        <div className="text-center max-w-2xl mx-auto mb-12 sm:mb-16">
-          <p className="text-[11px] uppercase tracking-[0.2em] text-text-muted mb-4">
+        <div className="text-center mb-14 sm:mb-20">
+          <p className="text-[11px] uppercase tracking-[0.25em] text-white/30 font-semibold mb-5">
             Soul Sample Club
           </p>
-          <h1 className="text-3xl sm:text-5xl font-bold text-white mb-5 tracking-tight leading-tight">
-            The only soul catalog built for producers.
+          <h1 className="text-[2.6rem] sm:text-6xl font-bold text-white mb-5 tracking-tight leading-[1.05]">
+            The only soul catalog<br className="hidden sm:block" /> built for producers.
           </h1>
-          <p className="text-text-muted text-base sm:text-lg max-w-xl mx-auto leading-relaxed">
-            One sample clearance can cost $5,000 to six figures. A year of Soul Sample Club is $49.
+          <p className="text-white/50 text-base sm:text-lg max-w-lg mx-auto leading-relaxed">
+            One sample clearance can cost $5,000 to six figures.<br className="hidden sm:block" />
+            A year of Soul Sample Club is $49.
           </p>
         </div>
 
         {/* Plan cards */}
-        <div className="max-w-3xl mx-auto grid grid-cols-1 sm:grid-cols-2 gap-4 mb-14">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-16">
 
           {/* Monthly */}
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-6 sm:p-8 flex flex-col">
+          <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-7 sm:p-9 flex flex-col">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/35 mb-7">
+              Monthly
+            </p>
             <div className="mb-8">
-              <p className="text-xs uppercase tracking-[0.15em] text-text-muted mb-3">Monthly</p>
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-4xl font-bold text-white">$6.99</span>
-                <span className="text-text-muted text-sm">/month</span>
+              <div className="flex items-end gap-2">
+                <span className="text-[3.25rem] font-bold text-white leading-none tracking-tight">
+                  $6.99
+                </span>
+                <span className="text-white/35 text-sm mb-1">/month</span>
               </div>
               {!hasUsedTrial && (
-                <p className="text-sm text-text-muted mt-2">First month just $2.99</p>
+                <p className="text-sm text-white/45 mt-2">First month $2.99</p>
               )}
             </div>
 
-            <div className="flex-1" />
-
-            {isLoggedIn ? (
-              <SubscribeCTA
-                isLoggedIn={true}
-                hasSubscription={false}
-                className="w-full"
-                size="lg"
-                plan="monthly"
-              >
-                Get started
-              </SubscribeCTA>
-            ) : (
-              <Link href="/signup?redirect=/checkout">
-                <Button className="w-full" size="lg">Get started</Button>
-              </Link>
-            )}
-            <p className="text-xs text-text-muted mt-3 text-center">Cancel anytime</p>
+            <div className="mt-auto pt-6 border-t border-white/[0.07]">
+              {isLoggedIn ? (
+                <SubscribeCTA
+                  isLoggedIn={true}
+                  hasSubscription={false}
+                  className="w-full !rounded-xl bg-white/10 text-white hover:bg-white/15 shadow-none"
+                  size="lg"
+                  plan="monthly"
+                  hideArrow
+                >
+                  Get started
+                </SubscribeCTA>
+              ) : (
+                <Link
+                  href={monthlyHref!}
+                  className="flex items-center justify-center w-full bg-white/10 hover:bg-white/[0.15] text-white font-semibold rounded-xl py-3.5 text-[15px] transition-colors duration-200"
+                >
+                  Get started
+                </Link>
+              )}
+              <p className="text-xs text-white/25 mt-3 text-center">Cancel anytime</p>
+            </div>
           </div>
 
-          {/* Yearly */}
-          <div className="relative bg-charcoal border-2 border-white/25 rounded-2xl p-6 sm:p-8 flex flex-col">
-            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
-              <span className="bg-white text-charcoal text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full whitespace-nowrap">
+          {/* Yearly — highlighted */}
+          <div
+            className="relative bg-white/[0.07] border border-white/20 rounded-2xl p-7 sm:p-9 flex flex-col"
+            style={{ boxShadow: "0 0 48px rgba(255,255,255,0.04)" }}
+          >
+            {/* Best value badge */}
+            <div className="absolute -top-[14px] left-1/2 -translate-x-1/2">
+              <span className="bg-white text-charcoal text-[10px] font-bold uppercase tracking-widest px-3.5 py-[5px] rounded-full whitespace-nowrap">
                 Best value
               </span>
             </div>
 
+            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/35 mb-7">
+              Yearly
+            </p>
             <div className="mb-8">
-              <p className="text-xs uppercase tracking-[0.15em] text-text-muted mb-3">Yearly</p>
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-4xl font-bold text-white">$49</span>
-                <span className="text-text-muted text-sm">/year</span>
+              <div className="flex items-end gap-2">
+                <span className="text-[3.25rem] font-bold text-white leading-none tracking-tight">
+                  $49
+                </span>
+                <span className="text-white/35 text-sm mb-1">/year</span>
               </div>
-              <p className="text-sm text-text-muted mt-2">Save over 40% vs monthly</p>
+              <p className="text-sm text-white/45 mt-2">Save over 40% vs monthly</p>
             </div>
 
-            <div className="flex-1" />
-
-            {isLoggedIn ? (
-              <SubscribeCTA
-                isLoggedIn={true}
-                hasSubscription={false}
-                className="w-full"
-                size="lg"
-                plan="yearly"
-              >
-                Lock in yearly
-              </SubscribeCTA>
-            ) : (
-              <Link href={`/signup?redirect=${encodeURIComponent("/checkout?plan=yearly")}`}>
-                <Button className="w-full" size="lg">Lock in yearly</Button>
-              </Link>
-            )}
-            <p className="text-xs text-text-muted mt-3 text-center">Prices rise August 1st, 2026</p>
+            <div className="mt-auto pt-6 border-t border-white/[0.1]">
+              {isLoggedIn ? (
+                <SubscribeCTA
+                  isLoggedIn={true}
+                  hasSubscription={false}
+                  className="w-full !rounded-xl shadow-none"
+                  size="lg"
+                  plan="yearly"
+                  hideArrow
+                >
+                  Lock in yearly
+                </SubscribeCTA>
+              ) : (
+                <Link
+                  href={yearlyHref!}
+                  className="flex items-center justify-center w-full bg-white hover:bg-white/90 text-charcoal font-semibold rounded-xl py-3.5 text-[15px] transition-colors duration-200"
+                >
+                  Lock in yearly
+                </Link>
+              )}
+              <p className="text-xs text-white/25 mt-3 text-center">
+                Prices rise August 1st, 2026
+              </p>
+            </div>
           </div>
 
         </div>
 
         {/* Feature list */}
-        <div className="max-w-md mx-auto">
-          <ul className="space-y-3.5">
+        <div className="max-w-lg mx-auto">
+          <ul className="space-y-4">
             {features.map((feature) => (
-              <li key={feature} className="flex items-start gap-3 text-sm text-text-secondary">
-                <Check className="w-4 h-4 text-success flex-shrink-0 mt-0.5" />
-                {feature}
+              <li key={feature} className="flex items-start gap-3.5">
+                <Check className="w-[18px] h-[18px] text-success flex-shrink-0 mt-[1px]" />
+                <span className="text-[15px] text-white/60 leading-snug">{feature}</span>
               </li>
             ))}
           </ul>
-          <p className="text-center text-xs text-text-muted mt-6">
+          <p className="text-center text-xs text-white/20 mt-8">
             Archived releases stay archived. Active catalog only.
           </p>
         </div>

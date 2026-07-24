@@ -303,7 +303,7 @@ export default async function HomePage() {
                 {!(isLoggedIn && hasUsedTrial) && (
                   <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 mb-6 sm:mb-8">
                     <Sparkles className="w-4 h-4 text-white" />
-                    <span className="text-sm text-white font-medium">First month $0.99</span>
+                    <span className="text-sm text-white font-medium">First month $2.99</span>
                     <span className="text-sm text-white/60">• Cancel anytime</span>
                   </div>
                 )}
