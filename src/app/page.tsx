@@ -263,9 +263,9 @@ export default async function HomePage() {
                     Log in
                   </Button>
                 </Link>
-                <Link href="/signup">
+                <Link href="/subscribe">
                   <Button size="sm">
-                    <span className="hidden sm:inline">Start for $0.99</span>
+                    <span className="hidden sm:inline">Get started</span>
                     <span className="sm:hidden">Sign up</span>
                   </Button>
                 </Link>
@@ -339,15 +339,15 @@ export default async function HomePage() {
                           size="lg"
                           className="w-full sm:w-auto"
                         >
-                          {hasUsedTrial ? "Subscribe now" : "Start for $0.99"}
+                          {hasUsedTrial ? "Subscribe now" : "Get started"}
                         </SubscribeCTA>
                       )}
                     </>
                   ) : (
                     <>
-                      <Link href="/signup">
+                      <Link href="/subscribe">
                         <Button size="lg" className="w-full sm:w-auto" rightIcon={<ArrowRight className="w-4 h-4" />}>
-                          Start for $0.99
+                          Get started
                         </Button>
                       </Link>
                       <a href="#catalog">
@@ -793,9 +793,9 @@ export default async function HomePage() {
                     Join producers who use Soul Sample Club for inspiration. Sign up today.
                   </p>
                   <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                    <Link href="/signup">
+                    <Link href="/subscribe">
                       <Button size="lg" className="w-full sm:w-auto">
-                        Start for $0.99
+                        Get started
                         <ArrowRight className="w-4 h-4 ml-2" />
                       </Button>
                     </Link>
@@ -825,7 +825,7 @@ export default async function HomePage() {
                   <p className="text-text-muted">
                     {hasUsedTrial
                       ? "Subscribe to download all samples."
-                      : "Start today, first month $0.99, then $6.99/month."}
+                      : "Start today, first month $2.99, then $6.99/month."}
                   </p>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-2 items-center">
@@ -835,7 +835,7 @@ export default async function HomePage() {
                     plan="monthly"
                     size="md"
                   >
-                    {hasUsedTrial ? "Subscribe now" : "Start for $0.99"}
+                    {hasUsedTrial ? "Subscribe now" : "Get started"}
                   </SubscribeCTA>
                   <SubscribeCTA
                     isLoggedIn={isLoggedIn}

@@ -59,7 +59,7 @@ export function PricingCard({ isLoggedIn, hasSubscription, hasUsedTrial }: Prici
                 <span className="text-text-muted text-lg">/month</span>
               </div>
               {!(isLoggedIn && hasUsedTrial) && (
-                <p className="text-sm text-text-muted mt-2">First month just $0.99</p>
+                <p className="text-sm text-text-muted mt-2">First month just $2.99</p>
               )}
             </>
           ) : (

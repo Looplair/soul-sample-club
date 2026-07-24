@@ -155,7 +155,7 @@ export async function POST(request: Request) {
       description: "Soul Sample Club Membership",
     };
 
-    // Create checkout session with auto-applied $0.99 first month discount
+    // Create checkout session with auto-applied $2.99 first month discount
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       mode: "subscription",
@@ -167,7 +167,7 @@ export async function POST(request: Request) {
         },
       ],
       ...(plan === "monthly" && {
-        discounts: [{ coupon: "ktZFClXu" }],
+        discounts: [{ coupon: "fRQCy1Av" }],
       }),
       subscription_data: subscriptionData,
       success_url: `${process.env.NEXT_PUBLIC_APP_URL}/feed?success=true&meta_event_id=${metaEventId}`,
@@ -188,7 +188,7 @@ export async function POST(request: Request) {
         submit: {
           message: plan === "yearly"
             ? "Annual membership. No refunds on annual plans."
-            : "Your first month is $0.99, then $3.99/month. Cancel anytime.",
+            : "Your first month is $2.99, then $6.99/month. Cancel anytime.",
         },
       },
     });

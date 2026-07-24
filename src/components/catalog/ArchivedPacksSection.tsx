@@ -40,8 +40,8 @@ export function ArchivedPacksSection({ archivedPacks }: ArchivedPacksSectionProp
       <p className="text-sm text-text-muted mb-5">
         Subscribe to download everything that&apos;s currently live the moment it drops.
       </p>
-      <Link href="/signup">
-        <Button className="w-full mb-3">Start for $0.99 →</Button>
+      <Link href="/subscribe">
+        <Button className="w-full mb-3">Get started →</Button>
       </Link>
       <p className="text-xs text-text-muted">
         or{" "}

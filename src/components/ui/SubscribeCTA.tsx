@@ -37,7 +37,7 @@ export function SubscribeCTA({
   // If not logged in, link to signup (preserve plan for yearly)
   if (!isLoggedIn) {
     const signupHref = plan === "yearly"
-      ? `/signup?redirect=${encodeURIComponent("/subscribe?plan=yearly")}`
+      ? `/signup?redirect=${encodeURIComponent("/checkout?plan=yearly")}`
       : "/signup";
     return (
       <Link href={signupHref}>
@@ -56,7 +56,7 @@ export function SubscribeCTA({
     if (typeof window !== "undefined" && typeof (window as Window & { fbq?: (...a: unknown[]) => void }).fbq === "function") {
       (window as Window & { fbq: (...a: unknown[]) => void }).fbq("track", "InitiateCheckout", {
         currency: "USD",
-        value: 0.99,
+        value: 2.99,
         content_name: "Soul Sample Club Membership",
       });
     }
