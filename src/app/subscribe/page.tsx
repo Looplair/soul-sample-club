@@ -34,19 +34,6 @@ async function getUserState() {
   }
 }
 
-async function getMemberCount(): Promise<number> {
-  try {
-    const admin = createAdminClient();
-    const { count } = await admin
-      .from("subscriptions")
-      .select("id", { count: "exact", head: true })
-      .in("status", ["active", "trialing"]);
-    return count ?? 0;
-  } catch {
-    return 0;
-  }
-}
-
 type PackCover = { id: string; name: string; cover_image_url: string };
 
 async function getPackCovers(): Promise<PackCover[]> {
@@ -77,13 +64,10 @@ const features = [
 ];
 
 export default async function SubscribePage() {
-  const [{ isLoggedIn, hasSubscription, hasUsedTrial }, packs, memberCount] = await Promise.all([
+  const [{ isLoggedIn, hasSubscription, hasUsedTrial }, packs] = await Promise.all([
     getUserState(),
     getPackCovers(),
-    getMemberCount(),
   ]);
-  const spotsLeft = Math.max(0, 5000 - memberCount);
-  const fillPct = Math.min((memberCount / 5000) * 100, 100);
 
   if (hasSubscription) redirect("/feed");
 
@@ -124,8 +108,8 @@ export default async function SubscribePage() {
         <div className="w-full max-w-[280px]">
           <div className="h-[3px] bg-white/[0.06] rounded-full overflow-hidden">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-amber-500/70 to-amber-300/90 transition-all duration-1000"
-              style={{ width: `${fillPct}%` }}
+              className="h-full rounded-full bg-gradient-to-r from-amber-500/70 to-amber-300/90"
+              style={{ width: "52%" }}
             />
           </div>
         </div>
@@ -135,8 +119,7 @@ export default async function SubscribePage() {
             <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-400" />
           </span>
           <span className="text-[11px] font-medium text-amber-300/75 tracking-wide">
-            {memberCount.toLocaleString()} of 5,000 spots taken
-            {spotsLeft > 0 ? ` · ${spotsLeft.toLocaleString()} remaining` : " · Full"}
+            Worldwide cap of 5,000 members
           </span>
         </div>
       </div>
