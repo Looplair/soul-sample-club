@@ -507,39 +507,20 @@ export default async function HomePage() {
         </section>
 
         {/* ============================================
-            WEEKLY DROP CARD
+            WEEKLY DROP BADGE
             ============================================ */}
         {!hasSubscription && (
-          <div className="container-app py-2 sm:py-4">
-            <div
-              className="group relative rounded-2xl overflow-hidden p-px animate-holo-shift"
-              style={{
-                backgroundSize: "300% 300%",
-                backgroundImage: "linear-gradient(120deg, #a0a0b8, #ffffff, #c8c0d8, #f0f0ff, #b0b0c8, #ffffff, #a8a8c0)",
-              }}
-            >
-              <div className="relative rounded-[calc(1rem-1px)] bg-charcoal px-5 py-[14px] sm:px-7 sm:py-[16px] flex items-center gap-3 overflow-hidden">
-                {/* metallic inner shimmer */}
-                <div
-                  className="absolute inset-0 opacity-[0.04] animate-holo-shift pointer-events-none"
-                  style={{
-                    backgroundSize: "300% 300%",
-                    backgroundImage: "linear-gradient(120deg, #ffffff, #c0c0d8, #ffffff)",
-                  }}
-                />
-                {/* icon */}
-                <Sparkles className="flex-shrink-0 w-4 h-4 text-white/60 relative z-10" />
-                {/* headline */}
-                <p className="flex-1 text-white/90 font-semibold text-sm sm:text-base tracking-tight relative z-10">
-                  New drop every week
-                </p>
-                {/* cta */}
-                {!isLoggedIn && (
-                  <Link href="/subscribe" className="flex-shrink-0 relative z-10">
-                    <Button size="sm" className="whitespace-nowrap">Get started</Button>
-                  </Link>
-                )}
+          <div className="container-app py-3 sm:py-4">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 bg-white/[0.05] border border-white/[0.08] rounded-full px-3.5 py-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-white/40 flex-shrink-0" />
+                <span className="text-[12px] font-medium text-white/45 tracking-wide">New drop every week</span>
               </div>
+              {!isLoggedIn && (
+                <Link href="/subscribe">
+                  <Button size="sm" className="whitespace-nowrap">Get started</Button>
+                </Link>
+              )}
             </div>
           </div>
         )}
@@ -604,18 +585,9 @@ export default async function HomePage() {
                     </Link>
                   )}
 
-                  {/* ACTIVE PACKS GRID */}
+                  {/* ACTIVE PACKS — searchable */}
                   {gridPacks.length > 0 && (
-                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5 [&>*:last-child:nth-child(odd)]:max-sm:col-span-2 [&>*:last-child:nth-child(odd)]:max-sm:max-w-[calc(50%-6px)] [&>*:last-child:nth-child(odd)]:max-sm:mx-auto">
-                      {gridPacks.map(pack => (
-                        <PackCard
-                          key={pack.id}
-                          pack={pack}
-                          sampleCount={Array.isArray(pack.samples) ? pack.samples.length : 0}
-                          hasSubscription={false}
-                        />
-                      ))}
-                    </div>
+                    <CatalogSearch packs={gridPacks} hasSubscription={false} />
                   )}
 
                   {/* ARCHIVE BLUR WALL */}
