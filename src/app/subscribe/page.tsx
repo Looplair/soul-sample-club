@@ -34,6 +34,19 @@ async function getUserState() {
   }
 }
 
+async function getMemberCount(): Promise<number> {
+  try {
+    const admin = createAdminClient();
+    const { count } = await admin
+      .from("subscriptions")
+      .select("id", { count: "exact", head: true })
+      .in("status", ["active", "trialing"]);
+    return count ?? 0;
+  } catch {
+    return 0;
+  }
+}
+
 type PackCover = { id: string; name: string; cover_image_url: string };
 
 async function getPackCovers(): Promise<PackCover[]> {
@@ -64,10 +77,13 @@ const features = [
 ];
 
 export default async function SubscribePage() {
-  const [{ isLoggedIn, hasSubscription, hasUsedTrial }, packs] = await Promise.all([
+  const [{ isLoggedIn, hasSubscription, hasUsedTrial }, packs, memberCount] = await Promise.all([
     getUserState(),
     getPackCovers(),
+    getMemberCount(),
   ]);
+  const spotsLeft = Math.max(0, 5000 - memberCount);
+  const fillPct = Math.min((memberCount / 5000) * 100, 100);
 
   if (hasSubscription) redirect("/feed");
 
@@ -101,6 +117,28 @@ export default async function SubscribePage() {
         <p className="text-white/45 text-base sm:text-lg leading-relaxed">
           A year of Soul Sample Club is $49.
         </p>
+      </div>
+
+      {/* Capacity badge */}
+      <div className="container-app flex flex-col items-center gap-3 pb-7 sm:pb-8">
+        <div className="w-full max-w-[280px]">
+          <div className="h-[3px] bg-white/[0.06] rounded-full overflow-hidden">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-amber-500/70 to-amber-300/90 transition-all duration-1000"
+              style={{ width: `${fillPct}%` }}
+            />
+          </div>
+        </div>
+        <div className="flex items-center gap-2 bg-amber-400/[0.08] border border-amber-400/[0.18] rounded-full px-4 py-[7px]">
+          <span className="relative flex h-2 w-2 flex-shrink-0">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-60" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-400" />
+          </span>
+          <span className="text-[11px] font-medium text-amber-300/75 tracking-wide">
+            {memberCount.toLocaleString()} of 5,000 spots taken
+            {spotsLeft > 0 ? ` · ${spotsLeft.toLocaleString()} remaining` : " · Full"}
+          </span>
+        </div>
       </div>
 
       {/* Plan cards */}
@@ -232,7 +270,7 @@ export default async function SubscribePage() {
       {packs.length > 0 && (
         <div className="pb-20 sm:pb-28">
           <p className="text-center text-[9px] uppercase tracking-[0.35em] text-white/15 mb-5 font-medium">
-            The catalog
+            A world of pre-cleared samples
           </p>
           <div className="relative">
             <div className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-charcoal to-transparent z-10 pointer-events-none" />

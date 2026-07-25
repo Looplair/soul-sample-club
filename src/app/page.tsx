@@ -510,17 +510,10 @@ export default async function HomePage() {
             WEEKLY DROP BADGE
             ============================================ */}
         {!hasSubscription && (
-          <div className="container-app py-3 sm:py-4">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 bg-white/[0.05] border border-white/[0.08] rounded-full px-3.5 py-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-white/40 flex-shrink-0" />
-                <span className="text-[12px] font-medium text-white/45 tracking-wide">New drop every week</span>
-              </div>
-              {!isLoggedIn && (
-                <Link href="/subscribe">
-                  <Button size="sm" className="whitespace-nowrap">Get started</Button>
-                </Link>
-              )}
+          <div className="container-app py-3 sm:py-4 flex justify-center">
+            <div className="flex items-center gap-2 bg-velvet/[0.1] border border-velvet/20 rounded-full px-4 py-2">
+              <Sparkles className="w-3 h-3 text-velvet-light/70 flex-shrink-0" />
+              <span className="text-[12px] font-medium text-white/50 tracking-wide">New drop every week</span>
             </div>
           </div>
         )}
