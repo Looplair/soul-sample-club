@@ -342,7 +342,7 @@ export default async function FeedPage() {
                       className="rounded-full"
                     >
                       <Sparkles className="w-3.5 h-3.5 mr-1.5" />
-                      {hasUsedTrial ? "Subscribe to download" : "First month $0.99"}
+                      {hasUsedTrial ? "Subscribe to download" : "First month $2.99"}
                     </SubscribeCTA>
                     <SubscribeCTA
                       isLoggedIn={isLoggedIn}

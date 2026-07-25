@@ -123,8 +123,8 @@ export default async function AppPage() {
                     Log in
                   </Button>
                 </Link>
-                <Link href="/signup">
-                  <Button size="sm">Start for $0.99</Button>
+                <Link href="/subscribe">
+                  <Button size="sm">Get started</Button>
                 </Link>
               </>
             )}
