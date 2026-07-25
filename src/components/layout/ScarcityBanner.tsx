@@ -42,11 +42,11 @@ export function ScarcityBanner() {
         </span>
 
         <Link
-          href="/signup"
+          href="/checkout"
           className="bg-white text-charcoal px-3 py-0.5 rounded-full text-[11px] tracking-wide font-semibold
                      hover:bg-white/90 active:scale-95 transition-all whitespace-nowrap"
         >
-          Start for $0.99 →
+          Get started →
         </Link>
       </div>
     </div>

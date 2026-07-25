@@ -36,9 +36,7 @@ export function SubscribeCTA({
 
   // If not logged in, link to signup (preserve plan for yearly)
   if (!isLoggedIn) {
-    const signupHref = plan === "yearly"
-      ? `/signup?redirect=${encodeURIComponent("/checkout?plan=yearly")}`
-      : "/signup";
+    const signupHref = "/subscribe";
     return (
       <Link href={signupHref}>
         <Button className={className} size={size} variant={variant}>

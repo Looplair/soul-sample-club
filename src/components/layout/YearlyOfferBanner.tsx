@@ -35,7 +35,7 @@ export function YearlyOfferBanner() {
           Full year · $49/yr
         </span>
         <Link
-          href="/signup?redirect=/subscribe?plan=yearly"
+          href="/subscribe"
           className="bg-white/95 text-[#07070f] px-3 py-0.5 rounded-full text-[11px] tracking-wide font-semibold hover:bg-white active:scale-95 transition-all whitespace-nowrap"
         >
           Get yearly →

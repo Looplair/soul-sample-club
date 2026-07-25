@@ -46,7 +46,7 @@ export function ArchivedPacksSection({ archivedPacks }: ArchivedPacksSectionProp
       <p className="text-xs text-text-muted">
         or{" "}
         <Link
-          href="/signup?redirect=/subscribe?plan=yearly"
+          href="/subscribe"
           className="hover:text-white transition-colors underline"
         >
           $49/year

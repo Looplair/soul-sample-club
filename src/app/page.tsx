@@ -533,14 +533,10 @@ export default async function HomePage() {
                 <p className="flex-1 text-white/90 font-semibold text-sm sm:text-base tracking-tight relative z-10">
                   New drop every week
                 </p>
-                {/* hover reveal */}
-                <span className="text-[11px] text-white/35 opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap relative z-10 hidden sm:block">
-                  Starting Aug 1st 2026
-                </span>
                 {/* cta */}
                 {!isLoggedIn && (
-                  <Link href="/signup" className="flex-shrink-0 relative z-10">
-                    <Button size="sm" className="whitespace-nowrap">Start $0.99</Button>
+                  <Link href="/subscribe" className="flex-shrink-0 relative z-10">
+                    <Button size="sm" className="whitespace-nowrap">Get started</Button>
                   </Link>
                 )}
               </div>
