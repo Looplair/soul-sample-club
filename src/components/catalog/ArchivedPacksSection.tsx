@@ -1,8 +1,4 @@
-"use client";
-
-import { useState } from "react";
 import Link from "next/link";
-import { ChevronDown } from "lucide-react";
 import { PackCard } from "@/components/packs/PackCard";
 import { Button } from "@/components/ui";
 
@@ -30,79 +26,47 @@ interface ArchivedPacksSectionProps {
 }
 
 export function ArchivedPacksSection({ archivedPacks }: ArchivedPacksSectionProps) {
-  const [expanded, setExpanded] = useState(false);
-  const visiblePacks = expanded ? archivedPacks : archivedPacks.slice(0, 8);
-
-  const SubscribeCard = ({ title }: { title: string }) => (
-    <div className="w-full max-w-sm bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6 sm:p-8 text-center">
-      <p className="text-[10px] uppercase tracking-[0.15em] text-text-muted mb-2">Members only</p>
-      <h3 className="text-lg font-semibold text-white mb-1">{title}</h3>
-      <p className="text-sm text-text-muted mb-5">
-        Pre-cleared and exclusive. Nowhere else on the internet. Plus a members-only drum vault and Looplair perks. First month $2.99.
-      </p>
-      <Link href="/subscribe">
-        <Button className="w-full mb-3">Get started →</Button>
-      </Link>
-      <p className="text-xs text-text-muted">
-        or{" "}
-        <Link
-          href="/subscribe"
-          className="hover:text-white transition-colors underline"
-        >
-          $49/year
-        </Link>
-        {" "}· Cancel anytime
-      </p>
-    </div>
-  );
-
   return (
     <div>
-      {/* Grid */}
-      <div className="relative">
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-          {visiblePacks.map(pack => (
+      {/* Section header */}
+      <div className="flex items-center justify-between mb-4 sm:mb-5">
+        <p className="text-[10px] uppercase tracking-[0.2em] text-white/20 font-medium">Archive</p>
+        <p className="text-[11px] text-white/20">Packs return for members</p>
+      </div>
+
+      {/* Grid — all archive packs, no blur wall */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+        {archivedPacks.map((pack) => (
+          <div key={pack.id} style={{ filter: "saturate(0.6) brightness(0.75)" }}>
             <PackCard
-              key={pack.id}
               pack={pack}
               sampleCount={Array.isArray(pack.samples) ? pack.samples.length : 0}
               hasSubscription={false}
             />
-          ))}
-        </div>
-
-        {/* Fade — z-20 so it sits above pack card text (which lives at z-10 inside transform stacking contexts) */}
-        {!expanded && (
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent from-[25%] to-charcoal pointer-events-none z-20" />
-        )}
+          </div>
+        ))}
       </div>
 
-      {/* Subscribe card — below the grid, no overlap */}
-      {!expanded && (
-        <div className="flex justify-center px-4 mt-4 relative z-10">
-          <SubscribeCard title={`${archivedPacks.length}+ releases in the archive`} />
+      {/* CTA at the end */}
+      <div className="flex justify-center mt-10 sm:mt-14">
+        <div className="w-full max-w-sm bg-white/[0.04] border border-white/[0.08] rounded-2xl p-6 sm:p-8 text-center">
+          <p className="text-[10px] uppercase tracking-[0.15em] text-white/25 mb-3">Members only</p>
+          <h3 className="text-base font-semibold text-white mb-2">{archivedPacks.length}+ releases in the archive</h3>
+          <p className="text-[13px] text-white/35 mb-5 leading-relaxed">
+            Pre-cleared and exclusive. Nowhere else on the internet. Plus a members-only drum vault and Looplair perks. First month $2.99.
+          </p>
+          <Link href="/subscribe">
+            <Button className="w-full mb-3">Get started</Button>
+          </Link>
+          <p className="text-xs text-white/25">
+            or{" "}
+            <Link href="/subscribe" className="hover:text-white transition-colors underline">
+              $49/year
+            </Link>
+            {" "}· Cancel anytime
+          </p>
         </div>
-      )}
-
-      {/* See more / collapse toggle */}
-      <div className="flex justify-center mt-6">
-        <button
-          onClick={() => setExpanded(v => !v)}
-          className="flex items-center gap-2 text-sm text-text-muted hover:text-white transition-colors py-2 px-4"
-        >
-          <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${expanded ? "rotate-180" : ""}`} />
-          {expanded
-            ? "Show less"
-            : `See all ${archivedPacks.length} archived releases`}
-        </button>
       </div>
-
-      {/* When expanded: subscribe card below the full grid */}
-      {expanded && (
-        <div className="flex justify-center px-4 mt-8">
-          <SubscribeCard title="Ready to download?" />
-        </div>
-      )}
     </div>
   );
 }

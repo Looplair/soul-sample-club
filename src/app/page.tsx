@@ -524,73 +524,17 @@ export default async function HomePage() {
         <section id="catalog" className="section scroll-mt-20">
           <div className="container-app">
 
-            {/* LOGGED-OUT: premium editorial layout */}
-            {!isLoggedIn && (() => {
-              const gridPacks = recentPacks.filter(p => p.id !== featuredPack?.id);
-              return (
-                <div className="space-y-5 sm:space-y-7">
-
-                  {/* HERO */}
-                  {featuredPack && (
-                    <Link
-                      href={`/packs/${featuredPack.id}`}
-                      className="group block relative rounded-2xl overflow-hidden aspect-square sm:aspect-[21/9]"
-                    >
-                      {featuredPack.cover_image_url && (
-                        <Image
-                          src={featuredPack.cover_image_url}
-                          alt={featuredPack.name}
-                          fill
-                          className="object-cover transition-transform duration-700 group-hover:scale-[1.03]"
-                          sizes="(max-width: 640px) 100vw, 100vw"
-                          priority
-                        />
-                      )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/25 to-transparent" />
-                      <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-transparent" />
-
-                      <div className="absolute top-4 sm:top-6 left-4 sm:left-6">
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white text-charcoal text-[10px] font-bold tracking-[0.12em] uppercase">
-                          <Sparkles className="w-2.5 h-2.5" />
-                          Latest Drop
-                        </span>
-                      </div>
-
-                      <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-8 lg:p-10">
-                        <h2 className="text-2xl sm:text-4xl lg:text-5xl font-bold text-white mb-1.5 sm:mb-3 leading-tight tracking-tight">
-                          {featuredPack.name}
-                        </h2>
-                        {featuredPack.description && (
-                          <p className="text-white/60 text-sm sm:text-base mb-4 max-w-lg line-clamp-2 hidden sm:block">
-                            {featuredPack.description}
-                          </p>
-                        )}
-                        <div className="flex items-center gap-3">
-                          <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-white text-charcoal text-sm font-semibold group-hover:bg-white/90 transition-colors">
-                            <Play className="w-3 h-3" fill="currentColor" />
-                            Preview
-                          </span>
-                          <span className="text-white/40 text-xs sm:text-sm">
-                            {Array.isArray(featuredPack.samples) ? featuredPack.samples.length : 0} tracks
-                          </span>
-                        </div>
-                      </div>
-                    </Link>
-                  )}
-
-                  {/* ACTIVE PACKS — searchable */}
-                  {gridPacks.length > 0 && (
-                    <CatalogSearch packs={gridPacks} hasSubscription={false} />
-                  )}
-
-                  {/* ARCHIVE BLUR WALL */}
-                  {archivedPacks.length > 0 && (
-                    <ArchivedPacksSection archivedPacks={archivedPacks} />
-                  )}
-
-                </div>
-              );
-            })()}
+            {/* LOGGED-OUT: clean catalog grid */}
+            {!isLoggedIn && (
+              <div className="space-y-10 sm:space-y-14">
+                {recentPacks.length > 0 && (
+                  <CatalogSearch packs={recentPacks} hasSubscription={false} />
+                )}
+                {archivedPacks.length > 0 && (
+                  <ArchivedPacksSection archivedPacks={archivedPacks} />
+                )}
+              </div>
+            )}
 
             {/* LOGGED-IN: searchable catalog */}
             {isLoggedIn && (
