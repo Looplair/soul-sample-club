@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { Music2, Shield, Layers, Zap, Mic2, BookOpen } from "lucide-react";
+import { Music2, Shield, Layers, Zap, Mic2, BookOpen, Lock, Drum, Gift } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { SubscribeCTA } from "@/components/ui/SubscribeCTA";
@@ -55,12 +55,15 @@ async function getPackCovers(): Promise<PackCover[]> {
 }
 
 const features = [
+  { icon: Lock, text: "Exclusively on SSC. These packs exist nowhere else on the internet." },
   { icon: Music2, text: "Pre-cleared soul, jazz, gospel and funk. Use it in any release." },
   { icon: Shield, text: "No clearance needed. Ever." },
   { icon: Layers, text: "Full stems on every release. Chop, flip, replay however you want." },
   { icon: Zap, text: "A new pre-cleared pack drops every week." },
   { icon: Mic2, text: "Made by real musicians, in-house. Not AI, not stock." },
-  { icon: BookOpen, text: "Access to the full active catalog." },
+  { icon: BookOpen, text: "Full access to the active catalog the moment you subscribe." },
+  { icon: Drum, text: "Members-only drum vault. Raw original drum breaks, free to collect and download." },
+  { icon: Gift, text: "Looplair member perks — early access to drops, bonus packs, and exclusive discounts." },
 ];
 
 export default async function SubscribePage() {
@@ -101,6 +104,13 @@ export default async function SubscribePage() {
         <p className="text-white/45 text-base sm:text-lg leading-relaxed">
           A year of Soul Sample Club is $49.
         </p>
+        <div className="flex items-center justify-center gap-2 mt-5 flex-wrap">
+          <span className="text-[11px] text-white/20 tracking-wide">Powered by Looplair</span>
+          <span className="text-white/10 text-[11px]">·</span>
+          <span className="text-[11px] text-white/20 tracking-wide">30,000+ producers worldwide</span>
+          <span className="text-white/10 text-[11px]">·</span>
+          <span className="text-[11px] text-white/20 tracking-wide">Exclusively on SSC</span>
+        </div>
       </div>
 
       {/* Capacity badge */}
