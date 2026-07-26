@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { Music2, Shield, Layers, Zap, Mic2, BookOpen, Lock, Drum, Gift } from "lucide-react";
+import { Drum, Gift } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { SubscribeCTA } from "@/components/ui/SubscribeCTA";
@@ -54,16 +54,13 @@ async function getPackCovers(): Promise<PackCover[]> {
   }
 }
 
-const features = [
-  { icon: Lock, text: "Exclusively on SSC. These packs exist nowhere else on the internet." },
-  { icon: Music2, text: "Pre-cleared soul, jazz, gospel and funk. Use it in any release." },
-  { icon: Shield, text: "No clearance needed. Ever." },
-  { icon: Layers, text: "Full stems on every release. Chop, flip, replay however you want." },
-  { icon: Zap, text: "A new pre-cleared pack drops every week." },
-  { icon: Mic2, text: "Made by real musicians, in-house. Not AI, not stock." },
-  { icon: BookOpen, text: "Full access to the active catalog the moment you subscribe." },
-  { icon: Drum, text: "Members-only drum vault. Raw original drum breaks, free to collect and download." },
-  { icon: Gift, text: "Looplair member perks — early access to drops, bonus packs, and exclusive discounts." },
+const coreFacts = [
+  "Pre-cleared soul, jazz, gospel and funk",
+  "No clearance needed. Ever.",
+  "Full stems on every release",
+  "A new pack drops every week",
+  "Made by real musicians. Not AI, not stock.",
+  "Exclusive to SSC. Nowhere else on the internet.",
 ];
 
 export default async function SubscribePage() {
@@ -104,13 +101,6 @@ export default async function SubscribePage() {
         <p className="text-white/45 text-base sm:text-lg leading-relaxed">
           A year of Soul Sample Club is $49.
         </p>
-        <div className="flex items-center justify-center gap-2 mt-5 flex-wrap">
-          <span className="text-[11px] text-white/20 tracking-wide">Powered by Looplair</span>
-          <span className="text-white/10 text-[11px]">·</span>
-          <span className="text-[11px] text-white/20 tracking-wide">30,000+ producers worldwide</span>
-          <span className="text-white/10 text-[11px]">·</span>
-          <span className="text-[11px] text-white/20 tracking-wide">Exclusively on SSC</span>
-        </div>
       </div>
 
       {/* Capacity badge */}
@@ -242,20 +232,38 @@ export default async function SubscribePage() {
         </div>
       </div>
 
-      {/* Features */}
-      <div className="container-app pb-14 sm:pb-16">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-w-5xl mx-auto">
-          {features.map(({ icon: Icon, text }) => (
-            <div
-              key={text}
-              className="flex items-start gap-3 p-4 rounded-2xl bg-white/[0.03] border border-white/[0.06]"
-            >
-              <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-white/[0.07] flex items-center justify-center mt-0.5">
-                <Icon className="w-4 h-4 text-white/40" />
-              </div>
-              <p className="text-[13px] text-white/45 leading-snug pt-1">{text}</p>
+      {/* Core facts */}
+      <div className="container-app pb-10 sm:pb-12">
+        <div className="max-w-2xl mx-auto grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-3">
+          {coreFacts.map((fact) => (
+            <div key={fact} className="flex items-center gap-3">
+              <span className="w-1 h-1 rounded-full bg-white/20 flex-shrink-0" />
+              <span className="text-[13px] text-white/40 leading-snug">{fact}</span>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* Member exclusives */}
+      <div className="container-app pb-14 sm:pb-16">
+        <p className="text-[9px] uppercase tracking-[0.35em] text-white/15 text-center mb-6 font-medium">
+          Member exclusives
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-3xl mx-auto">
+          <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-6 sm:p-7">
+            <div className="w-9 h-9 rounded-xl bg-white/[0.07] flex items-center justify-center mb-5">
+              <Drum className="w-4 h-4 text-white/50" />
+            </div>
+            <h3 className="text-white font-semibold text-[15px] mb-2">The Drum Vault</h3>
+            <p className="text-[13px] text-white/40 leading-relaxed">Raw, original drum breaks recorded by real musicians. Exclusive to SSC members. Free to collect and download, updated regularly.</p>
+          </div>
+          <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-6 sm:p-7">
+            <div className="w-9 h-9 rounded-xl bg-white/[0.07] flex items-center justify-center mb-5">
+              <Gift className="w-4 h-4 text-white/50" />
+            </div>
+            <h3 className="text-white font-semibold text-[15px] mb-2">Looplair Member Perks</h3>
+            <p className="text-[13px] text-white/40 leading-relaxed">Early access to drops, bonus packs from one of the best soul libraries in the world, and member-only discounts. Just for being here.</p>
+          </div>
         </div>
       </div>
 
