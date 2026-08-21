@@ -12,7 +12,6 @@ import { CommunityProof } from "@/components/sections/CommunityProof";
 import { MemberTestimonials } from "@/components/sections/MemberTestimonials";
 import { FAQSection } from "@/components/sections/FAQSection";
 import { PricingCard } from "@/components/sections/PricingCard";
-import { ScarcityBanner } from "@/components/layout/ScarcityBanner";
 import { ArchivedPacksSection } from "@/components/catalog/ArchivedPacksSection";
 import { HowItWorksSection } from "@/components/sections/HowItWorksSection";
 import { Button } from "@/components/ui";
@@ -204,7 +203,6 @@ export default async function HomePage() {
           HEADER
           ============================================ */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-charcoal/80 backdrop-blur-xl border-b border-grey-700/50">
-        {isLoggedIn && !hasSubscription && <ScarcityBanner />}
         <div className="container-app h-14 sm:h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center group">
             <Image
