@@ -5,6 +5,7 @@ import { Drum, Gift } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { SubscribeCTA } from "@/components/ui/SubscribeCTA";
+import { PriceJustificationSection } from "@/components/sections/PriceJustificationSection";
 
 async function getUserState() {
   try {
@@ -138,14 +139,14 @@ export default async function SubscribePage() {
               <div className="self-start flex items-center gap-1.5 bg-amber-400/[0.12] border border-amber-400/25 rounded-full px-3 py-[5px] mb-4">
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
                 <span className="text-amber-300 text-[11px] font-semibold tracking-wider">
-                  START FOR $2.99
+                  START FOR $0.99
                 </span>
               </div>
             )}
 
             <div className="flex items-end gap-2.5 mb-1">
               <span className="text-[3.5rem] lg:text-[4.5rem] font-bold text-white leading-none tracking-tight">
-                {showTrial ? "$2.99" : "$6.99"}
+                {showTrial ? "$0.99" : "$6.99"}
               </span>
               <span className="text-white/30 text-sm mb-2">
                 {showTrial ? "first month" : "/month"}
@@ -243,6 +244,9 @@ export default async function SubscribePage() {
           ))}
         </div>
       </div>
+
+      {/* Price justification */}
+      <PriceJustificationSection />
 
       {/* Member exclusives */}
       <div className="container-app pb-14 sm:pb-16">

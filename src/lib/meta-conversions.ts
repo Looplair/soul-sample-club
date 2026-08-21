@@ -160,7 +160,7 @@ export async function sendStartTrialEvent(params: {
     },
     customData: {
       currency: "USD",
-      value: 2.99,
+      value: 0.99,
       content_name: "Soul Sample Club Membership",
     },
     actionSource: "website",

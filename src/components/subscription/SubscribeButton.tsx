@@ -26,7 +26,7 @@ export function SubscribeButton({
     if (typeof window !== "undefined" && typeof (window as Window & { fbq?: (...a: unknown[]) => void }).fbq === "function") {
       (window as Window & { fbq: (...a: unknown[]) => void }).fbq("track", "InitiateCheckout", {
         currency: "USD",
-        value: 2.99,
+        value: 0.99,
         content_name: "Soul Sample Club Membership",
       });
     }

@@ -40,7 +40,7 @@ export function SubscribeCTA({
     return (
       <Link href={signupHref}>
         <Button className={className} size={size} variant={variant}>
-          {children || "Start for $2.99"}
+          {children || "Start for $0.99"}
           {!hideArrow && <ArrowRight className="w-4 h-4 ml-2" />}
         </Button>
       </Link>
@@ -54,7 +54,7 @@ export function SubscribeCTA({
     if (typeof window !== "undefined" && typeof (window as Window & { fbq?: (...a: unknown[]) => void }).fbq === "function") {
       (window as Window & { fbq: (...a: unknown[]) => void }).fbq("track", "InitiateCheckout", {
         currency: "USD",
-        value: 2.99,
+        value: 0.99,
         content_name: "Soul Sample Club Membership",
       });
     }

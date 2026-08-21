@@ -55,7 +55,7 @@ export function MetaPixelCheckoutSuccess() {
       "StartTrial",
       {
         currency: "USD",
-        value: 2.99,
+        value: 0.99,
         ...(fbc && { fbc }),
         ...(fbp && { fbp }),
       },

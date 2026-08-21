@@ -167,7 +167,7 @@ export async function POST(request: Request) {
         },
       ],
       ...(plan === "monthly" && {
-        discounts: [{ coupon: "fRQCy1Av" }],
+        discounts: [{ coupon: "ktZFClXu" }],
       }),
       subscription_data: subscriptionData,
       success_url: `${process.env.NEXT_PUBLIC_APP_URL}/feed?success=true&meta_event_id=${metaEventId}`,
@@ -188,7 +188,7 @@ export async function POST(request: Request) {
         submit: {
           message: plan === "yearly"
             ? "Annual membership. No refunds on annual plans."
-            : "Your first month is $2.99, then $6.99/month. Cancel anytime.",
+            : "Your first month is $0.99, then $6.99/month. Cancel anytime.",
         },
       },
     });

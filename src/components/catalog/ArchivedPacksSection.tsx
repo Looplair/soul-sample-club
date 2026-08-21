@@ -53,7 +53,7 @@ export function ArchivedPacksSection({ archivedPacks }: ArchivedPacksSectionProp
           <p className="text-[10px] uppercase tracking-[0.15em] text-white/25 mb-3">Members only</p>
           <h3 className="text-base font-semibold text-white mb-2">{archivedPacks.length}+ releases in the archive</h3>
           <p className="text-[13px] text-white/35 mb-5 leading-relaxed">
-            Pre-cleared and exclusive. Nowhere else on the internet. Plus a members-only drum vault and Looplair perks. First month $2.99.
+            Pre-cleared and exclusive. Nowhere else on the internet. Plus a members-only drum vault and Looplair perks. First month $0.99.
           </p>
           <Link href="/subscribe">
             <Button className="w-full mb-3">Get started</Button>

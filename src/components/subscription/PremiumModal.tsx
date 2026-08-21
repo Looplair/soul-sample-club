@@ -116,7 +116,7 @@ export function PremiumModal({ isOpen, onClose, hasUsedTrial, isLoggedIn }: Prem
                   ) : (
                     <Sparkles className="w-4 h-4" />
                   )}
-                  {hasUsedTrial ? "Subscribe Now" : "Start for $2.99"}
+                  {hasUsedTrial ? "Subscribe Now" : "Start for $0.99"}
                 </button>
                 <button
                   onClick={() => handleCheckout("yearly")}
@@ -134,7 +134,7 @@ export function PremiumModal({ isOpen, onClose, hasUsedTrial, isLoggedIn }: Prem
                   className="flex items-center justify-center gap-2 w-full px-6 py-3.5 bg-white text-black font-semibold rounded-xl hover:bg-grey-100 transition-colors"
                 >
                   <Sparkles className="w-4 h-4" />
-                  Start for $2.99
+                  Start for $0.99
                 </Link>
                 <Link
                   href="/subscribe"

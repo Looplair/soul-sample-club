@@ -14,7 +14,6 @@ import { MetaPixelCheckoutSuccess } from "@/components/analytics/MetaPixelEvents
 import { getNotificationsForUser } from "@/lib/notifications";
 import { Music, LogIn, Archive, User, Sparkles, RotateCcw, Trophy, Play } from "lucide-react";
 import { ScarcityBanner } from "@/components/layout/ScarcityBanner";
-import { YearlyOfferBanner } from "@/components/layout/YearlyOfferBanner";
 import { ArchivedPacksSection } from "@/components/catalog/ArchivedPacksSection";
 import { VaultButton } from "@/components/vault/VaultButton";
 import { SubscribeCTA } from "@/components/ui/SubscribeCTA";
@@ -172,7 +171,6 @@ export default async function FeedPage() {
 
       {/* Header */}
       <header className="border-b border-grey-700 bg-charcoal/90 backdrop-blur-xl sticky top-0 z-40">
-        {!isLoggedIn && <YearlyOfferBanner />}
         {isLoggedIn && !hasAccess && <ScarcityBanner />}
         <div className="container-app h-14 sm:h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center group">
@@ -342,7 +340,7 @@ export default async function FeedPage() {
                       className="rounded-full"
                     >
                       <Sparkles className="w-3.5 h-3.5 mr-1.5" />
-                      {hasUsedTrial ? "Subscribe to download" : "First month $2.99"}
+                      {hasUsedTrial ? "Subscribe to download" : "First month $0.99"}
                     </SubscribeCTA>
                     <SubscribeCTA
                       isLoggedIn={isLoggedIn}

@@ -6,12 +6,13 @@ import { CatalogSearch } from "@/components/catalog/CatalogSearch";
 import { PackCard } from "@/components/packs/PackCard";
 import { CreatorHeroStrip } from "@/components/sections/CreatorHeroStrip";
 import { CompleteControlSection } from "@/components/sections/CompleteControlSection";
+import { PriceJustificationSection } from "@/components/sections/PriceJustificationSection";
+import { MembershipCounter } from "@/components/sections/MembershipCounter";
 import { CommunityProof } from "@/components/sections/CommunityProof";
 import { MemberTestimonials } from "@/components/sections/MemberTestimonials";
 import { FAQSection } from "@/components/sections/FAQSection";
 import { PricingCard } from "@/components/sections/PricingCard";
 import { ScarcityBanner } from "@/components/layout/ScarcityBanner";
-import { YearlyOfferBanner } from "@/components/layout/YearlyOfferBanner";
 import { ArchivedPacksSection } from "@/components/catalog/ArchivedPacksSection";
 import { HowItWorksSection } from "@/components/sections/HowItWorksSection";
 import { Button } from "@/components/ui";
@@ -172,8 +173,7 @@ const features = [
 ];
 
 const stats = [
-  { value: "2000+", label: "members" },
-  { value: "$6.99", label: "/month" },
+  { value: "$0.99", label: "first month" },
   { value: "0", label: "restrictions" },
 ];
 
@@ -204,7 +204,6 @@ export default async function HomePage() {
           HEADER
           ============================================ */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-charcoal/80 backdrop-blur-xl border-b border-grey-700/50">
-        {!isLoggedIn && <YearlyOfferBanner />}
         {isLoggedIn && !hasSubscription && <ScarcityBanner />}
         <div className="container-app h-14 sm:h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center group">
@@ -303,7 +302,7 @@ export default async function HomePage() {
                 {!(isLoggedIn && hasUsedTrial) && (
                   <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 mb-6 sm:mb-8">
                     <Sparkles className="w-4 h-4 text-white" />
-                    <span className="text-sm text-white font-medium">First month $2.99</span>
+                    <span className="text-sm text-white font-medium">First month $0.99</span>
                     <span className="text-sm text-white/60">• Cancel anytime</span>
                   </div>
                 )}
@@ -378,7 +377,8 @@ export default async function HomePage() {
                 )}
 
                 {/* Stats */}
-                <div className="flex items-center justify-center lg:justify-start gap-8 pt-4">
+                <div className="flex items-center justify-center lg:justify-start gap-6 sm:gap-8 pt-4">
+                  <MembershipCounter />
                   {stats.map((stat) => (
                     <div key={stat.label} className="text-center">
                       <div className="text-2xl sm:text-3xl font-bold text-white">{stat.value}</div>
@@ -596,6 +596,11 @@ export default async function HomePage() {
         <CompleteControlSection />
 
         {/* ============================================
+            PRICE JUSTIFICATION
+            ============================================ */}
+        <PriceJustificationSection />
+
+        {/* ============================================
             COMMUNITY PROOF
             ============================================ */}
         <CommunityProof />
@@ -730,7 +735,7 @@ export default async function HomePage() {
                   <p className="text-text-muted">
                     {hasUsedTrial
                       ? "Subscribe to download all samples."
-                      : "Start today, first month $2.99, then $6.99/month."}
+                      : "Start today, first month $0.99, then $6.99/month."}
                   </p>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-2 items-center">
