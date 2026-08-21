@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { animate, useMotionValue } from "framer-motion";
 
 const CAP = 5000;
-const MIN_TARGET = 4350;
-const MAX_TARGET = 4750;
+const MIN_TARGET = 3050;
+const MAX_TARGET = 3250;
 const COUNT_DURATION = 2.2;
 const HOLD_MS = 1400;
 const RESET_DURATION = 0.5;
