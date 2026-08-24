@@ -14,6 +14,7 @@ interface PackRow {
   release_date: string;
   end_date: string | null;
   is_published: boolean;
+  is_bonus: boolean;
 }
 
 interface SampleRow {
@@ -97,7 +98,7 @@ export async function GET() {
 
     const packsResult = await adminSupabase
       .from("packs")
-      .select("id, name, description, cover_image_url, release_date, end_date, is_published")
+      .select("id, name, description, cover_image_url, release_date, end_date, is_published, is_bonus")
       .eq("is_published", true)
       .order("release_date", { ascending: false });
 
@@ -127,6 +128,7 @@ export async function GET() {
       release_date: p.release_date,
       end_date: p.end_date,
       archived: isPackExpiredWithEndDate(p.release_date, p.end_date),
+      bonus: p.is_bonus,
     }));
 
     const packById = new Map(packPayload.map((p) => [p.id, p]));
@@ -145,6 +147,7 @@ export async function GET() {
         peaks: s.waveform_peaks ?? null,
         release_date: pack?.release_date ?? null,
         archived: pack?.archived ?? false,
+        bonus: pack?.bonus ?? false,
       };
     });
 
