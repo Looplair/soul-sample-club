@@ -58,11 +58,11 @@ export async function GET(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const packResult = await (adminSupabase as any)
       .from("packs")
-      .select("id, name, release_date, end_date, is_published, pack_zip_path, is_returned")
+      .select("id, name, release_date, end_date, is_published, pack_zip_path, is_returned, samples(id)")
       .eq("id", packId)
       .single();
 
-    const pack = packResult.data as (Pack & { pack_zip_path: string | null }) | null;
+    const pack = packResult.data as (Pack & { pack_zip_path: string | null; samples: { id: string }[] }) | null;
 
     if (packResult.error || !pack) {
       return NextResponse.json({ error: "Pack not found" }, { status: 404 });
@@ -100,6 +100,19 @@ export async function GET(
     if (urlError || !signedUrl) {
       console.error("Error generating pack zip signed URL:", urlError);
       return NextResponse.json({ error: "Failed to generate download URL" }, { status: 500 });
+    }
+
+    // Record a download for analytics per sample in the pack (ignore errors - don't block download)
+    try {
+      const sampleIds = pack.samples?.map((s) => s.id) || [];
+      if (sampleIds.length > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (adminSupabase.from("downloads") as any).insert(
+          sampleIds.map((sampleId) => ({ user_id: user.id, sample_id: sampleId }))
+        );
+      }
+    } catch (insertErr) {
+      console.warn("Pack download analytics insert warning:", insertErr);
     }
 
     return NextResponse.json({ url: signedUrl.signedUrl });

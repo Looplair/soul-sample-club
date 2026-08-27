@@ -138,6 +138,12 @@ function computeTopSamples(downloads: DownloadRow[], limit: number): TopSample[]
     .slice(0, limit);
 }
 
+function filterSince(downloads: DownloadRow[], days: number): DownloadRow[] {
+  const start = new Date();
+  start.setDate(start.getDate() - days);
+  return downloads.filter((d) => new Date(d.downloaded_at) >= start);
+}
+
 function computeTopBPMRanges(downloads: DownloadRow[]): { range: string; count: number }[] {
   const counts: Record<string, number> = {};
   for (const d of downloads) {
@@ -191,10 +197,14 @@ export default async function AnalyticsPage() {
     getComparisonStats(),
   ]);
 
-  const recentDownloads = allDownloads.filter(d => new Date(d.downloaded_at) >= (() => { const s = new Date(); s.setDate(s.getDate() - 30); return s; })());
+  const windows = [7, 14, 30] as const;
+  const topPacksByWindow = Object.fromEntries(
+    windows.map((d) => [d, computeTopPacks(filterSince(allDownloads, d), 6)])
+  ) as Record<(typeof windows)[number], TopPack[]>;
+  const topSamplesByWindow = Object.fromEntries(
+    windows.map((d) => [d, computeTopSamples(filterSince(allDownloads, d), 8)])
+  ) as Record<(typeof windows)[number], TopSample[]>;
 
-  const topPacksRecent = computeTopPacks(recentDownloads, 5);
-  const topSamplesRecent = computeTopSamples(recentDownloads, 10);
   const topPacksAllTime = computeTopPacks(allDownloads);
   const topSamplesAllTime = computeTopSamples(allDownloads, 20);
   const topBPMRanges = computeTopBPMRanges(allDownloads);
@@ -225,25 +235,38 @@ export default async function AnalyticsPage() {
         <BarChart title="User Signups (Last 30 Days)" icon={<Users className="w-5 h-5" />} data={dailySignups} max={maxSignups} color="bg-success" label="signups" />
       </div>
 
-      {/* 30-day top content */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Package className="w-5 h-5" />Top Packs (30 Days)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <PackList packs={topPacksRecent} />
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2"><TrendingUp className="w-5 h-5" />Top Samples (30 Days)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <SampleList samples={topSamplesRecent} />
-          </CardContent>
-        </Card>
-      </div>
+      {/* Windowed top content — spot momentum shifts across 7/14/30 days */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><Package className="w-5 h-5" />Top Packs — Recent</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            {windows.map((d) => (
+              <div key={d} className={d !== 30 ? "sm:border-r sm:border-grey-700 sm:pr-6" : ""}>
+                <p className="text-xs uppercase tracking-wider text-snow/30 font-medium mb-4">Last {d} days</p>
+                <PackList packs={topPacksByWindow[d]} compact />
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><TrendingUp className="w-5 h-5" />Top Samples — Recent</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            {windows.map((d) => (
+              <div key={d} className={d !== 30 ? "sm:border-r sm:border-grey-700 sm:pr-6" : ""}>
+                <p className="text-xs uppercase tracking-wider text-snow/30 font-medium mb-4">Last {d} days</p>
+                <SampleList samples={topSamplesByWindow[d]} />
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* All-time divider */}
       <div className="flex items-center gap-4">
@@ -396,8 +419,24 @@ function BarChart({ title, icon, data, max, color, label }: {
   );
 }
 
-function PackList({ packs }: { packs: TopPack[] }) {
-  if (!packs.length) return <p className="text-snow/60 text-center py-8">No download data yet</p>;
+function PackList({ packs, compact }: { packs: TopPack[]; compact?: boolean }) {
+  if (!packs.length) return <p className="text-snow/40 text-sm py-4">No downloads yet</p>;
+  if (compact) {
+    return (
+      <div className="space-y-3">
+        {packs.map((pack, i) => (
+          <div key={pack.id} className="flex items-center gap-2.5">
+            <span className="w-4 text-xs text-snow/30 font-medium flex-shrink-0">{i + 1}</span>
+            {pack.cover_image_url
+              ? <img src={pack.cover_image_url} alt={pack.name} className="w-7 h-7 rounded object-cover flex-shrink-0" />
+              : <div className="w-7 h-7 rounded bg-grey-700 flex-shrink-0" />}
+            <p className="flex-1 text-snow text-sm truncate">{pack.name}</p>
+            <span className="text-snow/50 text-xs flex-shrink-0">{pack.downloads}</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
   return (
     <div className="space-y-4">
       {packs.map((pack, i) => (
