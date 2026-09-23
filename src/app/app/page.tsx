@@ -185,7 +185,7 @@ export default async function AppPage() {
 
               {/* Windows SmartScreen note */}
               <p className="text-sm text-white/40">
-                Windows may show a &quot;Windows protected your PC&quot; warning on first launch — click{" "}
+                Windows may show a &quot;Windows protected your PC&quot; warning on first launch, click{" "}
                 <span className="text-white/60">More info</span> →{" "}
                 <span className="text-white/60">Run anyway</span>. It&apos;s a safety check for newly
                 released apps, and it&apos;s signed and safe to run.
