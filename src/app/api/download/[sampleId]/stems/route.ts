@@ -1,8 +1,64 @@
 import { NextResponse } from "next/server";
+import JSZip from "jszip";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isPackExpiredWithEndDate } from "@/lib/utils";
 import type { Sample } from "@/types/database";
+
+/**
+ * Uploaded stems zips were made with Finder's "Compress", which bakes in
+ * a __MACOSX/ folder of AppleDouble resource-fork files (._filename).
+ * macOS's own unzip quietly reabsorbs those and hides them; Windows
+ * Explorer just dumps them as confusing extra files. Rather than touch
+ * the originals in storage, we lazily produce a stripped copy the first
+ * time it's requested and reuse it after that.
+ */
+async function getOrCreateCleanStemsPath(
+  adminSupabase: ReturnType<typeof createAdminClient>,
+  originalPath: string
+): Promise<string> {
+  const cleanPath = originalPath.replace(/\.zip$/i, "-clean.zip");
+
+  const { data: existing } = await adminSupabase.storage
+    .from("samples")
+    .list(cleanPath.split("/").slice(0, -1).join("/"), {
+      search: cleanPath.split("/").pop(),
+    });
+  if (existing?.some((f) => cleanPath.endsWith(f.name))) {
+    return cleanPath;
+  }
+
+  const { data: original, error: downloadError } = await adminSupabase.storage
+    .from("samples")
+    .download(originalPath);
+  if (downloadError || !original) {
+    throw new Error(`Failed to download original stems: ${downloadError?.message}`);
+  }
+
+  const zip = await JSZip.loadAsync(await original.arrayBuffer());
+  const cleaned = new JSZip();
+  for (const [entryPath, entry] of Object.entries(zip.files)) {
+    const basename = entryPath.split("/").pop() || "";
+    if (entryPath.startsWith("__MACOSX/") || basename.startsWith("._") || basename === ".DS_Store") {
+      continue;
+    }
+    if (entry.dir) {
+      cleaned.folder(entryPath);
+    } else {
+      cleaned.file(entryPath, await entry.async("nodebuffer"));
+    }
+  }
+  const cleanedBuffer = await cleaned.generateAsync({ type: "nodebuffer", compression: "DEFLATE" });
+
+  const { error: uploadError } = await adminSupabase.storage
+    .from("samples")
+    .upload(cleanPath, cleanedBuffer, { contentType: "application/zip", upsert: true });
+  if (uploadError) {
+    throw new Error(`Failed to upload cleaned stems: ${uploadError.message}`);
+  }
+
+  return cleanPath;
+}
 
 // Type for sample with pack relation
 interface SampleWithPack extends Sample {
@@ -104,10 +160,14 @@ export async function GET(
       );
     }
 
+    // Serve a stripped copy (no __MACOSX junk) rather than the original —
+    // see getOrCreateCleanStemsPath for why.
+    const cleanPath = await getOrCreateCleanStemsPath(adminSupabase, sample.stems_path);
+
     // Generate signed URL for the stems file (valid for 60 seconds)
     const { data: signedUrl, error: urlError } = await adminSupabase.storage
       .from("samples")
-      .createSignedUrl(sample.stems_path, 60, {
+      .createSignedUrl(cleanPath, 60, {
         download: `${sample.name}-stems.zip`,
       });
 
