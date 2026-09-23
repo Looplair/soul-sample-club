@@ -35,7 +35,10 @@ export async function GET(
 
   const releaseRes = await fetch(
     `https://api.github.com/repos/${REPO}/releases/tags/${TAG}`,
-    { headers: { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json" } }
+    {
+      headers: { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json" },
+      cache: "no-store",
+    }
   );
   if (!releaseRes.ok) {
     return NextResponse.json({ error: "Release lookup failed" }, { status: 502 });
@@ -56,6 +59,7 @@ export async function GET(
     {
       headers: { Authorization: `Bearer ${token}`, Accept: "application/octet-stream" },
       redirect: "manual",
+      cache: "no-store",
     }
   );
 
