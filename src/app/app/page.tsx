@@ -19,9 +19,8 @@ const SUBHEADLINE =
   "Browse every pack, preview any sample, and download it straight to your computer, then drag it right into your DAW. No browser tabs, no downloads folder, no extra steps.";
 
 const DOWNLOAD_LINKS = {
-  macOS: "#", // Replace with actual download link
-  macOSIntel: "#", // Replace with actual Intel Mac download link
-  windows: "#", // Replace with actual Windows download link
+  macOS: "/api/download-app/mac",
+  windows: "/api/download-app/windows",
 };
 
 const FAQ_ITEMS = [
@@ -133,15 +132,6 @@ export default async function AppPage() {
       </header>
 
       <main>
-        {/* Coming Soon Banner */}
-        <div className="bg-gradient-to-r from-amber-500/20 via-amber-500/10 to-amber-500/20 border-b border-amber-500/20">
-          <div className="container-app py-3 sm:py-4">
-            <p className="text-center text-sm sm:text-base text-amber-200">
-              <span className="font-semibold">Coming Soon</span> — The desktop app is currently in development. Stay tuned!
-            </p>
-          </div>
-        </div>
-
         {/* Hero Section */}
         <section className="py-16 sm:py-24 lg:py-32">
           <div className="container-app">
@@ -193,15 +183,12 @@ export default async function AppPage() {
                 </a>
               </div>
 
-              {/* Intel Mac Link */}
+              {/* Windows SmartScreen note */}
               <p className="text-sm text-white/40">
-                You have an Intel Mac?{" "}
-                <a
-                  href={DOWNLOAD_LINKS.macOSIntel}
-                  className="text-white underline hover:text-white/80 transition-colors"
-                >
-                  Download for Mac with Intel.
-                </a>
+                Windows may show a &quot;Windows protected your PC&quot; warning on first launch — click{" "}
+                <span className="text-white/60">More info</span> →{" "}
+                <span className="text-white/60">Run anyway</span>. It&apos;s a safety check for newly
+                released apps, and it&apos;s signed and safe to run.
               </p>
             </div>
           </div>
