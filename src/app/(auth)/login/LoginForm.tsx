@@ -116,7 +116,9 @@ export function LoginForm() {
 
   const handlePatreonLogin = () => {
     setOauthLoading("patreon");
-    window.location.href = "/api/patreon/login";
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const isDesktop = typeof window !== "undefined" && !!(window as any).sscDesktop;
+    window.location.href = isDesktop ? "/api/patreon/login?source=desktop" : "/api/patreon/login";
   };
 
   return (

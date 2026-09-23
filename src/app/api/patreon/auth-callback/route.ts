@@ -7,6 +7,9 @@ export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const code = searchParams.get("code");
   const error = searchParams.get("error");
+  // Patreon echoes `state` back verbatim — this is how we know the sign-in
+  // started in the desktop app rather than a browser.
+  const isDesktop = searchParams.get("state") === "login:desktop";
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
@@ -265,8 +268,13 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Redirect to the magic link to complete sign in
-    const verifyUrl = `${appUrl}/auth/confirm?token_hash=${magicLink.properties.hashed_token}&type=magiclink`;
+    // Desktop: hand the token to the app's local callback server instead of
+    // verifying it here, so the session cookie lands in the app's own
+    // session rather than the system browser's — same bridge the Google
+    // sign-in flow already uses.
+    const verifyUrl = isDesktop
+      ? `http://127.0.0.1:34523/callback?token_hash=${magicLink.properties.hashed_token}&type=magiclink`
+      : `${appUrl}/auth/confirm?token_hash=${magicLink.properties.hashed_token}&type=magiclink`;
     return NextResponse.redirect(verifyUrl);
   } catch (error) {
     console.error("Patreon auth callback error:", error);
