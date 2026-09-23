@@ -16,7 +16,7 @@ export const metadata = {
 
 const HEADLINE = "Download the Desktop App";
 const SUBHEADLINE =
-  "Sync your Soul Sample Club library and seamlessly integrate samples into your DAW. Make Soul Sample Club an essential part of your creative workflow.";
+  "Browse every pack, preview any sample, and download it straight to your computer, then drag it right into your DAW. No browser tabs, no downloads folder, no extra steps.";
 
 const DOWNLOAD_LINKS = {
   macOS: "#", // Replace with actual download link
@@ -28,22 +28,22 @@ const FAQ_ITEMS = [
   {
     question: "What are the benefits of using the app?",
     answer:
-      "The desktop app lets you browse, preview, and download samples directly to your computer. It syncs with your library, organizes your downloads, and makes it easy to drag samples straight into your DAW.",
+      "It cuts out every step between finding a sound and actually using it. No browser, no digging through a downloads folder, no renaming files, just browse, preview, and drag straight into your session.",
   },
   {
     question: "What can I do in the app?",
     answer:
-      "Browse the full catalog, preview samples with the built-in player, download WAV files and stems, organize your library, and access your favorites, all without opening a browser.",
+      "Browse every pack in the catalog, preview any sample instantly with the built-in player, and download the WAV or the full stems separately. Downloaded samples show up in an \"On This Mac\" view so you always know what's local and what's not.",
   },
   {
     question: "How do I start using the desktop app?",
     answer:
-      "Download the app for your operating system, install it, and sign in with your Soul Sample Club account. Your library and favorites will sync automatically.",
+      "Download the app for your operating system, install it, and sign in with your Soul Sample Club account. Your library shows up automatically, no manual syncing required.",
   },
   {
-    question: "Can I sync samples directly with my DAW?",
+    question: "Can I drag samples directly into my DAW?",
     answer:
-      "Yes. The app saves samples to a folder on your computer that you can point your DAW to. Any new downloads appear instantly and are ready to use in your projects.",
+      "Yes. Once a sample's downloaded, drag it straight out of the app and drop it into your DAW's timeline. No detour through Finder or Explorer.",
   },
   {
     question: "Is the app free to use?",
