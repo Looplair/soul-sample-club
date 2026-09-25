@@ -2,8 +2,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { Apple, Monitor } from "lucide-react";
 import { Button } from "@/components/ui";
+import { Navbar } from "@/components/layout";
 import { FAQAccordion } from "./FAQAccordion";
 import { createClient } from "@/lib/supabase/server";
+import { getNotificationsForUser } from "@/lib/notifications";
+import type { Profile, NotificationWithReadStatus } from "@/types/database";
 
 export const metadata = {
   title: "Desktop App | Soul Sample Club",
@@ -58,78 +61,17 @@ const FAQ_ITEMS = [
 export default async function AppPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  const isLoggedIn = !!user;
+
+  const [profile, { notifications, unreadCount }] = user
+    ? await Promise.all([
+        supabase.from("profiles").select("*").eq("id", user.id).single().then((r) => r.data as Profile | null),
+        getNotificationsForUser(user.id),
+      ])
+    : [null, { notifications: [] as NotificationWithReadStatus[], unreadCount: 0 }];
 
   return (
     <div className="min-h-screen bg-charcoal">
-      {/* Header */}
-      <header className="border-b border-grey-700 bg-charcoal/90 backdrop-blur-xl sticky top-0 z-40">
-        <div className="container-app h-14 sm:h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center group">
-            <Image
-              src="/logo.svg"
-              alt="Soul Sample Club"
-              width={160}
-              height={36}
-              className="h-7 sm:h-9 w-auto"
-              priority
-            />
-          </Link>
-
-          <nav className="hidden md:flex items-center gap-8">
-            {isLoggedIn ? (
-              <>
-                <Link href="/" className="nav-link">
-                  Catalog
-                </Link>
-                <Link href="/library" className="nav-link">
-                  Library
-                </Link>
-                <Link href="/app" className="nav-link nav-link-active">
-                  App
-                </Link>
-                <Link href="/account" className="nav-link">
-                  Account
-                </Link>
-              </>
-            ) : (
-              <>
-                <Link href="/#catalog" className="nav-link">
-                  Catalog
-                </Link>
-                <Link href="/#how-it-works" className="nav-link">
-                  How It Works
-                </Link>
-                <Link href="/#pricing" className="nav-link">
-                  Pricing
-                </Link>
-                <Link href="/app" className="nav-link nav-link-active">
-                  App
-                </Link>
-              </>
-            )}
-          </nav>
-
-          <div className="flex items-center gap-2 sm:gap-3">
-            {isLoggedIn ? (
-              <Link href="/">
-                <Button size="sm">Back to Catalog</Button>
-              </Link>
-            ) : (
-              <>
-                <Link href="/login">
-                  <Button variant="ghost" size="sm">
-                    Log in
-                  </Button>
-                </Link>
-                <Link href="/subscribe">
-                  <Button size="sm">Get started</Button>
-                </Link>
-              </>
-            )}
-          </div>
-        </div>
-      </header>
+      <Navbar user={profile} notifications={notifications} unreadCount={unreadCount} />
 
       <main>
         {/* Hero Section */}

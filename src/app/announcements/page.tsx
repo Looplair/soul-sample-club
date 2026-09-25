@@ -5,9 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ArrowLeft, Megaphone } from "lucide-react";
 import { formatDate } from "@/lib/utils";
-import { NotificationBell } from "@/components/notifications/NotificationBell";
-import { UserDropdown } from "@/components/layout/UserDropdown";
-import { VaultButton } from "@/components/vault/VaultButton";
+import { Navbar } from "@/components/layout";
 import { getNotificationsForUser } from "@/lib/notifications";
 import type { Announcement, Profile } from "@/types/database";
 
@@ -65,30 +63,9 @@ export default async function AnnouncementsPage() {
 
   return (
     <div className="min-h-screen bg-charcoal">
-      {/* Header */}
-      <header className="border-b border-grey-700 bg-charcoal/90 backdrop-blur-xl sticky top-0 z-40">
-        <div className="container-app h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center group">
-            <Image src="/logo.svg" alt="Soul Sample Club" width={160} height={36} className="h-8 sm:h-9 w-auto" priority />
-          </Link>
-          <div className="flex items-center gap-3">
-            <Link href="/feed" className="hidden sm:block">
-              <button className="btn-secondary text-sm px-4 py-2">Catalog</button>
-            </Link>
-            <VaultButton />
-            <NotificationBell userId={user.id} initialNotifications={notifications} initialUnreadCount={unreadCount} />
-            {profile && (
-              <UserDropdown
-                email={profile.email}
-                displayName={profile.username || profile.full_name || profile.email?.split("@")[0] || "User"}
-                isAdmin={profile.is_admin}
-              />
-            )}
-          </div>
-        </div>
-      </header>
+      <Navbar user={profile} notifications={notifications} unreadCount={unreadCount} />
 
-      <main className="section pb-32 sm:pb-0">
+      <main className="section pb-24 sm:pb-0">
         <div className="container-app">
           <Link href="/feed" className="inline-flex items-center gap-2 text-body text-text-muted hover:text-white transition-colors mb-8">
             <ArrowLeft className="w-4 h-4" />

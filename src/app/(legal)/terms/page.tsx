@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Image from "next/image";
 
 export const metadata = {
   title: "Terms of Use | Soul Sample Club",
@@ -9,22 +8,6 @@ export const metadata = {
 export default function TermsPage() {
   return (
     <div className="min-h-screen bg-charcoal">
-      {/* Header */}
-      <header className="border-b border-grey-700 bg-charcoal/90 backdrop-blur-xl sticky top-0 z-40">
-        <div className="container-app h-14 sm:h-16 flex items-center">
-          <Link href="/" className="flex items-center group">
-            <Image
-              src="/logo.svg"
-              alt="Soul Sample Club"
-              width={160}
-              height={36}
-              className="h-7 sm:h-9 w-auto"
-              priority
-            />
-          </Link>
-        </div>
-      </header>
-
       <main className="section">
         <div className="container-app max-w-3xl">
           <h1 className="text-h1 text-white mb-4">Terms of Use</h1>

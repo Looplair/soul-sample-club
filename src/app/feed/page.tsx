@@ -8,15 +8,13 @@ import { Bebas_Neue } from "next/font/google";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { PackCard } from "@/components/packs/PackCard";
-import { Button } from "@/components/ui";
-import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { Navbar } from "@/components/layout";
 import { MetaPixelCheckoutSuccess } from "@/components/analytics/MetaPixelEvents";
 import { getNotificationsForUser } from "@/lib/notifications";
-import { Music, LogIn, Archive, User, Sparkles, RotateCcw, Trophy, Play } from "lucide-react";
+import { Music, Archive, User, Sparkles, RotateCcw, Trophy, Play } from "lucide-react";
 import { ArchivedPacksSection } from "@/components/catalog/ArchivedPacksSection";
-import { VaultButton } from "@/components/vault/VaultButton";
 import { SubscribeCTA } from "@/components/ui/SubscribeCTA";
-import type { Sample, Subscription, NotificationWithReadStatus } from "@/types/database";
+import type { Sample, Subscription, NotificationWithReadStatus, Profile } from "@/types/database";
 
 const bebasNeue = Bebas_Neue({ weight: "400", subsets: ["latin"], display: "swap" });
 
@@ -156,10 +154,15 @@ export default async function FeedPage() {
   const { isLoggedIn, hasSubscription, hasPatreon, userId, hasUsedTrial } = userState;
   const hasAccess = hasSubscription || hasPatreon;
 
-  // Fetch notifications for logged-in users
-  const { notifications, unreadCount } = userId
-    ? await getNotificationsForUser(userId)
-    : { notifications: [] as NotificationWithReadStatus[], unreadCount: 0 };
+  // Fetch notifications + profile for logged-in users
+  const [{ notifications, unreadCount }, profile] = await Promise.all([
+    userId
+      ? getNotificationsForUser(userId)
+      : Promise.resolve({ notifications: [] as NotificationWithReadStatus[], unreadCount: 0 }),
+    userId
+      ? (await createClient()).from("profiles").select("*").eq("id", userId).single().then((r) => r.data as Profile | null)
+      : Promise.resolve(null),
+  ]);
 
   return (
     <div className="min-h-screen bg-charcoal overflow-x-hidden">
@@ -168,62 +171,10 @@ export default async function FeedPage() {
         <MetaPixelCheckoutSuccess />
       </Suspense>
 
-      {/* Header */}
-      <header className="border-b border-grey-700 bg-charcoal/90 backdrop-blur-xl sticky top-0 z-40">
-        <div className="container-app h-14 sm:h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center group">
-            <Image
-              src="/logo.svg"
-              alt="Soul Sample Club"
-              width={160}
-              height={36}
-              className="h-7 sm:h-9 w-auto"
-              priority
-            />
-          </Link>
-
-          <div className="flex items-center gap-2 sm:gap-3">
-            {isLoggedIn && userId ? (
-              <>
-                <VaultButton />
-                <NotificationBell
-                  userId={userId}
-                  initialNotifications={notifications}
-                  initialUnreadCount={unreadCount}
-                />
-                <Link href="/library" className="hidden sm:block">
-                  <Button variant="ghost" size="sm">
-                    Library
-                  </Button>
-                </Link>
-                <Link href="/account">
-                  <Button variant="secondary" size="sm">
-                    Account
-                  </Button>
-                </Link>
-              </>
-            ) : (
-              <>
-                <Link href="/login">
-                  <Button variant="ghost" size="sm">
-                    <LogIn className="w-4 h-4 sm:mr-1" />
-                    <span className="hidden sm:inline">Log in</span>
-                  </Button>
-                </Link>
-                <Link href="/subscribe">
-                  <Button size="sm">
-                    <span className="hidden sm:inline">Get started</span>
-                    <span className="sm:hidden">Sign up</span>
-                  </Button>
-                </Link>
-              </>
-            )}
-          </div>
-        </div>
-      </header>
+      <Navbar user={profile} notifications={notifications} unreadCount={unreadCount} />
 
       {/* Main Content */}
-      <main className={`${isLoggedIn ? 'section pb-32 sm:pb-0' : 'pt-6 sm:pt-10 pb-16'}`}>
+      <main className={`${isLoggedIn ? 'section pb-24 sm:pb-0' : 'pt-6 sm:pt-10 pb-16'}`}>
         <div className="container-app">
 
           {/* ============================================================
@@ -449,31 +400,13 @@ export default async function FeedPage() {
                 );
               })()}
 
-              {/* Mobile bottom nav */}
-              <nav className="sm:hidden fixed bottom-0 left-0 right-0 bg-charcoal-elevated/95 backdrop-blur-xl border-t border-grey-700 z-40 safe-area-bottom">
-                <div className="flex items-center justify-around h-14">
-                  <Link href="/" className="flex flex-col items-center gap-1 py-2 px-4 text-white">
-                    <Music className="w-5 h-5" /><span className="text-[10px]">Catalog</span>
-                  </Link>
-                  <Link href="/library" className="flex flex-col items-center gap-1 py-2 px-4 text-text-muted">
-                    <Archive className="w-5 h-5" /><span className="text-[10px]">Library</span>
-                  </Link>
-                  <Link href="/vault" className="flex flex-col items-center gap-1 py-2 px-4 text-text-muted">
-                    <Trophy className="w-5 h-5" /><span className="text-[10px]">Vault</span>
-                  </Link>
-                  <Link href="/account" className="flex flex-col items-center gap-1 py-2 px-4 text-text-muted">
-                    <User className="w-5 h-5" /><span className="text-[10px]">Account</span>
-                  </Link>
-                </div>
-              </nav>
             </>
           )}
 
         </div>
       </main>
 
-      {/* Footer - hidden on mobile when bottom nav is showing */}
-      <footer className={`border-t border-grey-700 py-6 sm:py-8 ${isLoggedIn ? 'hidden sm:block' : ''}`}>
+      <footer className="border-t border-grey-700 py-6 sm:py-8">
         <div className="container-app text-center">
           <p className="text-caption sm:text-body-sm text-text-subtle">
             Soul Sample Club - Premium sounds for music producers

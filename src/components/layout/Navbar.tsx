@@ -14,15 +14,16 @@ import {
   LogOut,
   Shield,
   CreditCard,
-  ChevronDown,
   Library,
   Monitor,
   Trophy,
+  LogIn,
+  UserPlus,
 } from "lucide-react";
 import { VaultButton } from "@/components/vault/VaultButton";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
-import { Dropdown } from "@/components/ui";
+import { Button } from "@/components/ui";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import type { Profile, NotificationWithReadStatus } from "@/types/database";
 
@@ -32,51 +33,26 @@ interface NavbarProps {
   unreadCount?: number;
 }
 
+const NAV_LINKS = [
+  { href: "/feed", label: "Catalog", icon: LayoutGrid },
+  { href: "/library", label: "Library", icon: Library },
+  { href: "/vault", label: "Drum Vault", icon: Trophy },
+  { href: "/app", label: "App", icon: Monitor },
+];
+
 export function Navbar({ user, notifications = [], unreadCount = 0 }: NavbarProps) {
   const pathname = usePathname();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const supabase = createClient();
+  const isLoggedIn = !!user;
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     window.location.href = "/";
   };
 
-  const navLinks = [
-    { href: "/feed", label: "Catalog", icon: LayoutGrid },
-    { href: "/library", label: "Library", icon: Library },
-    { href: "/vault", label: "Drum Vault", icon: Trophy },
-    { href: "/app", label: "App", icon: Monitor },
-    { href: "/account", label: "Account", icon: User },
-  ];
-
-  const userMenuItems = [
-    {
-      label: "Account",
-      onClick: () => (window.location.href = "/account"),
-      icon: <Settings className="w-4 h-4" />,
-    },
-    {
-      label: "Billing",
-      onClick: () => (window.location.href = "/account?tab=billing"),
-      icon: <CreditCard className="w-4 h-4" />,
-    },
-    ...(user?.is_admin
-      ? [
-          {
-            label: "Admin Panel",
-            onClick: () => (window.location.href = "/admin"),
-            icon: <Shield className="w-4 h-4" />,
-          },
-        ]
-      : []),
-    {
-      label: "Sign Out",
-      onClick: handleSignOut,
-      icon: <LogOut className="w-4 h-4" />,
-      danger: true,
-    },
-  ];
+  const isActive = (href: string) =>
+    pathname === href || (href === "/feed" && pathname.startsWith("/packs"));
 
   return (
     <nav className="h-16 bg-charcoal border-b border-grey-700 sticky top-0 z-40 backdrop-blur-xl bg-charcoal/90">
@@ -93,72 +69,64 @@ export function Navbar({ user, notifications = [], unreadCount = 0 }: NavbarProp
           />
         </Link>
 
-        {/* Desktop Navigation - Tracklib style with underline indicators */}
+        {/* Desktop Navigation */}
         <div className="hidden md:flex items-center gap-8">
-          {navLinks.map((link) => {
-            const isActive = pathname === link.href || (link.href === "/feed" && pathname.startsWith("/packs"));
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={cn(
-                  "nav-link py-1",
-                  isActive && "nav-link-active"
-                )}
-              >
-                {link.label}
-              </Link>
-            );
-          })}
+          {NAV_LINKS.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={cn("nav-link py-1", isActive(link.href) && "nav-link-active")}
+            >
+              {link.label}
+            </Link>
+          ))}
         </div>
 
-        {/* User Menu */}
+        {/* Right side */}
         <div className="flex items-center gap-2">
-          {user && (
+          <VaultButton />
+
+          {isLoggedIn ? (
             <>
-              {/* Vault icon */}
-              <VaultButton />
               <NotificationBell
                 userId={user.id}
                 initialNotifications={notifications}
                 initialUnreadCount={unreadCount}
               />
-              <Dropdown
-              trigger={
-                <button className="flex items-center gap-2 px-3 py-2 rounded-full hover:bg-grey-800 transition-all duration-200 group border border-transparent hover:border-grey-700">
-                  <div className="w-8 h-8 rounded-full bg-grey-700 flex items-center justify-center">
-                    <span className="text-white text-sm font-medium">
-                      {user.email?.[0]?.toUpperCase() || "U"}
-                    </span>
-                  </div>
-                  <span className="text-body text-text-secondary hidden sm:block group-hover:text-white transition-colors">
-                    {user.username || user.full_name || user.email?.split("@")[0]}
-                  </span>
-                  <ChevronDown className="w-4 h-4 text-text-muted hidden sm:block" />
-                </button>
-              }
-              items={userMenuItems}
-            />
+              {/* Desktop-only account button — mobile gets the same action via the menu below */}
+              <Link href="/account" className="hidden md:block">
+                <Button variant="secondary" size="sm">
+                  {user.username || user.full_name || user.email?.split("@")[0] || "Account"}
+                </Button>
+              </Link>
             </>
+          ) : (
+            <div className="hidden md:flex items-center gap-2">
+              <Link href="/login">
+                <Button variant="ghost" size="sm">
+                  Log in
+                </Button>
+              </Link>
+              <Link href="/subscribe">
+                <Button size="sm">Get started</Button>
+              </Link>
+            </div>
           )}
 
-          {/* Mobile Menu Toggle */}
+          {/* Single menu button — everything (nav + account) lives here on mobile */}
           <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            onClick={() => setMenuOpen(!menuOpen)}
             className="md:hidden btn-icon"
+            aria-label="Menu"
           >
-            {mobileMenuOpen ? (
-              <X className="w-5 h-5" />
-            ) : (
-              <Menu className="w-5 h-5" />
-            )}
+            {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
         </div>
       </div>
 
-      {/* Mobile Menu */}
+      {/* Mobile menu — nav links + account actions together, one surface */}
       <AnimatePresence>
-        {mobileMenuOpen && (
+        {menuOpen && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
@@ -167,17 +135,16 @@ export function Navbar({ user, notifications = [], unreadCount = 0 }: NavbarProp
             className="md:hidden bg-charcoal-elevated border-b border-grey-700 overflow-hidden"
           >
             <div className="container-app py-4 space-y-1">
-              {navLinks.map((link) => {
+              {NAV_LINKS.map((link) => {
                 const Icon = link.icon;
-                const isActive = pathname === link.href;
                 return (
                   <Link
                     key={link.href}
                     href={link.href}
-                    onClick={() => setMobileMenuOpen(false)}
+                    onClick={() => setMenuOpen(false)}
                     className={cn(
                       "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200",
-                      isActive
+                      isActive(link.href)
                         ? "bg-white/10 text-white"
                         : "text-text-secondary hover:bg-grey-800 hover:text-white"
                     )}
@@ -187,15 +154,72 @@ export function Navbar({ user, notifications = [], unreadCount = 0 }: NavbarProp
                   </Link>
                 );
               })}
-              {user?.is_admin && (
-                <Link
-                  href="/admin"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg text-white hover:bg-white/10 transition-all duration-200"
-                >
-                  <Shield className="w-5 h-5" />
-                  Admin Panel
-                </Link>
+
+              <div className="my-2 border-t border-grey-700" />
+
+              {isLoggedIn ? (
+                <>
+                  <Link
+                    href="/account"
+                    onClick={() => setMenuOpen(false)}
+                    className={cn(
+                      "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200",
+                      isActive("/account")
+                        ? "bg-white/10 text-white"
+                        : "text-text-secondary hover:bg-grey-800 hover:text-white"
+                    )}
+                  >
+                    <Settings className="w-5 h-5" />
+                    Account
+                  </Link>
+                  <Link
+                    href="/account?tab=billing"
+                    onClick={() => setMenuOpen(false)}
+                    className="flex items-center gap-3 px-4 py-3 rounded-lg text-text-secondary hover:bg-grey-800 hover:text-white transition-all duration-200"
+                  >
+                    <CreditCard className="w-5 h-5" />
+                    Billing
+                  </Link>
+                  {user.is_admin && (
+                    <Link
+                      href="/admin"
+                      onClick={() => setMenuOpen(false)}
+                      className="flex items-center gap-3 px-4 py-3 rounded-lg text-text-secondary hover:bg-grey-800 hover:text-white transition-all duration-200"
+                    >
+                      <Shield className="w-5 h-5" />
+                      Admin Panel
+                    </Link>
+                  )}
+                  <button
+                    onClick={() => {
+                      setMenuOpen(false);
+                      handleSignOut();
+                    }}
+                    className="flex items-center gap-3 px-4 py-3 rounded-lg text-error hover:bg-error/10 transition-all duration-200 w-full text-left"
+                  >
+                    <LogOut className="w-5 h-5" />
+                    Sign Out
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    href="/login"
+                    onClick={() => setMenuOpen(false)}
+                    className="flex items-center gap-3 px-4 py-3 rounded-lg text-text-secondary hover:bg-grey-800 hover:text-white transition-all duration-200"
+                  >
+                    <LogIn className="w-5 h-5" />
+                    Log in
+                  </Link>
+                  <Link
+                    href="/subscribe"
+                    onClick={() => setMenuOpen(false)}
+                    className="flex items-center gap-3 px-4 py-3 rounded-lg bg-white/10 text-white hover:bg-white/15 transition-all duration-200"
+                  >
+                    <UserPlus className="w-5 h-5" />
+                    Get started
+                  </Link>
+                </>
               )}
             </div>
           </motion.div>

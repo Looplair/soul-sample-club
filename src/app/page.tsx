@@ -16,8 +16,7 @@ import { ArchivedPacksSection } from "@/components/catalog/ArchivedPacksSection"
 import { HowItWorksSection } from "@/components/sections/HowItWorksSection";
 import { Button } from "@/components/ui";
 import { SubscribeCTA } from "@/components/ui/SubscribeCTA";
-import { NotificationBell } from "@/components/notifications/NotificationBell";
-import { VaultButton } from "@/components/vault/VaultButton";
+import { Navbar } from "@/components/layout";
 import { getNotificationsForUser } from "@/lib/notifications";
 import {
   Music,
@@ -31,8 +30,6 @@ import {
   Clock,
   Star,
   ChevronRight,
-  Archive,
-  User,
   Shuffle,
 } from "lucide-react";
 import type { Sample, Profile, NotificationWithReadStatus } from "@/types/database";
@@ -202,75 +199,9 @@ export default async function HomePage() {
       {/* ============================================
           HEADER
           ============================================ */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-charcoal/80 backdrop-blur-xl border-b border-grey-700/50">
-        <div className="container-app h-14 sm:h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center group">
-            <Image
-              src="/logo.svg"
-              alt="Soul Sample Club"
-              width={160}
-              height={36}
-              className="h-7 sm:h-9 w-auto"
-              priority
-            />
-          </Link>
-
-          <nav className="hidden md:flex items-center gap-8">
-            <a href="#catalog" className="nav-link">
-              Catalog
-            </a>
-            <a href="#how-it-works" className="nav-link">
-              How It Works
-            </a>
-            <a href="#pricing" className="nav-link">
-              Pricing
-            </a>
-            <a href="#faq" className="nav-link">
-              FAQ
-            </a>
-          </nav>
-
-          <div className="flex items-center gap-2 sm:gap-3">
-            {isLoggedIn ? (
-              <>
-                <VaultButton />
-                {userId && (
-                  <NotificationBell
-                    userId={userId}
-                    initialNotifications={notifications}
-                    initialUnreadCount={unreadCount}
-                  />
-                )}
-                <Link href="/library" className="hidden sm:block">
-                  <Button variant="ghost" size="sm">
-                    Library
-                  </Button>
-                </Link>
-                <Link href="/account">
-                  <Button variant="secondary" size="sm">
-                    {profile?.username || profile?.full_name || "Account"}
-                  </Button>
-                </Link>
-              </>
-            ) : (
-              <>
-                <VaultButton />
-                <Link href="/login">
-                  <Button variant="ghost" size="sm">
-                    Log in
-                  </Button>
-                </Link>
-                <Link href="/subscribe">
-                  <Button size="sm">
-                    <span className="hidden sm:inline">Get started</span>
-                    <span className="sm:hidden">Sign up</span>
-                  </Button>
-                </Link>
-              </>
-            )}
-          </div>
-        </div>
-      </header>
+      <div className="fixed top-0 left-0 right-0 z-50">
+        <Navbar user={profile} notifications={notifications} unreadCount={unreadCount} />
+      </div>
 
       <main className={!hasSubscription ? "pt-24 sm:pt-[104px]" : "pt-14 sm:pt-16"}>
         {/* ============================================
@@ -766,7 +697,7 @@ export default async function HomePage() {
       {/* ============================================
           FOOTER
           ============================================ */}
-      <footer className={`border-t border-grey-700 py-8 sm:py-12 ${isLoggedIn ? 'pb-24 sm:pb-12' : ''}`}>
+      <footer className={`border-t border-grey-700 py-8 sm:py-12 ${isLoggedIn ? 'pb-20 sm:pb-12' : ''}`}>
         <div className="container-app">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             {/* Logo */}
@@ -801,28 +732,6 @@ export default async function HomePage() {
           </div>
         </div>
       </footer>
-
-      {/* ============================================
-          MOBILE BOTTOM NAV (for logged-in users)
-          ============================================ */}
-      {isLoggedIn && (
-        <nav className="sm:hidden fixed bottom-0 left-0 right-0 bg-charcoal-elevated/95 backdrop-blur-xl border-t border-grey-700 z-40 safe-area-bottom">
-          <div className="flex items-center justify-around h-14">
-            <Link href="/" className="flex flex-col items-center gap-1 py-2 px-4 text-white">
-              <Music className="w-5 h-5" />
-              <span className="text-[10px]">Catalog</span>
-            </Link>
-            <Link href="/library" className="flex flex-col items-center gap-1 py-2 px-4 text-text-muted">
-              <Archive className="w-5 h-5" />
-              <span className="text-[10px]">Library</span>
-            </Link>
-            <Link href="/account" className="flex flex-col items-center gap-1 py-2 px-4 text-text-muted">
-              <User className="w-5 h-5" />
-              <span className="text-[10px]">Account</span>
-            </Link>
-          </div>
-        </nav>
-      )}
     </div>
   );
 }
