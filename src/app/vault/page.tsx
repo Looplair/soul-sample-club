@@ -28,7 +28,7 @@ export default async function VaultPage() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (adminSupabase as any)
       .from("drum_breaks")
-      .select("*")
+      .select("id, name, bpm, waveform_peaks, is_published, is_exclusive, created_at, updated_at")
       .eq("is_published", true)
       .order("created_at", { ascending: false }),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -51,8 +51,7 @@ export default async function VaultPage() {
   );
 
   const breaks: DrumBreakWithStatus[] = (breaksResult.data ?? []).map((b: {
-    id: string; name: string; bpm: number | null; file_path: string | null;
-    preview_path: string | null; waveform_peaks: number[] | null;
+    id: string; name: string; bpm: number | null; waveform_peaks: number[] | null;
     is_published: boolean; is_exclusive: boolean; created_at: string; updated_at: string;
   }) => ({
     ...b,
