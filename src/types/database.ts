@@ -499,10 +499,8 @@ export type BreakCollection = {
   collected_at: string;
 };
 
-// DrumBreak with is_collected flag — returned by GET /api/drum-vault.
-// Storage paths are left out: this goes to any signed-in user, and a path
-// in the public `samples` bucket is a direct link to the full WAV.
-export type DrumBreakWithStatus = Omit<DrumBreak, "file_path" | "preview_path"> & {
+// DrumBreak with is_collected flag — returned by GET /api/drum-vault
+export type DrumBreakWithStatus = DrumBreak & {
   is_collected: boolean;
   is_new: boolean; // true if created_at > user's vault_last_visited
 };

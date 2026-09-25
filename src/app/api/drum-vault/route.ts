@@ -29,7 +29,7 @@ export async function GET() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const breaksResult = await (adminSupabase as any)
       .from("drum_breaks")
-      .select("id, name, bpm, waveform_peaks, is_published, is_exclusive, created_at, updated_at")
+      .select("*")
       .eq("is_published", true)
       .order("created_at", { ascending: false });
 
@@ -50,7 +50,7 @@ export async function GET() {
     );
 
     // Merge is_collected + is_new flag
-    const breaks: DrumBreakWithStatus[] = (breaksResult.data as Omit<DrumBreak, "file_path" | "preview_path">[]).map((b) => ({
+    const breaks: DrumBreakWithStatus[] = (breaksResult.data as DrumBreak[]).map((b) => ({
       ...b,
       waveform_peaks: b.waveform_peaks as number[] | null,
       is_collected: collectedIds.has(b.id),
