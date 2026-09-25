@@ -9,6 +9,7 @@ import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
 import { KlaviyoTracking } from "@/components/analytics/KlaviyoTracking";
 import { MetaPixel } from "@/components/analytics/MetaPixel";
 import { FbclidCapture } from "@/components/analytics/FbclidCapture";
+import { PaymentFailedBanner } from "@/components/subscription/PaymentFailedBanner";
 import { createClient } from "@/lib/supabase/server";
 
 /** SHA-256 hex digest — used for Meta Advanced Matching (server-side, safe) */
@@ -102,6 +103,9 @@ export default async function RootLayout({
           <div className="flex-1 pb-20">{children}</div>
           <NowPlayingBar />
         </AudioProvider>
+        <Suspense fallback={null}>
+          <PaymentFailedBanner />
+        </Suspense>
       </body>
     </html>
   );

@@ -89,7 +89,7 @@ async function getUserState(): Promise<{
         .from("subscriptions")
         .select("status")
         .eq("user_id", user.id)
-        .in("status", ["active", "trialing", "past_due"])
+        .in("status", ["active", "trialing"])
         .gte("current_period_end", now)
         .limit(1),
       supabase

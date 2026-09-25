@@ -97,12 +97,12 @@ export async function GET(
       .in("status", ["active", "trialing"])
       .lt("current_period_end", now);
 
-    // Then check subscription status (past_due keeps access while Stripe retries)
+    // Then check subscription status (past_due has no access until the failed payment is fixed)
     const subscriptionResult = await adminSupabase
       .from("subscriptions")
       .select("status, current_period_end")
       .eq("user_id", user.id)
-      .in("status", ["active", "trialing", "past_due"])
+      .in("status", ["active", "trialing"])
       .limit(1);
 
     const subscription = subscriptionResult.data?.[0] as { status: string; current_period_end: string } | undefined;

@@ -51,13 +51,13 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Same access rules as the download route: an active/trialing/past_due
+    // Same access rules as the download route: an active/trialing
     // Stripe subscription, or a live Patreon link.
     const subscriptionResult = await adminSupabase
       .from("subscriptions")
       .select("status")
       .eq("user_id", user.id)
-      .in("status", ["active", "trialing", "past_due"])
+      .in("status", ["active", "trialing"])
       .limit(1);
 
     const hasStripe = !!subscriptionResult.data?.length;

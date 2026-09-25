@@ -31,7 +31,7 @@ export async function GET(
       .from("subscriptions")
       .select("status, current_period_end")
       .eq("user_id", user.id)
-      .in("status", ["active", "trialing", "past_due"])
+      .in("status", ["active", "trialing"])
       .gte("current_period_end", now)
       .limit(1);
 

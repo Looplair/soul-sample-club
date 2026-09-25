@@ -31,7 +31,7 @@ export async function POST(
         .from("subscriptions")
         .select("status")
         .eq("user_id", user.id)
-        .in("status", ["active", "trialing", "past_due"])
+        .in("status", ["active", "trialing"])
         .limit(1),
       adminSupabase
         .from("patreon_links")

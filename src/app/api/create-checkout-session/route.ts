@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { stripe, STRIPE_PRICE_ID, STRIPE_YEARLY_PRICE_ID } from "@/lib/stripe";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getBlockingPastDueSubscription } from "@/lib/payment-status";
 
 // Helper to extract a cookie value by name
 function getCookieValue(cookieHeader: string, name: string): string {
@@ -42,6 +43,11 @@ export async function POST(request: Request) {
 
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // A failed payment is fixed by paying the open invoice, not by starting a second subscription
+    if (await getBlockingPastDueSubscription(user.id)) {
+      return NextResponse.json({ url: `${process.env.NEXT_PUBLIC_APP_URL}/api/billing/fix-payment` });
     }
 
     // Get user profile

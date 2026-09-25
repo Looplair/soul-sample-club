@@ -98,7 +98,7 @@ async function getUserState(): Promise<{
       .from("subscriptions")
       .select("*")
       .eq("user_id", user.id)
-      .in("status", ["active", "trialing", "past_due"])
+      .in("status", ["active", "trialing"])
       .single();
 
     // Check Patreon
