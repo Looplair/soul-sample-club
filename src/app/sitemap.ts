@@ -1,10 +1,11 @@
 import type { MetadataRoute } from "next";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { SITE_URL } from "@/lib/site";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://soulsampleclub.com";
+  const baseUrl = SITE_URL;
 
-  // Static pages
+  // Static pages (login/signup left out: nothing there worth ranking)
   const staticPages: MetadataRoute.Sitemap = [
     {
       url: baseUrl,
@@ -13,16 +14,28 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 1,
     },
     {
-      url: `${baseUrl}/login`,
+      url: `${baseUrl}/subscribe`,
       lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 0.5,
+      changeFrequency: "weekly",
+      priority: 0.9,
     },
     {
-      url: `${baseUrl}/signup`,
+      url: `${baseUrl}/feed`,
+      lastModified: new Date(),
+      changeFrequency: "daily",
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/explore`,
+      lastModified: new Date(),
+      changeFrequency: "daily",
+      priority: 0.6,
+    },
+    {
+      url: `${baseUrl}/app`,
       lastModified: new Date(),
       changeFrequency: "monthly",
-      priority: 0.8,
+      priority: 0.6,
     },
     {
       url: `${baseUrl}/terms`,
@@ -35,12 +48,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: new Date(),
       changeFrequency: "yearly",
       priority: 0.3,
-    },
-    {
-      url: `${baseUrl}/app`,
-      lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 0.6,
     },
   ];
 

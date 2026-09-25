@@ -8,7 +8,8 @@ import type { Sample, Pack } from "@/types/database";
 
 export const metadata = {
   title: "Explore | Soul Sample Club",
-  description: "Discover samples by swiping through our catalog",
+  description: "Discover pre-cleared soul samples by swiping through the Soul Sample Club catalog.",
+  alternates: { canonical: "/explore" },
 };
 
 interface SampleWithPack extends Sample {

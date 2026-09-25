@@ -11,6 +11,7 @@ import { MetaPixel } from "@/components/analytics/MetaPixel";
 import { FbclidCapture } from "@/components/analytics/FbclidCapture";
 import { PaymentFailedBanner } from "@/components/subscription/PaymentFailedBanner";
 import { createClient } from "@/lib/supabase/server";
+import { SITE_URL } from "@/lib/site";
 
 /** SHA-256 hex digest — used for Meta Advanced Matching (server-side, safe) */
 async function sha256hex(value: string): Promise<string> {
@@ -34,34 +35,34 @@ const bebasNeue = Bebas_Neue({
   variable: "--font-wordmark",
 });
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://soulsampleclub.com";
+const siteUrl = SITE_URL;
 
 export const metadata: Metadata = {
-  title: "Soul Sample Club | Premium Sample Packs for Producers",
+  title: "Soul Sample Club | Pre-Cleared Soul Samples for Producers",
   description:
-    "Access exclusive soul, gospel, and vintage sample packs. Download high-quality WAV files for your productions.",
-  keywords: ["sample packs", "soul samples", "gospel samples", "music production", "looplair"],
+    "Exclusive soul, jazz, gospel and funk compositions, pre-cleared for real releases. Full stems on every pack. First month $0.99.",
+  keywords: ["soul samples", "pre-cleared samples", "royalty free soul samples", "soul sample packs", "gospel samples", "jazz samples", "sample packs with stems", "looplair"],
   metadataBase: new URL(siteUrl),
   openGraph: {
     type: "website",
     locale: "en_US",
     url: siteUrl,
     siteName: "Soul Sample Club",
-    title: "Soul Sample Club | Premium Sample Packs for Producers",
-    description: "Access exclusive soul, gospel, and vintage sample packs. Download high-quality WAV files for your productions.",
+    title: "Soul Sample Club | Pre-Cleared Soul Samples for Producers",
+    description: "Exclusive soul, jazz, gospel and funk compositions, pre-cleared for real releases. Full stems on every pack. First month $0.99.",
     images: [
       {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Soul Sample Club - Premium Sample Packs",
+        alt: "Soul Sample Club",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Soul Sample Club | Premium Sample Packs for Producers",
-    description: "Access exclusive soul, gospel, and vintage sample packs. Download high-quality WAV files for your productions.",
+    title: "Soul Sample Club | Pre-Cleared Soul Samples for Producers",
+    description: "Exclusive soul, jazz, gospel and funk compositions, pre-cleared for real releases. Full stems on every pack. First month $0.99.",
     images: ["/og-image.png"],
   },
 };

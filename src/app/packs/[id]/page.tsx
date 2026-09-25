@@ -21,6 +21,7 @@ import { VoteBringBack } from "@/components/packs/VoteBringBack";
 import { DownloadAllButton } from "@/components/packs/DownloadAllButton";
 import { Navbar } from "@/components/layout";
 import { getNotificationsForUser } from "@/lib/notifications";
+import { SITE_URL } from "@/lib/site";
 import type { Pack, Sample, NotificationWithReadStatus, Profile } from "@/types/database";
 
 // -----------------------------------------
@@ -28,6 +29,45 @@ import type { Pack, Sample, NotificationWithReadStatus, Profile } from "@/types/
 // -----------------------------------------
 interface PackWithSamples extends Pack {
   samples: Sample[];
+}
+
+// Pack blurbs are one-liners ("Theme music to a getaway."), so add what's
+// actually in the pack for search results and share previews
+function getPackSearchDescription(pack: PackWithSamples): string {
+  const blurb = (pack.description || "").trim();
+  const sentence = blurb && !/[.!?]$/.test(blurb) ? `${blurb}.` : blurb;
+  const count = pack.samples.length;
+  const stems = pack.samples.some((s) => !!s.stems_path) ? " with full stems" : "";
+  const what = `${count} pre-cleared soul sample${count === 1 ? "" : "s"}${stems}, exclusive to Soul Sample Club.`;
+  return sentence ? `${sentence} ${what}` : what;
+}
+
+// Structured data so search engines know this page is a music release by Looplair
+function getPackJsonLd(pack: PackWithSamples, packUrl: string) {
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "MusicAlbum",
+        name: pack.name,
+        description: getPackSearchDescription(pack),
+        url: packUrl,
+        ...(pack.cover_image_url && { image: pack.cover_image_url }),
+        datePublished: pack.release_date,
+        numTracks: pack.samples.length,
+        byArtist: { "@type": "MusicGroup", name: "Looplair" },
+        publisher: { "@type": "Organization", name: "Soul Sample Club", url: SITE_URL },
+      },
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Soul Sample Club", item: SITE_URL },
+          { "@type": "ListItem", position: 2, name: "Catalog", item: `${SITE_URL}/feed` },
+          { "@type": "ListItem", position: 3, name: pack.name, item: packUrl },
+        ],
+      },
+    ],
+  };
 }
 
 // -----------------------------------------
@@ -88,7 +128,7 @@ export async function generateMetadata({
 }: {
   params: { id: string };
 }) {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://soulsampleclub.com";
+  const siteUrl = SITE_URL;
   const pack = await getPack(params.id);
 
   if (!pack) {
@@ -100,13 +140,15 @@ export async function generateMetadata({
 
   const packUrl = `${siteUrl}/packs/${params.id}`;
   const ogImage = pack.cover_image_url || `${siteUrl}/og-image.png`;
+  const description = getPackSearchDescription(pack);
 
   return {
-    title: `${pack.name} | Soul Sample Club`,
-    description: pack.description,
+    title: `${pack.name}: Soul Sample Pack | Soul Sample Club`,
+    description,
+    alternates: { canonical: packUrl },
     openGraph: {
       title: `${pack.name} | Soul Sample Club`,
-      description: pack.description,
+      description,
       url: packUrl,
       siteName: "Soul Sample Club",
       images: [
@@ -122,7 +164,7 @@ export async function generateMetadata({
     twitter: {
       card: "summary_large_image",
       title: `${pack.name} | Soul Sample Club`,
-      description: pack.description,
+      description,
       images: [ogImage],
     },
   };
@@ -281,6 +323,12 @@ export default async function PackDetailPage({
 
   return (
     <div className="min-h-screen bg-charcoal">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(getPackJsonLd(pack, `${SITE_URL}/packs/${pack.id}`)),
+        }}
+      />
       <Navbar user={profile} notifications={notifications} unreadCount={unreadCount} />
 
       <main className={`section ${isLoggedIn ? 'pb-24 sm:pb-0' : ''}`}>

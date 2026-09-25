@@ -18,6 +18,7 @@ import { Button } from "@/components/ui";
 import { SubscribeCTA } from "@/components/ui/SubscribeCTA";
 import { Navbar } from "@/components/layout";
 import { getNotificationsForUser } from "@/lib/notifications";
+import { SITE_URL } from "@/lib/site";
 import {
   Music,
   Sparkles,
@@ -37,6 +38,32 @@ import type { Sample, Profile, NotificationWithReadStatus } from "@/types/databa
 // ============================================
 // TYPES
 // ============================================
+export const metadata = {
+  alternates: { canonical: "/" },
+};
+
+// Tells search engines who runs the site (name, logo, main URL)
+const organizationJsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": `${SITE_URL}/#organization`,
+      name: "Soul Sample Club",
+      url: SITE_URL,
+      logo: `${SITE_URL}/icon.png`,
+      sameAs: ["https://www.patreon.com/Looplair"],
+    },
+    {
+      "@type": "WebSite",
+      "@id": `${SITE_URL}/#website`,
+      name: "Soul Sample Club",
+      url: SITE_URL,
+      publisher: { "@id": `${SITE_URL}/#organization` },
+    },
+  ],
+};
+
 interface PackWithSamples {
   id: string;
   name: string;
@@ -196,6 +223,10 @@ export default async function HomePage() {
 
   return (
     <div className="min-h-screen bg-charcoal overflow-x-hidden">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+      />
       {/* ============================================
           HEADER
           ============================================ */}

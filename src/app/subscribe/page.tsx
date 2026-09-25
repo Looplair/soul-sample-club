@@ -7,6 +7,13 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { SubscribeCTA } from "@/components/ui/SubscribeCTA";
 import { PriceJustificationSection } from "@/components/sections/PriceJustificationSection";
 
+export const metadata = {
+  title: "Join Soul Sample Club | Pre-Cleared Soul Samples",
+  description:
+    "Unlimited access to exclusive, pre-cleared soul compositions with full stems. First month $0.99, then $6.99/month. Cancel anytime and keep everything you download.",
+  alternates: { canonical: "/subscribe" },
+};
+
 async function getUserState() {
   try {
     const supabase = await createClient();
@@ -145,7 +152,6 @@ export default async function SubscribePage() {
             )}
 
             <div className="flex items-end gap-2.5 mb-1">
-              <span className="text-xl lg:text-2xl font-semibold text-white/30 line-through mb-2">$49</span>
               <span className="text-[3.5rem] lg:text-[4.5rem] font-bold text-white leading-none tracking-tight">
                 {showTrial ? "$0.99" : "$6.99"}
               </span>

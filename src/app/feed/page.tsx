@@ -20,7 +20,9 @@ const bebasNeue = Bebas_Neue({ weight: "400", subsets: ["latin"], display: "swap
 
 export const metadata = {
   title: "Catalog | Soul Sample Club",
-  description: "Discover the latest releases, trending sounds, and staff picks",
+  description:
+    "Browse every Soul Sample Club release: exclusive, pre-cleared soul, jazz and gospel sample packs with full stems. Preview everything free.",
+  alternates: { canonical: "/feed" },
 };
 
 interface PackWithSamples {

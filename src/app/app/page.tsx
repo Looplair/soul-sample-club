@@ -11,6 +11,7 @@ import type { Profile, NotificationWithReadStatus } from "@/types/database";
 export const metadata = {
   title: "Desktop App | Soul Sample Club",
   description: "Download the Soul Sample Club desktop app for Mac and Windows",
+  alternates: { canonical: "/app" },
 };
 
 // ============================================
