@@ -155,7 +155,11 @@ export async function POST(request: Request) {
       description: "Soul Sample Club Membership",
     };
 
-    // Create checkout session with auto-applied $2.99 first month discount
+    // First charge reported to Meta: yearly is the full plan price, monthly is the $0.99 intro
+    const yearlyPrice = plan === "yearly" ? await stripe.prices.retrieve(STRIPE_YEARLY_PRICE_ID) : null;
+    const firstChargeValue = yearlyPrice?.unit_amount ? yearlyPrice.unit_amount / 100 : 0.99;
+
+    // Create checkout session with auto-applied $0.99 first month discount
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       mode: "subscription",
@@ -170,7 +174,7 @@ export async function POST(request: Request) {
         discounts: [{ coupon: "ktZFClXu" }],
       }),
       subscription_data: subscriptionData,
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/feed?success=true&meta_event_id=${metaEventId}`,
+      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/feed?success=true&meta_event_id=${metaEventId}&value=${firstChargeValue}`,
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/feed?canceled=true`,
       metadata: {
         supabase_user_id: user.id,

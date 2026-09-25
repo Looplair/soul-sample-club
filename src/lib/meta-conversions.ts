@@ -141,6 +141,8 @@ export async function sendStartTrialEvent(params: {
   clientUserAgent?: string;
   eventId?: string;
   eventSourceUrl?: string;
+  value?: number;
+  currency?: string;
 }): Promise<boolean> {
   return sendMetaConversionEvent({
     eventName: "StartTrial",
@@ -159,8 +161,8 @@ export async function sendStartTrialEvent(params: {
       clientUserAgent: params.clientUserAgent,
     },
     customData: {
-      currency: "USD",
-      value: 0.99,
+      currency: params.currency ?? "USD",
+      value: params.value ?? 0.99,
       content_name: "Soul Sample Club Membership",
     },
     actionSource: "website",

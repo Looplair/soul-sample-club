@@ -41,6 +41,10 @@ export function MetaPixelCheckoutSuccess() {
     // Grab the event_id generated at checkout creation for CAPI deduplication
     const eventId = searchParams.get("meta_event_id") || undefined;
 
+    // Amount actually charged (e.g. $0.99 monthly intro, full price for yearly)
+    const parsedValue = parseFloat(searchParams.get("value") || "");
+    const value = Number.isFinite(parsedValue) && parsedValue > 0 && parsedValue < 1000 ? parsedValue : 0.99;
+
     // Read fbc/fbp cookies for better match quality
     const fbc = getCookie("_fbc") || undefined;
     const fbp = getCookie("_fbp") || undefined;
@@ -55,7 +59,7 @@ export function MetaPixelCheckoutSuccess() {
       "StartTrial",
       {
         currency: "USD",
-        value: 0.99,
+        value,
         ...(fbc && { fbc }),
         ...(fbp && { fbp }),
       },

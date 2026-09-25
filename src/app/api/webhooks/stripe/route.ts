@@ -147,6 +147,8 @@ export async function POST(request: Request) {
               city: session.metadata?.meta_city || undefined,
               state: session.metadata?.meta_state || undefined,
               eventSourceUrl: "https://www.soulsampleclub.com/feed",
+              value: session.amount_total != null ? session.amount_total / 100 : undefined,
+              currency: session.currency ? session.currency.toUpperCase() : undefined,
             }).catch((err) => console.error("Meta Conversions API error:", err));
 
             // Notify admin of new subscription (annual vs monthly)
