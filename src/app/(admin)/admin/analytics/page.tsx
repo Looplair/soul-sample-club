@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import {
   TrendingUp,
   Download,
@@ -24,6 +25,8 @@ interface TopSample { id: string; name: string; pack_name: string; downloads: nu
 
 interface DownloadRow {
   downloaded_at: string;
+  // Pack ZIP downloads insert one row per sample with an identical timestamp
+  viaPack: boolean;
   sample: {
     id: string;
     name: string;
@@ -54,16 +57,7 @@ function bpmBucket(bpm: number): string {
   return "120+";
 }
 
-async function getDailyDownloads(days: number): Promise<DailyDownload[]> {
-  const supabase = await createClient();
-  const { start } = getDateRange(days);
-  const result = await supabase
-    .from("downloads")
-    .select("downloaded_at")
-    .gte("downloaded_at", start.toISOString())
-    .order("downloaded_at", { ascending: true });
-
-  const downloads = (result.data as { downloaded_at: string }[]) || [];
+function computeDailyDownloads(downloads: DownloadRow[], days: number): DailyDownload[] {
   const countsByDate: Record<string, number> = {};
   for (let i = 0; i < days; i++) {
     const date = new Date();
@@ -100,12 +94,58 @@ async function getDailySignups(days: number): Promise<DailySignup[]> {
   return Object.entries(countsByDate).map(([date, count]) => ({ date, count }));
 }
 
+const PAGE_SIZE = 1000; // Supabase caps each request at 1,000 rows
+
 async function getAllDownloads(): Promise<DownloadRow[]> {
-  const supabase = await createClient();
-  const result = await supabase
-    .from("downloads")
-    .select("downloaded_at, sample:samples(id, name, bpm, key, pack:packs(id, name, cover_image_url))");
-  return (result.data as DownloadRow[]) || [];
+  const admin = createAdminClient();
+
+  const { count } = await admin.from("downloads").select("id", { count: "exact", head: true });
+  const pages = Math.ceil((count || 0) / PAGE_SIZE);
+
+  const [pageResults, samplesResult, packsResult] = await Promise.all([
+    Promise.all(
+      Array.from({ length: pages }, (_, i) =>
+        admin
+          .from("downloads")
+          .select("user_id, sample_id, downloaded_at")
+          .order("downloaded_at", { ascending: true })
+          .order("id", { ascending: true })
+          .range(i * PAGE_SIZE, i * PAGE_SIZE + PAGE_SIZE - 1)
+      )
+    ),
+    admin.from("samples").select("id, name, bpm, key, pack_id"),
+    admin.from("packs").select("id, name, cover_image_url"),
+  ]);
+
+  const raw = pageResults.flatMap(
+    (r) => (r.data as { user_id: string; sample_id: string; downloaded_at: string }[]) || []
+  );
+
+  const packs = new Map(
+    ((packsResult.data as { id: string; name: string; cover_image_url: string | null }[]) || []).map((p) => [p.id, p])
+  );
+  const samples = new Map(
+    (
+      (samplesResult.data as { id: string; name: string; bpm: number | null; key: string | null; pack_id: string }[]) || []
+    ).map((s) => [s.id, s])
+  );
+
+  const batchSizes = new Map<string, number>();
+  for (const r of raw) {
+    const k = `${r.user_id}|${r.downloaded_at}`;
+    batchSizes.set(k, (batchSizes.get(k) || 0) + 1);
+  }
+
+  return raw.map((r) => {
+    const s = samples.get(r.sample_id);
+    return {
+      downloaded_at: r.downloaded_at,
+      viaPack: (batchSizes.get(`${r.user_id}|${r.downloaded_at}`) || 0) > 1,
+      sample: s
+        ? { id: s.id, name: s.name, bpm: s.bpm, key: s.key, pack: packs.get(s.pack_id) || null }
+        : null,
+    };
+  });
 }
 
 function computeTopPacks(downloads: DownloadRow[], limit?: number): TopPack[] {
@@ -190,25 +230,28 @@ async function getComparisonStats() {
 }
 
 export default async function AnalyticsPage() {
-  const [dailyDownloads, dailySignups, allDownloads, comparison] = await Promise.all([
-    getDailyDownloads(30),
+  const [dailySignups, allDownloads, comparison] = await Promise.all([
     getDailySignups(30),
     getAllDownloads(),
     getComparisonStats(),
   ]);
+
+  const dailyDownloads = computeDailyDownloads(allDownloads, 30);
+  // Sample-level insights use individual picks only, so a pack ZIP doesn't credit every sample in it
+  const individualDownloads = allDownloads.filter((d) => !d.viaPack);
 
   const windows = [7, 14, 30] as const;
   const topPacksByWindow = Object.fromEntries(
     windows.map((d) => [d, computeTopPacks(filterSince(allDownloads, d), 6)])
   ) as Record<(typeof windows)[number], TopPack[]>;
   const topSamplesByWindow = Object.fromEntries(
-    windows.map((d) => [d, computeTopSamples(filterSince(allDownloads, d), 8)])
+    windows.map((d) => [d, computeTopSamples(filterSince(individualDownloads, d), 8)])
   ) as Record<(typeof windows)[number], TopSample[]>;
 
   const topPacksAllTime = computeTopPacks(allDownloads);
-  const topSamplesAllTime = computeTopSamples(allDownloads, 20);
-  const topBPMRanges = computeTopBPMRanges(allDownloads);
-  const topKeys = computeTopKeys(allDownloads);
+  const topSamplesAllTime = computeTopSamples(individualDownloads, 20);
+  const topBPMRanges = computeTopBPMRanges(individualDownloads);
+  const topKeys = computeTopKeys(individualDownloads);
 
   const maxDownloads = Math.max(...dailyDownloads.map(d => d.count), 1);
   const maxSignups = Math.max(...dailySignups.map(d => d.count), 1);
@@ -255,6 +298,7 @@ export default async function AnalyticsPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><TrendingUp className="w-5 h-5" />Top Samples — Recent</CardTitle>
+          <p className="text-xs text-snow/40">Individual sample downloads (full-pack ZIPs excluded)</p>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
