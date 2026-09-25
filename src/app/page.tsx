@@ -300,7 +300,7 @@ export default async function HomePage() {
                       hideArrow
                       className="!p-0 !h-auto !font-normal !text-sm text-white underline hover:text-grey-200 !bg-transparent !border-0 !rounded-none inline"
                     >
-                      $49/year and lock in your rate
+                      <s className="opacity-60">$49</s> $35/year, locked in for life
                     </SubscribeCTA>
                   </p>
                 )}
@@ -685,7 +685,7 @@ export default async function HomePage() {
                     hideArrow
                     className="text-text-muted hover:text-white underline text-sm !bg-transparent !border-0"
                   >
-                    or $49/year
+                    or <s className="opacity-60">$49</s> $35/year, locked in for life
                   </SubscribeCTA>
                 </div>
               </div>

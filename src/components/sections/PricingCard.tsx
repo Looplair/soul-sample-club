@@ -65,11 +65,12 @@ export function PricingCard({ isLoggedIn, hasSubscription, hasUsedTrial }: Prici
           ) : (
             <>
               <div className="flex items-baseline justify-center gap-1">
-                <span className="text-5xl font-bold text-white">$49</span>
+                <span className="text-2xl font-semibold text-white/40 line-through mr-2">$49</span>
+                <span className="text-5xl font-bold text-white">$35</span>
                 <span className="text-text-muted text-lg">/year</span>
               </div>
               <p className="text-sm text-text-muted mt-2 max-w-xs mx-auto">
-                Save over 40% vs monthly. Lock in your rate for life — even if we raise prices again.
+                Offer price. Save over 50% vs monthly, locked in for life. Won&apos;t last forever.
               </p>
             </>
           )}
@@ -106,7 +107,7 @@ export function PricingCard({ isLoggedIn, hasSubscription, hasUsedTrial }: Prici
           size="lg"
           plan={plan}
         >
-          {plan === "yearly" ? "Start for $49/year" : undefined}
+          {plan === "yearly" ? "Start for $35/year" : undefined}
         </SubscribeCTA>
 
         {hasSubscription && (

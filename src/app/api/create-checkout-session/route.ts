@@ -4,6 +4,9 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getBlockingPastDueSubscription } from "@/lib/payment-status";
 
+// Yearly offer: $14 off forever ($49 -> $35, locked in for life). Set to "" to end the offer.
+const YEARLY_OFFER_COUPON: string = "wjveVSUF";
+
 // Helper to extract a cookie value by name
 function getCookieValue(cookieHeader: string, name: string): string {
   const match = cookieHeader.match(new RegExp(`(?:^|;\\s*)${name}=([^;]*)`));
@@ -161,9 +164,17 @@ export async function POST(request: Request) {
       description: "Soul Sample Club Membership",
     };
 
-    // First charge reported to Meta: yearly is the full plan price, monthly is the $0.99 intro
-    const yearlyPrice = plan === "yearly" ? await stripe.prices.retrieve(STRIPE_YEARLY_PRICE_ID) : null;
-    const firstChargeValue = yearlyPrice?.unit_amount ? yearlyPrice.unit_amount / 100 : 0.99;
+    // First charge reported to Meta: yearly is the plan price less the offer, monthly is the $0.99 intro
+    const [yearlyPrice, yearlyCoupon] =
+      plan === "yearly"
+        ? await Promise.all([
+            stripe.prices.retrieve(STRIPE_YEARLY_PRICE_ID),
+            YEARLY_OFFER_COUPON ? stripe.coupons.retrieve(YEARLY_OFFER_COUPON) : null,
+          ])
+        : [null, null];
+    const firstChargeValue = yearlyPrice?.unit_amount
+      ? (yearlyPrice.unit_amount - (yearlyCoupon?.amount_off ?? 0)) / 100
+      : 0.99;
 
     // Create checkout session with auto-applied $0.99 first month discount
     const session = await stripe.checkout.sessions.create({
@@ -179,6 +190,9 @@ export async function POST(request: Request) {
       ...(plan === "monthly" && {
         discounts: [{ coupon: "ktZFClXu" }],
       }),
+      ...(plan === "yearly" && YEARLY_OFFER_COUPON
+        ? { discounts: [{ coupon: YEARLY_OFFER_COUPON }] }
+        : {}),
       subscription_data: subscriptionData,
       success_url: `${process.env.NEXT_PUBLIC_APP_URL}/feed?success=true&meta_event_id=${metaEventId}&value=${firstChargeValue}`,
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/feed?canceled=true`,

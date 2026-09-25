@@ -100,7 +100,7 @@ export default async function SubscribePage() {
           One sample clearance can cost $5,000 to six figures.
         </p>
         <p className="text-white/45 text-base sm:text-lg leading-relaxed">
-          A year of Soul Sample Club is $49.
+          A year of Soul Sample Club is $35.
         </p>
       </div>
 
@@ -145,6 +145,7 @@ export default async function SubscribePage() {
             )}
 
             <div className="flex items-end gap-2.5 mb-1">
+              <span className="text-xl lg:text-2xl font-semibold text-white/30 line-through mb-2">$49</span>
               <span className="text-[3.5rem] lg:text-[4.5rem] font-bold text-white leading-none tracking-tight">
                 {showTrial ? "$0.99" : "$6.99"}
               </span>
@@ -199,12 +200,13 @@ export default async function SubscribePage() {
             {showTrial && <div className="h-[29px] mb-4" />}
 
             <div className="flex items-end gap-2.5 mb-1">
+              <span className="text-xl lg:text-2xl font-semibold text-white/30 line-through mb-2">$49</span>
               <span className="text-[3.5rem] lg:text-[4.5rem] font-bold text-white leading-none tracking-tight">
-                $49
+                $35
               </span>
               <span className="text-white/30 text-sm mb-2">/year</span>
             </div>
-            <p className="text-sm text-white/30 mb-2">Save over 40% vs monthly</p>
+            <p className="text-sm text-white/30 mb-2">Save over 50% vs monthly</p>
 
             <div className="mt-auto pt-5 border-t border-white/[0.1]">
               {isLoggedIn ? (
@@ -226,7 +228,7 @@ export default async function SubscribePage() {
                   Lock in yearly
                 </Link>
               )}
-              <p className="text-xs text-white/20 mt-3 text-center">Lock in before prices rise</p>
+              <p className="text-xs text-white/20 mt-3 text-center">Offer price, locked in for life. Won&apos;t last forever.</p>
             </div>
           </div>
 

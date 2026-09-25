@@ -449,7 +449,7 @@ function BillingTab({ subscription, patreonLink }: { subscription: Subscription 
                   disabled={isLoading}
                   className="text-sm text-text-muted hover:text-white underline transition-colors disabled:opacity-50"
                 >
-                  or $49/year — lock in your rate
+                  or <s className="opacity-60">$49</s> $35/year, locked in for life
                 </button>
               </div>
             </div>

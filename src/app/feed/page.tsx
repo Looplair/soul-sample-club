@@ -299,7 +299,7 @@ export default async function FeedPage() {
                       size="sm"
                       className="rounded-full border border-white/20 hover:border-white/40"
                     >
-                      $49/year — lock in your rate
+                      <s className="opacity-60">$49</s> $35/year, locked in for life
                     </SubscribeCTA>
                   </div>
                 )}
