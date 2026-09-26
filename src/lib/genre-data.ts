@@ -4,6 +4,7 @@ import { isPackExpiredWithEndDate } from "@/lib/utils";
 
 export interface GenrePack {
   id: string;
+  slug: string | null;
   name: string;
   description: string | null;
   cover_image_url: string | null;
@@ -22,6 +23,7 @@ export interface GenreStats {
 
 type Row = {
   id: string;
+  slug: string | null;
   name: string;
   description: string | null;
   cover_image_url: string | null;
@@ -42,7 +44,7 @@ function isArchived(p: Row): boolean {
 export const getGenrePacks = cache(async (tag: string): Promise<GenrePack[]> => {
   const { data, error } = await createAdminClient()
     .from("packs")
-    .select("id, name, description, cover_image_url, release_date, end_date, is_returned, styles, samples(id, name, bpm, key, duration, order_index)")
+    .select("id, slug, name, description, cover_image_url, release_date, end_date, is_returned, styles, samples(id, name, bpm, key, duration, order_index)")
     .eq("is_published", true)
     .eq("is_bonus", false)
     .contains("genres", [tag])
@@ -53,6 +55,7 @@ export const getGenrePacks = cache(async (tag: string): Promise<GenrePack[]> => 
   }
   return ((data || []) as unknown as Row[]).map((p) => ({
     id: p.id,
+    slug: p.slug,
     name: p.name,
     description: p.description,
     cover_image_url: p.cover_image_url,

@@ -8,7 +8,7 @@ export async function getGuidePacks(ids?: string[]): Promise<GuidePack[]> {
   if (ids && ids.length === 0) return [];
   let query = createAdminClient()
     .from("packs")
-    .select("id, name, description, cover_image_url, samples(id, name, bpm, key, duration, order_index)")
+    .select("id, slug, name, description, cover_image_url, samples(id, name, bpm, key, duration, order_index)")
     .eq("is_published", true)
     .order("release_date", { ascending: false });
   // Embeds render whatever a guide references; the editor's picker only offers

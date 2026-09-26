@@ -15,6 +15,7 @@ import {
 import { cn, formatRelativeDate, isPackExpired } from "@/lib/utils";
 import { Badge } from "@/components/ui";
 import type { Pack, Sample } from "@/types/database";
+import { packPath } from "@/lib/pack-url";
 
 // Feed item types
 export type FeedItemType =
@@ -96,9 +97,9 @@ export function FeedItem({ item, hasSubscription }: FeedItemProps) {
 
   // Determine link destination
   const href = isPack && pack
-    ? `/packs/${pack.id}`
+    ? packPath(pack)
     : sample?.pack
-      ? `/packs/${sample.pack.id}`
+      ? packPath(sample.pack)
       : "#";
 
   return (

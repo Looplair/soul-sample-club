@@ -18,6 +18,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import type { Sample, Pack } from "@/types/database";
+import { packPath } from "@/lib/pack-url";
 
 interface SampleWithPack extends Sample {
   pack: Pack;
@@ -130,7 +131,7 @@ function SampleSlide({
 
             {/* View Pack button */}
             <Link
-              href={`/packs/${sample.pack.id}`}
+              href={packPath(sample.pack)}
               className="absolute top-3 right-3 z-20"
             >
               <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/90 text-charcoal text-sm font-medium shadow-lg hover:bg-white active:scale-95 active:bg-white/80 transition-all">
@@ -172,7 +173,7 @@ function SampleSlide({
             {sample.name}
           </h1>
           <Link
-            href={`/packs/${sample.pack.id}`}
+            href={packPath(sample.pack)}
             className="text-base text-white/70 hover:text-white transition-colors"
           >
             {sample.pack.name}

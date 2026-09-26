@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Music2, Archive, Star, Sparkles, Play, Gift, Clock, RotateCcw, Loader2 } from "lucide-react";
 import { cn, formatDate, isPackNew, isPackExpiredWithEndDate, getDaysUntilEndDate, getExpiryBadgeText } from "@/lib/utils";
 import type { Pack } from "@/types/database";
+import { packPath } from "@/lib/pack-url";
 
 interface PackCardProps {
   pack: Pack & { is_staff_pick?: boolean; is_bonus?: boolean; is_returned?: boolean; end_date?: string | null };
@@ -39,7 +40,7 @@ export function PackCard({ pack, sampleCount }: PackCardProps) {
 
   return (
     <Link
-      href={`/packs/${pack.id}`}
+      href={packPath(pack)}
       className="block group relative"
       onClick={handleClick}
     >

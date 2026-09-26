@@ -3,7 +3,7 @@
 export const revalidate = 60;
 
 import { cache } from "react";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, Calendar, Music2, Download, Lock, Archive, Sparkles, Star, Play, Gift, Clock, RotateCcw } from "lucide-react";
@@ -22,6 +22,7 @@ import { DownloadAllButton } from "@/components/packs/DownloadAllButton";
 import { Navbar } from "@/components/layout";
 import { getNotificationsForUser } from "@/lib/notifications";
 import { SITE_URL } from "@/lib/site";
+import { isPackUuid, packPath } from "@/lib/pack-url";
 import type { Pack, Sample, NotificationWithReadStatus, Profile } from "@/types/database";
 
 // -----------------------------------------
@@ -74,9 +75,10 @@ function getPackJsonLd(pack: PackWithSamples, packUrl: string) {
 // FETCH PACK (Public - uses admin client)
 // Wrapped with React cache() to deduplicate requests within the same render
 // -----------------------------------------
-const getPack = cache(async (id: string): Promise<PackWithSamples | null> => {
+const getPack = cache(async (idOrSlug: string): Promise<PackWithSamples | null> => {
   const adminSupabase = createAdminClient();
 
+  // Old links use the pack id; current links use the slug
   const result = await adminSupabase
     .from("packs")
     .select(
@@ -85,7 +87,7 @@ const getPack = cache(async (id: string): Promise<PackWithSamples | null> => {
       samples(*)
     `
     )
-    .eq("id", id)
+    .eq(isPackUuid(idOrSlug) ? "id" : "slug", idOrSlug)
     .eq("is_published", true)
     .single();
 
@@ -112,11 +114,11 @@ export async function generateStaticParams() {
   const adminSupabase = createAdminClient();
   const { data: packs } = await adminSupabase
     .from("packs")
-    .select("id")
+    .select("id, slug")
     .eq("is_published", true);
 
-  return (packs as { id: string }[] || []).map((pack) => ({
-    id: pack.id,
+  return ((packs as { id: string; slug: string | null }[]) || []).map((pack) => ({
+    id: pack.slug || pack.id,
   }));
 }
 
@@ -138,7 +140,7 @@ export async function generateMetadata({
     };
   }
 
-  const packUrl = `${siteUrl}/packs/${params.id}`;
+  const packUrl = `${siteUrl}${packPath(pack)}`;
   const ogImage = pack.cover_image_url || `${siteUrl}/og-image.png`;
   const description = getPackSearchDescription(pack);
 
@@ -284,6 +286,11 @@ export default async function PackDetailPage({
     notFound();
   }
 
+  // Old /packs/<uuid> links move permanently to /packs/<slug>
+  if (isPackUuid(id) && pack.slug) {
+    permanentRedirect(packPath(pack));
+  }
+
   const { hasAccess, isLoggedIn, userId, hasUsedTrial, profile } = userState;
 
   // Fetch notifications for logged-in users
@@ -307,7 +314,7 @@ export default async function PackDetailPage({
   const expiryBadgeText = !isExpired ? getExpiryBadgeText(daysRemaining) : null;
 
   // Fetch vote data for expired packs
-  const voteData = isExpired ? await getVoteData(id) : { hasVoted: false, voteCount: 0 };
+  const voteData = isExpired ? await getVoteData(pack.id) : { hasVoted: false, voteCount: 0 };
 
   // Expired packs: everyone can preview, no one can download
   // Active packs: subscribers/patrons can download, others can preview
@@ -326,7 +333,7 @@ export default async function PackDetailPage({
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(getPackJsonLd(pack, `${SITE_URL}/packs/${pack.id}`)),
+          __html: JSON.stringify(getPackJsonLd(pack, `${SITE_URL}${packPath(pack)}`)),
         }}
       />
       <Navbar user={profile} notifications={notifications} unreadCount={unreadCount} />
@@ -491,7 +498,7 @@ export default async function PackDetailPage({
                 </div>
                 <div className="ml-auto">
                   <ShareButtonsInline
-                    url={`${process.env.NEXT_PUBLIC_SITE_URL || 'https://soulsampleclub.com'}/packs/${pack.id}`}
+                    url={`${SITE_URL}${packPath(pack)}`}
                     title={`${pack.name} - Soul Sample Club`}
                     description={pack.description}
                   />

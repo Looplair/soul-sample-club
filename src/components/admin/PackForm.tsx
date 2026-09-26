@@ -11,6 +11,7 @@ import { Button, Input, Card, CardContent } from "@/components/ui";
 import type { Pack } from "@/types/database";
 import { TagPicker } from "./TagPicker";
 import { GENRE_PRESETS, STYLE_PRESETS, mergeTagOptions } from "@/lib/pack-tags";
+import { slugifyPackName } from "@/lib/pack-url";
 
 interface PackFormProps {
   pack?: Pack;
@@ -184,7 +185,20 @@ export function PackForm({ pack }: PackFormProps) {
         coverImageUrl = publicUrl.publicUrl;
       }
 
+      // The web address (/packs/<slug>) is set once and never changes on rename,
+      // so links people have shared keep working
+      let slug = pack?.slug || null;
+      if (!slug) {
+        const base = slugifyPackName(name) || "pack";
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: taken } = await (supabase.from("packs") as any).select("slug").like("slug", `${base}%`);
+        const used = new Set(((taken || []) as { slug: string | null }[]).map((r) => r.slug));
+        slug = base;
+        for (let n = 2; used.has(slug); n++) slug = `${base}-${n}`;
+      }
+
       const packData = {
+        slug,
         name,
         description,
         release_date: releaseDate,
@@ -424,6 +438,11 @@ export function PackForm({ pack }: PackFormProps) {
             placeholder="e.g., Soul Essentials Vol. 1"
             required
           />
+
+          <p className="text-caption text-snow/40 -mt-2">
+            Web address: soulsampleclub.com/packs/{pack?.slug || slugifyPackName(name) || "…"}
+            {pack?.slug ? " (fixed, so shared links keep working)" : " (set when first saved, and stays the same if you rename the pack)"}
+          </p>
 
           {/* Description */}
           <div>

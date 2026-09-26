@@ -35,6 +35,7 @@ import {
   Shuffle,
 } from "lucide-react";
 import type { Sample, Profile, NotificationWithReadStatus } from "@/types/database";
+import { packPath } from "@/lib/pack-url";
 
 // ============================================
 // TYPES
@@ -374,7 +375,7 @@ export default async function HomePage() {
               {/* Right: Featured pack showcase */}
               <div className="relative hidden lg:block">
                 {featuredPack && (
-                  <Link href={`/packs/${featuredPack.id}`} className="block group">
+                  <Link href={packPath(featuredPack)} className="block group">
                     <div className="relative">
                       {/* Main featured pack */}
                       <div className="relative aspect-square rounded-2xl overflow-hidden shadow-2xl transform group-hover:scale-[1.02] transition-transform duration-500">

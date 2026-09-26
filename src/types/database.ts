@@ -173,6 +173,7 @@ export interface Database {
           is_returned?: boolean;
           genres?: string[];
           styles?: string[];
+          slug?: string | null;
           created_at: string;
           updated_at: string;
         };

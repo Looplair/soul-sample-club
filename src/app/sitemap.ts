@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { SITE_URL } from "@/lib/site";
+import { packPath } from "@/lib/pack-url";
 import { getPublishedGuides } from "@/lib/guides";
 import { GENRE_PAGES } from "@/lib/genre-pages";
 import { getGenreAvailability } from "@/lib/genre-data";
@@ -64,12 +65,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const supabase = createAdminClient();
     const { data: packs } = await supabase
       .from("packs")
-      .select("id, updated_at")
+      .select("id, slug, updated_at")
       .eq("is_published", true);
 
     if (packs && Array.isArray(packs)) {
-      packPages = packs.map((pack: { id: string; updated_at: string }) => ({
-        url: `${baseUrl}/packs/${pack.id}`,
+      packPages = packs.map((pack: { id: string; slug: string | null; updated_at: string }) => ({
+        url: `${baseUrl}${packPath(pack)}`,
         lastModified: new Date(pack.updated_at),
         changeFrequency: "weekly" as const,
         priority: 0.7,

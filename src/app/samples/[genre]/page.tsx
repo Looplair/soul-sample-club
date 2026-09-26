@@ -11,6 +11,7 @@ import { getNotificationsForUser } from "@/lib/notifications";
 import { GENRE_PAGES, getGenrePage } from "@/lib/genre-pages";
 import { getGenreAvailability, getGenrePacks, getGenreStats } from "@/lib/genre-data";
 import { SITE_URL } from "@/lib/site";
+import { packPath } from "@/lib/pack-url";
 import type { Profile, NotificationWithReadStatus } from "@/types/database";
 
 // Wide display face for the giant genre title (a free cousin of Monument Extended)
@@ -80,7 +81,7 @@ export default async function GenrePage({ params }: { params: { genre: string } 
           itemListElement: live.map((p, i) => ({
             "@type": "ListItem",
             position: i + 1,
-            url: `${SITE_URL}/packs/${p.id}`,
+            url: `${SITE_URL}${packPath(p)}`,
             name: p.name,
           })),
         },

@@ -5,9 +5,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { Play, Pause, Loader2, ArrowRight } from "lucide-react";
 import { useAudio } from "@/contexts/AudioContext";
+import { packPath } from "@/lib/pack-url";
 
 export interface GuidePack {
   id: string;
+  slug?: string | null;
   name: string;
   description: string | null;
   cover_image_url: string | null;
@@ -97,14 +99,14 @@ export function GuidePackEmbed({ pack }: { pack: GuidePack }) {
   return (
     <div className="not-prose my-10 rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-5">
       <div className="flex items-center gap-4">
-        <Link href={`/packs/${pack.id}`} className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-xl bg-grey-800">
+        <Link href={packPath(pack)} className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-xl bg-grey-800">
           {pack.cover_image_url && (
             <Image src={pack.cover_image_url} alt={pack.name} fill sizes="80px" className="object-cover" />
           )}
         </Link>
         <div className="min-w-0">
           <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-white/35">From the catalog</p>
-          <Link href={`/packs/${pack.id}`} className="block truncate text-lg font-semibold text-white hover:underline">
+          <Link href={packPath(pack)} className="block truncate text-lg font-semibold text-white hover:underline">
             {pack.name}
           </Link>
           {pack.description && <p className="truncate text-sm text-white/50">{pack.description}</p>}
@@ -141,7 +143,7 @@ export function GuidePackEmbed({ pack }: { pack: GuidePack }) {
       </ul>
 
       <Link
-        href={`/packs/${pack.id}`}
+        href={packPath(pack)}
         className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-white/70 hover:text-white"
       >
         Hear the full pack <ArrowRight className="h-3.5 w-3.5" />

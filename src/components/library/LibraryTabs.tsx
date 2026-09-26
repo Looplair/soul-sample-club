@@ -16,6 +16,7 @@ import {
 import { SampleRowWithLoop as SampleRow } from "@/components/audio/SampleRowWithLoop";
 import { cn, formatDate } from "@/lib/utils";
 import type { Sample, Pack } from "@/types/database";
+import { packPath } from "@/lib/pack-url";
 
 interface SampleWithPack extends Sample {
   pack: Pack;
@@ -298,7 +299,7 @@ function PackGroupCard({
 
         {/* View Pack Link */}
         <Link
-          href={`/packs/${pack.id}`}
+          href={packPath(pack)}
           onClick={(e) => e.stopPropagation()}
           className="hidden sm:block px-3 py-1.5 text-sm text-text-muted hover:text-white hover:bg-grey-700 rounded-lg transition-colors"
         >

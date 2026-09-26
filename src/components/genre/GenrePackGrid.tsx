@@ -7,6 +7,7 @@ import { Play, Pause, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePreviewPlayer } from "@/components/audio/usePreviewPlayer";
 import type { GenrePack } from "@/lib/genre-data";
+import { packPath } from "@/lib/pack-url";
 
 function tempo(p: GenrePack): string | null {
   const bpms = p.samples.map((s) => s.bpm).filter((b): b is number => !!b && b >= 40 && b <= 200);
@@ -23,7 +24,7 @@ function PackTile({ pack, player }: { pack: GenrePack; player: ReturnType<typeof
   return (
     <div className="group">
       <div className="relative aspect-square overflow-hidden rounded-2xl bg-grey-800">
-        <Link href={`/packs/${pack.id}`} aria-label={pack.name}>
+        <Link href={packPath(pack)} aria-label={pack.name}>
           {pack.cover_image_url && (
             <Image
               src={pack.cover_image_url}
@@ -56,7 +57,7 @@ function PackTile({ pack, player }: { pack: GenrePack; player: ReturnType<typeof
           </button>
         )}
       </div>
-      <Link href={`/packs/${pack.id}`} className="mt-3 block">
+      <Link href={packPath(pack)} className="mt-3 block">
         <p className="truncate font-semibold text-white">{pack.name}</p>
         <p className="mt-0.5 truncate text-sm text-white/40">{meta}</p>
       </Link>
@@ -119,7 +120,7 @@ export function GenrePackGrid({ packs, genre }: { packs: GenrePack[]; genre: str
           {/* Compact on purpose: the archive is a footnote, not the main event */}
           <div className="grid grid-cols-4 gap-3 sm:grid-cols-6 lg:grid-cols-8">
             {archive.map((p) => (
-              <Link key={p.id} href={`/packs/${p.id}`} className="group" title={p.name}>
+              <Link key={p.id} href={packPath(p)} className="group" title={p.name}>
                 <div className="relative aspect-square overflow-hidden rounded-xl bg-grey-800">
                   {p.cover_image_url && (
                     <Image

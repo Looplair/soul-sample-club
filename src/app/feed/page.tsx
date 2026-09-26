@@ -16,6 +16,7 @@ import { Music, Archive, User, Sparkles, RotateCcw, Trophy, Play } from "lucide-
 import { ArchivedPacksSection } from "@/components/catalog/ArchivedPacksSection";
 import { SubscribeCTA } from "@/components/ui/SubscribeCTA";
 import type { Sample, Subscription, NotificationWithReadStatus, Profile } from "@/types/database";
+import { packPath } from "@/lib/pack-url";
 
 const bebasNeue = Bebas_Neue({ weight: "400", subsets: ["latin"], display: "swap" });
 
@@ -197,7 +198,7 @@ export default async function FeedPage() {
                 {/* HERO — Latest drop */}
                 {heroPack && (
                   <Link
-                    href={`/packs/${heroPack.id}`}
+                    href={packPath(heroPack)}
                     className="group block relative rounded-2xl overflow-hidden aspect-square sm:aspect-[21/9]"
                   >
                     {heroPack.cover_image_url && (
