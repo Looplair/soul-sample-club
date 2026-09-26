@@ -12,7 +12,7 @@ export default function TermsPage() {
         <div className="container-app max-w-3xl">
           <h1 className="text-h1 text-white mb-4">Terms of Use</h1>
           <p className="text-body-lg text-text-muted mb-8">
-            Last updated: December 2024
+            Last updated: September 2026
           </p>
 
           <div className="prose prose-invert prose-grey max-w-none space-y-8 text-text-secondary">
@@ -109,7 +109,7 @@ export default function TermsPage() {
               <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-6 space-y-4">
                 <h3 className="text-lg font-semibold text-emerald-400">Grant of License</h3>
                 <p>
-                  Subject to your compliance with these Terms, Soul Sample Club grants you a <strong className="text-white">non-exclusive, perpetual, royalty-free license</strong> to use any samples or compositions that you downloaded while your subscription was active.
+                  Subject to your compliance with these Terms, Soul Sample Club grants you a <strong className="text-white">non-exclusive, perpetual, royalty-free license</strong> to use the audio recordings of any samples you downloaded while your subscription was active. Soul Sample Club retains ownership of the underlying compositions.
                 </p>
               </div>
 
