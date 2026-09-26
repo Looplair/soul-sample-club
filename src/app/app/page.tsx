@@ -10,7 +10,7 @@ import type { Profile, NotificationWithReadStatus } from "@/types/database";
 
 export const metadata = {
   title: "Desktop App | Soul Sample Club",
-  description: "Download the Soul Sample Club desktop app for Mac and Windows",
+  description: "Download the free Soul Sample Club desktop app for Mac and Windows",
   alternates: { canonical: "/app" },
 };
 
@@ -51,7 +51,7 @@ const FAQ_ITEMS = [
   {
     question: "Is the app free to use?",
     answer:
-      "Yes, the desktop app is free for all Soul Sample Club members. You need an active subscription or Patreon membership to download samples.",
+      "Yes. The app is free to download for everyone, and free to use for all Soul Sample Club members. You need an active subscription or Patreon membership to download samples.",
   },
 ];
 
@@ -125,6 +125,8 @@ export default async function AppPage() {
                   </Button>
                 </a>
               </div>
+
+              <p className="text-sm font-medium text-white/70 mb-4">Free to download for macOS and Windows</p>
 
               {/* Windows SmartScreen note */}
               <p className="text-sm text-white/40">

@@ -1,4 +1,21 @@
 import { NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+
+// Records a download click for the admin overview. Never blocks the download.
+async function logDownload(request: Request, platform: string) {
+  try {
+    const ua = request.headers.get("user-agent") || "";
+    if (!ua || /bot|crawl|spider|slurp|preview|facebookexternalhit/i.test(ua)) return;
+    const {
+      data: { user },
+    } = await (await createClient()).auth.getUser();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (createAdminClient() as any).from("app_downloads").insert({ platform, user_id: user?.id ?? null });
+  } catch (error) {
+    console.error("App download log failed:", error);
+  }
+}
 
 /**
  * Serves the desktop app installers from the private
@@ -68,5 +85,6 @@ export async function GET(
     return NextResponse.json({ error: "Failed to resolve download URL" }, { status: 502 });
   }
 
+  await logDownload(request, platform);
   return NextResponse.redirect(location);
 }

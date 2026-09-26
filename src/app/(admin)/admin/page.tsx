@@ -13,9 +13,11 @@ import {
   Eye,
   Gift,
   Heart,
+  Monitor,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent, Badge } from "@/components/ui";
 import { formatDate, getDaysUntilEndDate, getExpiryBadgeText } from "@/lib/utils";
+import { getAppDownloadStats } from "@/lib/app-downloads";
 
 export const metadata = {
   title: "Admin Dashboard | Soul Sample Club",
@@ -482,6 +484,9 @@ export default async function AdminDashboardPage() {
         />
       </div>
 
+      {/* Desktop app */}
+      <AppDownloadsCard />
+
       {/* Subscription Breakdown */}
       <Card>
         <CardHeader>
@@ -768,6 +773,45 @@ function StatCard({
   }
 
   return content;
+}
+
+async function AppDownloadsCard() {
+  const stats = await getAppDownloadStats();
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Monitor className="w-5 h-5" />
+          Desktop app downloads
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {!stats ? (
+          <p className="text-sm text-snow/50">Download tracking isn&apos;t set up yet (the app_downloads table is missing).</p>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+              {[
+                ["All time", stats.total],
+                ["Last 7 days", stats.last7],
+                ["Last 30 days", stats.last30],
+                ["macOS", stats.mac],
+                ["Windows", stats.windows],
+              ].map(([label, value]) => (
+                <div key={label as string}>
+                  <p className="text-h4 text-snow">{(value as number).toLocaleString()}</p>
+                  <p className="text-caption text-snow/50">{label}</p>
+                </div>
+              ))}
+            </div>
+            <p className="mt-4 text-caption text-snow/40">
+              Counts clicks on the download buttons on /app. {stats.signedIn.toLocaleString()} came from signed-in users.
+            </p>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
 }
 
 function MiniStatCard({
