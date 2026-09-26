@@ -3,6 +3,7 @@ import { stripe, STRIPE_PRICE_ID, STRIPE_YEARLY_PRICE_ID } from "@/lib/stripe";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getBlockingPastDueSubscription } from "@/lib/payment-status";
+import { FREE_PACK_OFFER_COUPON, offerIsLive } from "@/lib/free-pack";
 
 // Yearly offer: $14 off forever ($49 -> $35, locked in for life). Set to "" to end the offer.
 const YEARLY_OFFER_COUPON: string = "wjveVSUF";
@@ -16,6 +17,8 @@ function getCookieValue(cookieHeader: string, name: string): string {
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
   const plan: "monthly" | "yearly" = body.plan === "yearly" ? "yearly" : "monthly";
+  // "free-pack": the $1.99 x 3 welcome offer shown after claiming the free pack (checked below)
+  const wantsFreePackOffer = body.offer === "free-pack" && plan === "monthly";
 
   // Capture Meta matching signals from browser before we lose context
   const cookieHeader = request.headers.get("cookie") || "";
@@ -172,9 +175,20 @@ export async function POST(request: Request) {
             YEARLY_OFFER_COUPON ? stripe.coupons.retrieve(YEARLY_OFFER_COUPON) : null,
           ])
         : [null, null];
-    const firstChargeValue = yearlyPrice?.unit_amount
+    // Welcome offer only while the 30-minute window after the free pack download is open
+    const useFreePackOffer = wantsFreePackOffer && !!FREE_PACK_OFFER_COUPON && (await offerIsLive(user.id));
+    const monthlyCoupon = useFreePackOffer ? FREE_PACK_OFFER_COUPON : "ktZFClXu";
+
+    let firstChargeValue = yearlyPrice?.unit_amount
       ? (yearlyPrice.unit_amount - (yearlyCoupon?.amount_off ?? 0)) / 100
       : 0.99;
+    if (useFreePackOffer) {
+      const [monthlyPrice, offerCoupon] = await Promise.all([
+        stripe.prices.retrieve(STRIPE_PRICE_ID),
+        stripe.coupons.retrieve(FREE_PACK_OFFER_COUPON),
+      ]);
+      if (monthlyPrice.unit_amount) firstChargeValue = (monthlyPrice.unit_amount - (offerCoupon.amount_off ?? 0)) / 100;
+    }
 
     // Create checkout session with auto-applied $0.99 first month discount
     const session = await stripe.checkout.sessions.create({
@@ -188,14 +202,14 @@ export async function POST(request: Request) {
         },
       ],
       ...(plan === "monthly" && {
-        discounts: [{ coupon: "ktZFClXu" }],
+        discounts: [{ coupon: monthlyCoupon }],
       }),
       ...(plan === "yearly" && YEARLY_OFFER_COUPON
         ? { discounts: [{ coupon: YEARLY_OFFER_COUPON }] }
         : {}),
       subscription_data: subscriptionData,
       success_url: `${process.env.NEXT_PUBLIC_APP_URL}/feed?success=true&meta_event_id=${metaEventId}&value=${firstChargeValue}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/feed?canceled=true`,
+      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}${useFreePackOffer ? "/free/offer" : "/feed?canceled=true"}`,
       metadata: {
         supabase_user_id: user.id,
         meta_fbc: metaFbc,
@@ -212,7 +226,9 @@ export async function POST(request: Request) {
         submit: {
           message: plan === "yearly"
             ? "Annual membership. No refunds on annual plans."
-            : "Your first month is $0.99, then $6.99/month. Cancel anytime.",
+            : useFreePackOffer
+              ? "$1.99/month for your first 3 months, then $6.99/month. Cancel anytime."
+              : "Your first month is $0.99, then $6.99/month. Cancel anytime.",
         },
       },
     });

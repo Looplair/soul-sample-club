@@ -360,3 +360,39 @@ export async function bulkSyncUsersToKlaviyo(
     errors: errors.slice(0, 10), // Only return first 10 errors
   };
 }
+
+
+/**
+ * Track a custom event (metric) for a profile, e.g. "Claimed Free Pack".
+ * Flows in Klaviyo can trigger on it. Never throws.
+ */
+export async function trackKlaviyoEvent(
+  email: string,
+  metric: string,
+  properties: Record<string, string | number | boolean | null> = {}
+): Promise<boolean> {
+  try {
+    const response = await fetch(`${KLAVIYO_API_URL}/events`, {
+      method: "POST",
+      headers: getHeaders(),
+      body: JSON.stringify({
+        data: {
+          type: "event",
+          attributes: {
+            properties,
+            metric: { data: { type: "metric", attributes: { name: metric } } },
+            profile: { data: { type: "profile", attributes: { email } } },
+          },
+        },
+      }),
+    });
+    if (!response.ok) {
+      console.error("Klaviyo trackEvent error:", response.status, await response.text());
+      return false;
+    }
+    return true;
+  } catch (error) {
+    console.error("Klaviyo trackEvent error:", error);
+    return false;
+  }
+}

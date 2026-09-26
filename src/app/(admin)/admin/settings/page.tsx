@@ -19,6 +19,9 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui";
 import Link from "next/link";
 import { KlaviyoSync } from "@/components/admin/KlaviyoSync";
 import { HomepageHeroUpload } from "@/components/admin/HomepageHeroUpload";
+import { FreePackSetting } from "@/components/admin/FreePackSetting";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { isPackExpiredWithEndDate } from "@/lib/utils";
 
 export const metadata = {
   title: "Settings | Soul Sample Club Admin",
@@ -77,6 +80,25 @@ export default async function SettingsPage() {
     .eq("id", "singleton")
     .single();
 
+  // Free pack: real packs with a ZIP, and the current choice
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const adminDb = createAdminClient() as any;
+  const [{ data: zipPacks }, { data: freePackRow }] = await Promise.all([
+    adminDb
+      .from("packs")
+      .select("id, name, release_date, end_date, is_returned")
+      .eq("is_published", true)
+      .eq("is_bonus", false)
+      .not("pack_zip_path", "is", null)
+      .order("release_date", { ascending: false }),
+    adminDb.from("homepage_settings").select("free_pack_id").eq("id", "singleton").maybeSingle(),
+  ]);
+  const freePackOptions = ((zipPacks || []) as { id: string; name: string; release_date: string; end_date: string | null; is_returned: boolean | null }[]).map((p) => ({
+    id: p.id,
+    name: p.name,
+    archived: p.is_returned ? (p.end_date ? new Date() > new Date(p.end_date) : false) : isPackExpiredWithEndDate(p.release_date, p.end_date),
+  }));
+
   // Environment checks
   const envChecks = {
     supabase: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -106,6 +128,19 @@ export default async function SettingsPage() {
         </CardHeader>
         <CardContent>
           <HomepageHeroUpload initialHeroUrl={homepageSettings?.hero_image_url || null} />
+        </CardContent>
+      </Card>
+
+      {/* Free pack */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Package className="w-5 h-5" />
+            Free Pack
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <FreePackSetting options={freePackOptions} current={freePackRow?.free_pack_id ?? null} />
         </CardContent>
       </Card>
 

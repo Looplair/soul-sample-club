@@ -86,7 +86,8 @@ export async function GET(request: Request) {
         .eq("is_active", true)
         .single();
 
-      if (subscriptionResult.data || patreonResult.data) {
+      // Members go to the catalog, unless they came for the free pack
+      if ((subscriptionResult.data || patreonResult.data) && !next.startsWith("/free")) {
         finalRedirectUrl = `${origin}/feed`;
       }
 
@@ -205,7 +206,8 @@ export async function GET(request: Request) {
 
           // If no subscription or Patreon, redirect to subscribe
           // Preserve any existing /subscribe URL (e.g. with ?plan=yearly)
-          if (!hasStripeSubscription && !hasPatreonAccess && !next.startsWith("/subscribe")) {
+          // Free pack sign-ups go back to /free to download, everyone else to payment
+          if (!hasStripeSubscription && !hasPatreonAccess && !next.startsWith("/subscribe") && !next.startsWith("/free")) {
             finalRedirectUrl = `${origin}/subscribe`;
           }
         }

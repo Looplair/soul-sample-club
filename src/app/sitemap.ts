@@ -5,6 +5,7 @@ import { packPath } from "@/lib/pack-url";
 import { getPublishedGuides } from "@/lib/guides";
 import { GENRE_PAGES } from "@/lib/genre-pages";
 import { getGenreAvailability } from "@/lib/genre-data";
+import { getFreePackId } from "@/lib/free-pack";
 
 // Re-check hourly so scheduled guides show up on their go-live date
 export const revalidate = 3600;
@@ -103,5 +104,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.8,
   }));
 
-  return [...staticPages, ...genrePages, ...guidePages, ...packPages];
+  // Free pack page, when one is chosen
+  const freePage: MetadataRoute.Sitemap = (await getFreePackId())
+    ? [{ url: `${baseUrl}/free`, lastModified: new Date(), changeFrequency: "monthly" as const, priority: 0.7 }]
+    : [];
+
+  return [...staticPages, ...freePage, ...genrePages, ...guidePages, ...packPages];
 }
