@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useDropzone } from "react-dropzone";
@@ -9,6 +9,8 @@ import { Upload, X, AlertCircle, CheckCircle, Gift, Calendar, RotateCcw, Package
 import { createClient } from "@/lib/supabase/client";
 import { Button, Input, Card, CardContent } from "@/components/ui";
 import type { Pack } from "@/types/database";
+import { TagPicker } from "./TagPicker";
+import { GENRE_PRESETS, STYLE_PRESETS, mergeTagOptions } from "@/lib/pack-tags";
 
 interface PackFormProps {
   pack?: Pack;
@@ -28,6 +30,23 @@ export function PackForm({ pack }: PackFormProps) {
   const [isPublished, setIsPublished] = useState(pack?.is_published || false);
   const [isBonus, setIsBonus] = useState(pack?.is_bonus || false);
   const [isReturned, setIsReturned] = useState(pack?.is_returned || false);
+  const [genres, setGenres] = useState<string[]>(pack?.genres || []);
+  const [styles, setStyles] = useState<string[]>(pack?.styles || []);
+  const [usedTags, setUsedTags] = useState<{ genres: string[]; styles: string[] }>({ genres: [], styles: [] });
+
+  // Custom tags added on other packs become options here too
+  useEffect(() => {
+    (async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data } = await (supabase.from("packs") as any).select("genres, styles");
+      const rows = (data || []) as { genres: string[] | null; styles: string[] | null }[];
+      setUsedTags({
+        genres: Array.from(new Set(rows.flatMap((r) => r.genres || []))),
+        styles: Array.from(new Set(rows.flatMap((r) => r.styles || []))),
+      });
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [coverImage, setCoverImage] = useState<File | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(
     pack?.cover_image_url || null
@@ -174,6 +193,8 @@ export function PackForm({ pack }: PackFormProps) {
         is_bonus: isBonus,
         is_returned: isReturned,
         cover_image_url: coverImageUrl,
+        genres,
+        styles,
       };
 
       if (isEditing) {
@@ -414,6 +435,24 @@ export function PackForm({ pack }: PackFormProps) {
               rows={4}
               className="input resize-none"
               required
+            />
+          </div>
+
+          {/* Tags */}
+          <div className="space-y-6">
+            <TagPicker
+              label="Genre"
+              hint="Pick every genre that fits. These power the genre pages and catalog filters."
+              options={mergeTagOptions(GENRE_PRESETS, usedTags.genres)}
+              value={genres}
+              onChange={setGenres}
+            />
+            <TagPicker
+              label="Style"
+              hint="The feel of the pack. Pick as many as fit."
+              options={mergeTagOptions(STYLE_PRESETS, usedTags.styles)}
+              value={styles}
+              onChange={setStyles}
             />
           </div>
 
