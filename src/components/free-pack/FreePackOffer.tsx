@@ -8,6 +8,9 @@ import { cn } from "@/lib/utils";
 
 interface Props {
   packName: string;
+  hasStems: boolean;
+  isPhone: boolean;
+  zipBytes: number | null;
   deadline: string | null;
   serverNow: number;
   windowMinutes: number;
@@ -22,7 +25,7 @@ const FACTS = [
   "Cancel anytime",
 ];
 
-export function FreePackOffer({ packName, deadline, serverNow, windowMinutes, covers, displayFont }: Props) {
+export function FreePackOffer({ packName, hasStems, isPhone, zipBytes, deadline, serverNow, windowMinutes, covers, displayFont }: Props) {
   const end = deadline ? Date.parse(deadline) : 0;
   const [now, setNow] = useState(serverNow);
   const [loading, setLoading] = useState(false);
@@ -33,14 +36,14 @@ export function FreePackOffer({ packName, deadline, serverNow, windowMinutes, co
     return () => clearInterval(t);
   }, []);
 
-  // Arriving from the Download button (?dl=1): start the download from here.
-  // The URL is cleaned first so a refresh doesn't download it twice.
+  // Arriving from the Download button (?dl=1): on a computer, start the
+  // download from here. The URL is cleaned first so a refresh doesn't repeat it.
   useEffect(() => {
     const url = new URL(window.location.href);
     if (url.searchParams.get("dl") !== "1") return;
     window.history.replaceState(null, "", url.pathname);
-    window.location.href = "/api/free-pack/download";
-  }, []);
+    if (!isPhone) window.location.href = "/api/free-pack/download";
+  }, [isPhone]);
 
   const left = Math.max(0, end - now);
   const live = left > 0;
@@ -77,16 +80,31 @@ export function FreePackOffer({ packName, deadline, serverNow, windowMinutes, co
           <span className="mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-white text-charcoal">
             <Check className="h-4 w-4" strokeWidth={3} />
           </span>
-          <div className="text-[13px] leading-relaxed text-white/60">
-            <p className="text-[15px] font-semibold text-white">Your download has started</p>
-            <p className="mt-0.5">
-              {packName} is on its way to your downloads. Didn&apos;t start?{" "}
-              <a href="/api/free-pack/download" className="font-medium text-white underline underline-offset-4">
-                Download again
+          {isPhone ? (
+            <div className="min-w-0 flex-1 text-[13px] leading-relaxed text-white/60">
+              <p className="text-[15px] font-semibold text-white">{packName} is ready</p>
+              <p className="mt-0.5">
+                It&apos;s a {zipBytes ? `${Math.round(zipBytes / 1_000_000)} MB ` : ""}ZIP{hasStems ? " with stems" : ""}, so it&apos;s
+                best on a computer. We&apos;ve emailed you the link.
+              </p>
+              <a
+                href="/api/free-pack/download"
+                className="mt-3 flex h-10 w-full items-center justify-center rounded-xl border border-white/20 text-[13px] font-semibold text-white"
+              >
+                Download on this phone anyway
               </a>
-            </p>
-            <p className="mt-1.5">On your phone? We&apos;ve also emailed you the link.</p>
-          </div>
+            </div>
+          ) : (
+            <div className="text-[13px] leading-relaxed text-white/60">
+              <p className="text-[15px] font-semibold text-white">Your download has started</p>
+              <p className="mt-0.5">
+                {packName} is on its way to your downloads. Didn&apos;t start?{" "}
+                <a href="/api/free-pack/download" className="font-medium text-white underline underline-offset-4">
+                  Download again
+                </a>
+              </p>
+            </div>
+          )}
         </div>
 
         {live ? (

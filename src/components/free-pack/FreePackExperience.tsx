@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Play, Pause, Loader2, Download } from "lucide-react";
+import { Play, Pause, Loader2, Download, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAudio } from "@/contexts/AudioContext";
 import { usePreviewPlayer } from "@/components/audio/usePreviewPlayer";
@@ -73,13 +73,13 @@ export function FreePackExperience({ pack, isLoggedIn, hasAccess, downloadHref, 
       </header>
 
       <main className="mx-auto max-w-xl px-5">
-        <p className="mt-6 text-center text-[11px] font-semibold uppercase tracking-[0.22em] text-white/55">
-          {unlocked ? "Your free pack" : (
+        <h1 className="mt-6 text-center text-[11px] font-semibold uppercase tracking-[0.22em] text-white/55">
+          {unlocked ? "Your free soul sample pack" : (
             <>
-              Free pack <span className="mx-1 opacity-50">·</span> No card needed
+              Free soul sample pack <span className="mx-1 opacity-50">·</span> No card needed
             </>
           )}
-        </p>
+        </h1>
 
         {/* Cover with the highlight reel */}
         <div className="relative mt-4 aspect-square overflow-hidden rounded-[22px] bg-grey-800">
@@ -115,9 +115,9 @@ export function FreePackExperience({ pack, isLoggedIn, hasAccess, downloadHref, 
           </div>
         </div>
 
-        <h1 className={cn(displayFont, "mt-6 break-words text-[clamp(2.6rem,13vw,4.2rem)] font-bold uppercase leading-[0.95] tracking-[-0.02em]")}>
+        <p className={cn(displayFont, "mt-6 break-words text-[clamp(2.6rem,13vw,4.2rem)] font-bold uppercase leading-[0.95] tracking-[-0.02em]")}>
           {pack.name}
-        </h1>
+        </p>
 
         {unlocked ? (
           <>
@@ -240,6 +240,39 @@ export function FreePackExperience({ pack, isLoggedIn, hasAccess, downloadHref, 
             ))}
           </>
         )}
+
+        {/* About, written for search as much as for people */}
+        <p className="mb-2 mt-12 text-[11px] font-semibold uppercase tracking-[0.22em] text-white/40">About this free pack</p>
+        <h2 className="text-lg font-semibold leading-snug">Free soul samples, pre-cleared for your releases</h2>
+        <p className="mt-2 text-sm leading-relaxed text-white/60">
+          {pack.name} is a full pack from the Soul Sample Club catalog, and it&apos;s yours free. You get {pack.tracks.length} original soul
+          compositions{stemCount > 0 ? ", each with its stems," : ""} made by real musicians and pre-cleared, so you can release whatever you
+          make with them.
+        </p>
+        <div className="mt-5 divide-y divide-white/[0.07] border-y border-white/[0.07]">
+          {[
+            {
+              q: "Are these soul samples really free?",
+              a: "Yes. Create a free account and the whole pack is yours to download and keep. You won't be asked for a card.",
+            },
+            {
+              q: "Can I use them in music I release?",
+              a: "Yes. Everything is pre-cleared, so you can use it in songs you put out and beats you sell.",
+            },
+            {
+              q: "What's in the download?",
+              a: `One ZIP with all ${pack.tracks.length} compositions${stemCount > 0 ? " and their stems" : ""}. It's a big file, so it's easiest to grab on a computer.`,
+            },
+          ].map((f) => (
+            <details key={f.q} className="group py-3.5 [&_summary::-webkit-details-marker]:hidden">
+              <summary className="flex cursor-pointer items-center justify-between gap-4 text-[15px] font-semibold">
+                {f.q}
+                <ChevronRight className="h-4 w-4 flex-shrink-0 text-white/40 transition-transform group-open:rotate-90" />
+              </summary>
+              <p className="mt-2 text-sm leading-relaxed text-white/60">{f.a}</p>
+            </details>
+          ))}
+        </div>
       </main>
 
       {/* Pinned call to action, sitting above the player bar when it's showing */}

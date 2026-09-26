@@ -310,6 +310,9 @@ export default async function GenrePage({ params }: { params: { genre: string } 
               <Link href="/feed" className="inline-flex items-center gap-1.5 text-sm font-medium text-white/70 hover:text-white">
                 Preview the whole catalog free <ArrowRight className="h-3.5 w-3.5" />
               </Link>
+              <Link href="/free" className="inline-flex items-center gap-1.5 text-sm font-medium text-white/70 hover:text-white">
+                Get a free soul sample pack <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
             </div>
           </div>
         </section>

@@ -1,9 +1,10 @@
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { Unbounded } from "next/font/google";
 import { FreePackOffer } from "@/components/free-pack/FreePackOffer";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { FREE_PACK_OFFER_COUPON, OFFER_MINUTES, claimFreePack, getFreePack, startOffer, userHasAccess } from "@/lib/free-pack";
+import { FREE_PACK_OFFER_COUPON, OFFER_MINUTES, claimFreePack, getFreePack, getZipSize, startOffer, userHasAccess } from "@/lib/free-pack";
 
 // Where the free pack's Download button lands: the download starts from here,
 // and the one-time welcome offer runs for 30 minutes from the first visit.
@@ -27,6 +28,12 @@ export default async function FreePackOfferPage() {
   await claimFreePack(user.id, user.email, pack);
   const deadline = await startOffer(user.id, pack.id);
 
+  // Phones (and the Instagram/Facebook in-app browsers ads open in) don't get
+  // the automatic download: it's a big ZIP, and those browsers often can't save files
+  const ua = (await headers()).get("user-agent") ?? "";
+  const isPhone = /Android|iPhone|iPad|iPod|Mobile|FBAN|FBAV|Instagram/i.test(ua);
+  const zipBytes = isPhone ? await getZipSize(pack.pack_zip_path) : null;
+
   // Recent releases, never bonus packs or the free pack itself
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: covers } = await (createAdminClient() as any)
@@ -42,6 +49,9 @@ export default async function FreePackOfferPage() {
   return (
     <FreePackOffer
       packName={pack.name}
+      hasStems={pack.tracks.some((t) => t.hasStems)}
+      isPhone={isPhone}
+      zipBytes={zipBytes}
       deadline={deadline?.toISOString() ?? null}
       serverNow={Date.now()}
       windowMinutes={OFFER_MINUTES}

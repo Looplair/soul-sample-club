@@ -26,6 +26,12 @@ export function Footer() {
               Looplair
             </Link>
             <Link
+              href="/free"
+              className="hover:text-white transition-colors"
+            >
+              Free sample pack
+            </Link>
+            <Link
               href="/terms"
               className="hover:text-white transition-colors"
             >

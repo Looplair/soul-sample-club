@@ -73,6 +73,12 @@ export async function getFreePack(): Promise<FreePack | null> {
   };
 }
 
+/** The free pack ZIP's size in bytes, for telling phone users what they'd be downloading */
+export async function getZipSize(path: string): Promise<number | null> {
+  const { data } = await createAdminClient().storage.from("samples").info(path);
+  return data?.size ?? null;
+}
+
 /** Active Stripe subscription or Patreon link: these people already have the whole catalog */
 export async function userHasAccess(userId: string): Promise<boolean> {
   const [subs, patreon] = await Promise.all([
