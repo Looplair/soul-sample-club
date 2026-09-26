@@ -2,6 +2,8 @@ import type { MetadataRoute } from "next";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { SITE_URL } from "@/lib/site";
 import { getPublishedGuides } from "@/lib/guides";
+import { GENRE_PAGES } from "@/lib/genre-pages";
+import { getGenreAvailability } from "@/lib/genre-data";
 
 // Re-check hourly so scheduled guides show up on their go-live date
 export const revalidate = 3600;
@@ -91,5 +93,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       ]
     : [];
 
-  return [...staticPages, ...guidePages, ...packPages];
+  // Genre pages: only those with at least one pack currently in the catalog
+  const availability = await getGenreAvailability();
+  const genrePages: MetadataRoute.Sitemap = GENRE_PAGES.filter((g) => (availability[g.tag]?.live ?? 0) > 0).map((g) => ({
+    url: `${baseUrl}/samples/${g.slug}`,
+    lastModified: new Date(),
+    changeFrequency: "weekly" as const,
+    priority: 0.8,
+  }));
+
+  return [...staticPages, ...genrePages, ...guidePages, ...packPages];
 }
