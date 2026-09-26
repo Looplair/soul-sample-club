@@ -20,11 +20,12 @@ export async function generateMetadata({ params }: { params: { genre: string } }
   const page = getGenrePage(params.genre);
   if (!page) return {};
   const url = `${SITE_URL}/samples/${page.slug}`;
-  const hasLivePacks = (await getGenrePacks(page.tag)).some((p) => !p.archived);
+  // Indexed as soon as any real pack carries the tag, expired or not, so pages don't
+  // drop in and out of Google as packs move to the archive
+  const hasPacks = (await getGenrePacks(page.tag)).length > 0;
   return {
     title: page.seoTitle,
-    // No current packs means thin content: keep it out of Google until there are
-    ...(!hasLivePacks && { robots: { index: false, follow: true } }),
+    ...(!hasPacks && { robots: { index: false, follow: true } }),
     description: page.description,
     alternates: { canonical: url },
     openGraph: { title: page.seoTitle, description: page.description, url, siteName: "Soul Sample Club", type: "website" },
@@ -37,8 +38,8 @@ export default async function GenrePage({ params }: { params: { genre: string } 
   if (!page) notFound();
 
   const [packs, availability] = await Promise.all([getGenrePacks(page.tag), getGenreAvailability()]);
-  // Other genre pages that currently have packs, for the "explore" links
-  const otherGenres = GENRE_PAGES.filter((g) => g.slug !== page.slug && (availability[g.tag]?.live ?? 0) > 0);
+  // Other genre pages with any tagged packs, for the "explore" links
+  const otherGenres = GENRE_PAGES.filter((g) => g.slug !== page.slug && (availability[g.tag]?.total ?? 0) > 0);
 
   const supabase = await createClient();
   const {

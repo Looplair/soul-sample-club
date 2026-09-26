@@ -93,9 +93,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       ]
     : [];
 
-  // Genre pages: only those with at least one pack currently in the catalog
+  // Genre pages: any with at least one tagged pack, expired or not
   const availability = await getGenreAvailability();
-  const genrePages: MetadataRoute.Sitemap = GENRE_PAGES.filter((g) => (availability[g.tag]?.live ?? 0) > 0).map((g) => ({
+  const genrePages: MetadataRoute.Sitemap = GENRE_PAGES.filter((g) => (availability[g.tag]?.total ?? 0) > 0).map((g) => ({
     url: `${baseUrl}/samples/${g.slug}`,
     lastModified: new Date(),
     changeFrequency: "weekly" as const,
