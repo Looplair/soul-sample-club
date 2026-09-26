@@ -11,6 +11,7 @@ import { PackCard } from "@/components/packs/PackCard";
 import { Navbar } from "@/components/layout";
 import { MetaPixelCheckoutSuccess } from "@/components/analytics/MetaPixelEvents";
 import { getNotificationsForUser } from "@/lib/notifications";
+import { hasPublishedGuides } from "@/lib/guides";
 import { Music, Archive, User, Sparkles, RotateCcw, Trophy, Play } from "lucide-react";
 import { ArchivedPacksSection } from "@/components/catalog/ArchivedPacksSection";
 import { SubscribeCTA } from "@/components/ui/SubscribeCTA";
@@ -155,6 +156,7 @@ export default async function FeedPage() {
 
   const { isLoggedIn, hasSubscription, hasPatreon, userId, hasUsedTrial } = userState;
   const hasAccess = hasSubscription || hasPatreon;
+  const hasGuides = await hasPublishedGuides();
 
   // Fetch notifications + profile for logged-in users
   const [{ notifications, unreadCount }, profile] = await Promise.all([
@@ -413,6 +415,11 @@ export default async function FeedPage() {
           <p className="text-caption sm:text-body-sm text-text-subtle">
             Soul Sample Club - Premium sounds for music producers
           </p>
+          {hasGuides && (
+            <Link href="/guides" className="mt-2 inline-block text-caption sm:text-body-sm text-text-subtle hover:text-white transition-colors">
+              Guides for producers
+            </Link>
+          )}
         </div>
       </footer>
     </div>

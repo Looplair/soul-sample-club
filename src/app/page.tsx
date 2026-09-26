@@ -19,6 +19,7 @@ import { SubscribeCTA } from "@/components/ui/SubscribeCTA";
 import { Navbar } from "@/components/layout";
 import { getNotificationsForUser } from "@/lib/notifications";
 import { SITE_URL } from "@/lib/site";
+import { isGuidePublished, hasPublishedGuides } from "@/lib/guides";
 import {
   Music,
   Sparkles,
@@ -204,7 +205,12 @@ const stats = [
 // PAGE COMPONENT
 // ============================================
 export default async function HomePage() {
-  const [allPacks, userState] = await Promise.all([getAllPacks(), getUserState()]);
+  const [allPacks, userState, hasClearanceGuide, hasGuides] = await Promise.all([
+    getAllPacks(),
+    getUserState(),
+    isGuidePublished("sample-clearance"),
+    hasPublishedGuides(),
+  ]);
 
   const { isLoggedIn, hasSubscription, profile, userId, hasUsedTrial } = userState;
 
@@ -615,7 +621,7 @@ export default async function HomePage() {
         {/* ============================================
             FAQ SECTION
             ============================================ */}
-        <FAQSection />
+        <FAQSection clearanceGuideHref={hasClearanceGuide ? "/guides/sample-clearance" : undefined} />
 
         {/* ============================================
             TRUST SIGNALS
@@ -748,6 +754,11 @@ export default async function HomePage() {
               <a href="#pricing" className="hover:text-white transition-colors">
                 Pricing
               </a>
+              {hasGuides && (
+                <Link href="/guides" className="hover:text-white transition-colors">
+                  Guides
+                </Link>
+              )}
               <Link href="/terms" className="hover:text-white transition-colors">
                 Terms
               </Link>

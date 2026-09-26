@@ -38,6 +38,8 @@ export async function generateMetadata({ params }: { params: { slug: string } })
       modifiedTime: guide.updatedAt,
       authors: [`${GUIDE_AUTHOR.name}, ${GUIDE_AUTHOR.role}`],
     },
+    // Image comes from ./opengraph-image.tsx
+    twitter: { card: "summary_large_image", title: guide.title, description: guide.description },
   };
 }
 

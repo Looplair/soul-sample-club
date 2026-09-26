@@ -42,6 +42,18 @@ export async function getPublishedGuides(): Promise<Guide[]> {
   return (data || []).map(rowToGuide);
 }
 
+/** Cheap check used to decide whether to show links to guides */
+export async function isGuidePublished(slug: string): Promise<boolean> {
+  const { data } = await guidesTable().select("id").eq("slug", slug).eq("is_published", true).maybeSingle();
+  return !!data;
+}
+
+/** Whether any guide is live (footers only link to /guides once one is) */
+export async function hasPublishedGuides(): Promise<boolean> {
+  const { count } = await guidesTable().select("id", { count: "exact", head: true }).eq("is_published", true);
+  return (count ?? 0) > 0;
+}
+
 export async function getAllGuides(): Promise<Guide[]> {
   const { data, error } = await guidesTable().select("*").order("updated_at", { ascending: false });
   if (error) {

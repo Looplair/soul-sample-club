@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, Mail } from "lucide-react";
+import Link from "next/link";
+import { ChevronDown, Mail, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // ============================================
@@ -20,6 +21,7 @@ const faqs = [
   },
   {
     question: "Will I ever need to clear a sample later",
+    guideLink: true,
     answer:
       "No. There is nothing to clear now or in the future.\n\nIndependent release, label release, sync, or commercial placement. The terms never change.",
   },
@@ -126,11 +128,13 @@ const faqs = [
 function FAQItem({
   question,
   answer,
+  guideHref,
   isOpen,
   onToggle,
 }: {
   question: string;
   answer: string;
+  guideHref?: string;
   isOpen: boolean;
   onToggle: () => void;
 }) {
@@ -160,6 +164,11 @@ function FAQItem({
           <p className="text-text-secondary text-sm sm:text-base leading-relaxed whitespace-pre-line pr-8">
             {answer}
           </p>
+          {guideHref && (
+            <Link href={guideHref} className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-white hover:underline">
+              How sample clearance works <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          )}
         </div>
       </div>
     </div>
@@ -169,7 +178,8 @@ function FAQItem({
 // ============================================
 // MAIN FAQ SECTION COMPONENT
 // ============================================
-export function FAQSection() {
+// clearanceGuideHref is only passed once the clearance guide is published
+export function FAQSection({ clearanceGuideHref }: { clearanceGuideHref?: string } = {}) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   const handleToggle = (index: number) => {
@@ -207,6 +217,7 @@ export function FAQSection() {
                   key={index}
                   question={faq.question}
                   answer={faq.answer}
+                  guideHref={"guideLink" in faq && faq.guideLink ? clearanceGuideHref : undefined}
                   isOpen={openIndex === index}
                   onToggle={() => handleToggle(index)}
                 />
@@ -220,6 +231,7 @@ export function FAQSection() {
                   key={index + midpoint}
                   question={faq.question}
                   answer={faq.answer}
+                  guideHref={"guideLink" in faq && faq.guideLink ? clearanceGuideHref : undefined}
                   isOpen={openIndex === index + midpoint}
                   onToggle={() => handleToggle(index + midpoint)}
                 />
