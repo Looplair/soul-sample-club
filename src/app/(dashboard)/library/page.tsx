@@ -7,6 +7,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { Heart, Download, Clock, Music, Package } from "lucide-react";
 import type { Sample, Pack } from "@/types/database";
 import { LibraryTabs } from "@/components/library/LibraryTabs";
+import { hidePaths } from "@/lib/hide-paths";
 
 export const metadata = {
   title: "My Library | Soul Sample Club",
@@ -59,7 +60,7 @@ async function getLikedSamples(userId: string): Promise<SampleWithPack[]> {
   }
 
   // Extract samples from likes
-  const likes = result.data as unknown as LikeWithSample[];
+  const likes = hidePaths(result.data as unknown as LikeWithSample[]);
   return likes
     .filter((like) => like.sample && like.sample.pack)
     .map((like) => like.sample);
@@ -90,7 +91,7 @@ async function getDownloadHistory(userId: string): Promise<SampleWithPack[]> {
   }
 
   // Extract samples from downloads (dedupe by sample_id)
-  const downloads = result.data as unknown as DownloadWithSample[];
+  const downloads = hidePaths(result.data as unknown as DownloadWithSample[]);
   const seen = new Set<string>();
   return downloads
     .filter((download) => {

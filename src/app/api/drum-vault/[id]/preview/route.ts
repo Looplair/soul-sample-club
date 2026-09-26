@@ -47,17 +47,17 @@ export async function GET(
 
     audioPath = audioPath.replace(/^\/+/, "");
 
-    // Use public URL for streaming (same reason as existing preview route)
-    const { data: publicUrlData } = adminSupabase.storage
+    // Temporary link (the samples bucket is private)
+    const { data: signed, error: signError } = await adminSupabase.storage
       .from("samples")
-      .getPublicUrl(audioPath);
+      .createSignedUrl(audioPath, 6 * 60 * 60);
 
-    if (!publicUrlData?.publicUrl) {
+    if (signError || !signed?.signedUrl) {
       return NextResponse.json({ error: "Failed to generate audio URL" }, { status: 500 });
     }
 
     const isMP3 = audioPath.toLowerCase().endsWith(".mp3");
-    return NextResponse.json({ url: publicUrlData.publicUrl, format: isMP3 ? "mp3" : "wav" });
+    return NextResponse.json({ url: signed.signedUrl, format: isMP3 ? "mp3" : "wav" });
   } catch (error) {
     console.error("Vault preview error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

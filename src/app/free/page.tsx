@@ -4,6 +4,7 @@ import { FreePackExperience } from "@/components/free-pack/FreePackExperience";
 import { createClient } from "@/lib/supabase/server";
 import { FREE_PACK_OFFER_COUPON, getFreePack, getOfferDeadline, userHasAccess } from "@/lib/free-pack";
 import { SITE_URL } from "@/lib/site";
+import { hidePaths } from "@/lib/hide-paths";
 
 // Free pack funnel for cold traffic (Meta ads) and "free soul samples" searches.
 // Linked from the footer, genre pages and guides (never the main menus). The pack is chosen in Admin → Settings.
@@ -48,7 +49,7 @@ export default async function FreePackPage() {
 
   return (
     <FreePackExperience
-      pack={pack}
+      pack={hidePaths(pack)}
       isLoggedIn={!!user}
       hasAccess={hasAccess}
       downloadHref={viaOffer ? "/free/offer?dl=1" : "/api/free-pack/download"}

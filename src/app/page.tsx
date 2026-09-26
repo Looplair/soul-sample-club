@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 import type { Sample, Profile, NotificationWithReadStatus } from "@/types/database";
 import { packPath } from "@/lib/pack-url";
+import { hidePaths } from "@/lib/hide-paths";
 
 // ============================================
 // TYPES
@@ -95,7 +96,7 @@ async function getAllPacks(): Promise<PackWithSamples[]> {
     .eq("is_published", true)
     .order("release_date", { ascending: false });
 
-  return (result.data as PackWithSamples[]) || [];
+  return hidePaths((result.data as PackWithSamples[]) || []);
 }
 
 async function getUserState(): Promise<{

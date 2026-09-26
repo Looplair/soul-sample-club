@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { VaultClient } from "./VaultClient";
 import type { DrumBreakWithStatus } from "@/types/database";
+import { hidePaths } from "@/lib/hide-paths";
 
 export const metadata = {
   title: "Drum Vault | Soul Sample Club",
@@ -50,7 +51,7 @@ export default async function VaultPage() {
     (collectionsResult.data ?? []).map((c: { break_id: string }) => c.break_id)
   );
 
-  const breaks: DrumBreakWithStatus[] = (breaksResult.data ?? []).map((b: {
+  const breaks: DrumBreakWithStatus[] = hidePaths(breaksResult.data ?? []).map((b: {
     id: string; name: string; bpm: number | null; file_path: string | null;
     preview_path: string | null; waveform_peaks: number[] | null;
     is_published: boolean; is_exclusive: boolean; created_at: string; updated_at: string;

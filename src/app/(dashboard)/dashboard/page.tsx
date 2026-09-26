@@ -6,6 +6,7 @@ import { ActivityFeed } from "@/components/feed";
 import { PackCardSkeleton } from "@/components/ui";
 import { TrendingUp, Sparkles, Clock } from "lucide-react";
 import type { Subscription, Sample, Pack } from "@/types/database";
+import { hidePaths } from "@/lib/hide-paths";
 
 export const metadata = {
   title: "Dashboard | Soul Sample Club",
@@ -68,7 +69,7 @@ async function getAllPacksWithSamples(): Promise<PackWithSamples[]> {
     return [];
   }
 
-  return (result.data as PackWithSamples[]) || [];
+  return hidePaths((result.data as PackWithSamples[]) || []);
 }
 
 async function getUserSubscription(): Promise<Subscription | null> {

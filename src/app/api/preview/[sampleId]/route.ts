@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
+const PREVIEW_LINK_SECONDS = 6 * 60 * 60;
+
 // Type for sample with pack relation
 interface SampleData {
   id: string;
@@ -60,25 +62,22 @@ export async function GET(
     // Do NOT include bucket name in path - just folder/filename
     audioPath = audioPath.replace(/^\/+/, "");
 
-    // Use PUBLIC URL for previews - signed URLs cause issues with waveform libraries
-    // that make multiple fetches, range requests, and retries
-    const { data: publicUrlData } = adminSupabase.storage
+    // Temporary link (the samples bucket is private). Long enough for a
+    // listening session; players can re-request the preview after that.
+    const { data: signed, error: signError } = await adminSupabase.storage
       .from("samples")
-      .getPublicUrl(audioPath);
+      .createSignedUrl(audioPath, PREVIEW_LINK_SECONDS);
 
-    if (!publicUrlData?.publicUrl) {
-      console.error("Failed to get public URL for:", audioPath);
-      return NextResponse.json(
-        { error: "Failed to generate audio URL", path: audioPath },
-        { status: 500 }
-      );
+    if (signError || !signed?.signedUrl) {
+      console.error("Failed to sign preview URL for:", audioPath, signError);
+      return NextResponse.json({ error: "Failed to generate audio URL" }, { status: 500 });
     }
 
     // Determine content type based on file extension
     const isMP3 = audioPath.toLowerCase().endsWith('.mp3');
 
     return NextResponse.json({
-      url: publicUrlData.publicUrl,
+      url: signed.signedUrl,
       format: isMP3 ? 'mp3' : 'wav'
     });
   } catch (error) {

@@ -24,6 +24,7 @@ import { getNotificationsForUser } from "@/lib/notifications";
 import { SITE_URL } from "@/lib/site";
 import { isPackUuid, packPath } from "@/lib/pack-url";
 import type { Pack, Sample, NotificationWithReadStatus, Profile } from "@/types/database";
+import { hidePaths } from "@/lib/hide-paths";
 
 // -----------------------------------------
 // TYPE DEFINITIONS
@@ -91,7 +92,7 @@ const getPack = cache(async (idOrSlug: string): Promise<PackWithSamples | null> 
     .eq("is_published", true)
     .single();
 
-  const pack = result.data as PackWithSamples | null;
+  const pack = hidePaths(result.data as PackWithSamples | null);
 
   if (result.error || !pack) return null;
 

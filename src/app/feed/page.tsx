@@ -17,6 +17,7 @@ import { ArchivedPacksSection } from "@/components/catalog/ArchivedPacksSection"
 import { SubscribeCTA } from "@/components/ui/SubscribeCTA";
 import type { Sample, Subscription, NotificationWithReadStatus, Profile } from "@/types/database";
 import { packPath } from "@/lib/pack-url";
+import { hidePaths } from "@/lib/hide-paths";
 
 const bebasNeue = Bebas_Neue({ weight: "400", subsets: ["latin"], display: "swap" });
 
@@ -60,7 +61,7 @@ async function getAllPacks(): Promise<PackWithSamples[]> {
     return [];
   }
 
-  return (result.data as PackWithSamples[]) || [];
+  return hidePaths((result.data as PackWithSamples[]) || []);
 }
 
 // Check if user is logged in and has subscription

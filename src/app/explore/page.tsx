@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ExplorePlayer } from "@/components/explore/ExplorePlayer";
 import type { Sample, Pack } from "@/types/database";
+import { hidePaths } from "@/lib/hide-paths";
 
 export const metadata = {
   title: "Explore | Soul Sample Club",
@@ -31,7 +32,7 @@ async function getRandomSamples(): Promise<SampleWithPack[]> {
   }
 
   // Filter to only published packs and shuffle
-  const samples = (result.data as SampleWithPack[]).filter(
+  const samples = hidePaths(result.data as SampleWithPack[]).filter(
     (s) => s.pack && s.pack.is_published
   );
 

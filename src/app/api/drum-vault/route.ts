@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { DrumBreak, DrumBreakWithStatus } from "@/types/database";
+import { hidePaths } from "@/lib/hide-paths";
 
 export async function GET() {
   try {
@@ -50,7 +51,7 @@ export async function GET() {
     );
 
     // Merge is_collected + is_new flag
-    const breaks: DrumBreakWithStatus[] = (breaksResult.data as DrumBreak[]).map((b) => ({
+    const breaks: DrumBreakWithStatus[] = hidePaths(breaksResult.data as DrumBreak[]).map((b) => ({
       ...b,
       waveform_peaks: b.waveform_peaks as number[] | null,
       is_collected: collectedIds.has(b.id),
