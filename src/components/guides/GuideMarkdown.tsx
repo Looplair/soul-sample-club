@@ -23,7 +23,20 @@ function textOf(children: React.ReactNode): string {
   return "";
 }
 
-export function GuideMarkdown({ body, packs }: { body: string; packs: Record<string, GuidePack> }) {
+/**
+ * liveGuideSlugs: on the public page, links to guides that aren't live yet
+ * render as plain text (they become links on their go-live date). Omit it in
+ * the admin preview to show every link.
+ */
+export function GuideMarkdown({
+  body,
+  packs,
+  liveGuideSlugs,
+}: {
+  body: string;
+  packs: Record<string, GuidePack>;
+  liveGuideSlugs?: string[];
+}) {
   const components = {
     h2: ({ children }) => (
       <h2
@@ -36,8 +49,10 @@ export function GuideMarkdown({ body, packs }: { body: string; packs: Record<str
     h3: ({ children }) => <h3 className="mt-8 mb-3 text-lg font-semibold text-white">{children}</h3>,
     p: ({ children }) => <p className="my-5 text-[17px] leading-[1.75] text-white/75">{children}</p>,
     strong: ({ children }) => <strong className="font-semibold text-white">{children}</strong>,
-    a: ({ href = "", children }) =>
-      href.startsWith("/") ? (
+    a: ({ href = "", children }) => {
+      const guideSlug = href.match(/^\/guides\/([^/#?]+)/)?.[1];
+      if (guideSlug && liveGuideSlugs && !liveGuideSlugs.includes(guideSlug)) return <>{children}</>;
+      return href.startsWith("/") ? (
         <Link href={href} className="text-white underline decoration-white/30 underline-offset-4 hover:decoration-white">
           {children}
         </Link>
@@ -50,7 +65,8 @@ export function GuideMarkdown({ body, packs }: { body: string; packs: Record<str
         >
           {children}
         </a>
-      ),
+      );
+    },
     ul: ({ children }) => <ul className="my-5 space-y-2.5 pl-5 text-[17px] leading-[1.7] text-white/75 list-disc marker:text-white/30">{children}</ul>,
     ol: ({ children }) => <ol className="my-5 space-y-2.5 pl-5 text-[17px] leading-[1.7] text-white/75 list-decimal marker:text-white/40">{children}</ol>,
     li: ({ children }) => <li className="pl-1">{children}</li>,

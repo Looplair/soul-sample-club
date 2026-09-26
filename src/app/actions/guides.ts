@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getGuideChecks, slugify, GUIDE_CLUSTERS, type Guide } from "@/lib/guide-utils";
 
-export type GuideInput = Omit<Guide, "id" | "publishedAt" | "updatedAt"> & { id?: string };
+export type GuideInput = Omit<Guide, "id" | "updatedAt"> & { id?: string };
 
 type Result = { ok: true; id: string; slug: string } | { ok: false; error: string };
 
@@ -62,8 +62,8 @@ export async function saveGuide(input: GuideInput): Promise<Result> {
     faqs: input.faqs.filter((f) => f.q.trim() && f.a.trim()),
     sources: input.sources.filter((s) => s.label.trim() && s.url.trim()),
     related: input.related,
-    // First publish sets the date; unpublishing keeps it for history
-    published_at: existing?.published_at ?? (input.published ? now : null),
+    // Go-live time: a chosen date (future = scheduled), else first publish time
+    published_at: input.publishedAt ?? existing?.published_at ?? (input.published ? now : null),
     updated_at: now,
   };
 

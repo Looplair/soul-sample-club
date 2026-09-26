@@ -4,7 +4,7 @@ import { ArrowRight } from "lucide-react";
 import { Navbar, Footer } from "@/components/layout";
 import { createClient } from "@/lib/supabase/server";
 import { getNotificationsForUser } from "@/lib/notifications";
-import { GUIDE_CLUSTERS, getAllGuides, getPublishedGuides, viewerIsAdmin } from "@/lib/guides";
+import { GUIDE_CLUSTERS, getAllGuides, getGuideStatus, getPublishedGuides, viewerIsAdmin } from "@/lib/guides";
 import type { Profile, NotificationWithReadStatus } from "@/types/database";
 
 export const metadata = {
@@ -75,9 +75,9 @@ export default async function GuidesPage() {
                       <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-white/70 group-hover:text-white">
                         Read <ArrowRight className="h-3.5 w-3.5" />
                       </span>
-                      {!g.published && (
-                        <span className="ml-3 rounded-full bg-yellow-300/15 px-2 py-0.5 text-[10px] font-semibold text-yellow-200">
-                          Draft
+                      {getGuideStatus(g) !== "published" && (
+                        <span className="ml-3 rounded-full bg-yellow-300/15 px-2 py-0.5 text-[10px] font-semibold capitalize text-yellow-200">
+                          {getGuideStatus(g)}
                         </span>
                       )}
                     </Link>

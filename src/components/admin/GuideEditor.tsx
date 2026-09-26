@@ -25,7 +25,18 @@ import { Badge } from "@/components/ui";
 import { GuideMarkdown } from "@/components/guides/GuideMarkdown";
 import type { GuidePack } from "@/components/guides/GuidePackEmbed";
 import { saveGuide, deleteGuide, type GuideInput } from "@/app/actions/guides";
-import { GUIDE_CLUSTERS, getGuideChecks, slugify, type Guide, type GuideCluster } from "@/lib/guide-utils";
+import { GUIDE_CLUSTERS, getGuideChecks, getGuideStatus, slugify, type Guide, type GuideCluster } from "@/lib/guide-utils";
+
+// <input type="datetime-local"> works in local time without a zone
+function toLocalInput(iso: string | null): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+}
+
+function formatWhen(iso: string): string {
+  return new Date(iso).toLocaleString(undefined, { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
+}
 
 interface GuideEditorProps {
   guide?: Guide;
@@ -47,6 +58,7 @@ const EMPTY: GuideInput = {
   faqs: [],
   sources: [],
   related: [],
+  publishedAt: null,
 };
 
 const SNIPPETS = [
@@ -77,6 +89,8 @@ export function GuideEditor({ guide, packs, otherGuides }: GuideEditorProps) {
   const checks = getGuideChecks(form);
   const blocking = checks.filter((c) => c.level === "block");
   const packMap = useMemo(() => Object.fromEntries(packs.map((p) => [p.id, p])), [packs]);
+  const status = getGuideStatus(form);
+  const goLiveInFuture = !!form.publishedAt && new Date(form.publishedAt) > new Date();
 
   useEffect(() => {
     const warn = (e: BeforeUnloadEvent) => {
@@ -115,7 +129,14 @@ export function GuideEditor({ guide, packs, otherGuides }: GuideEditorProps) {
     setSaved(next);
     setMessage({
       kind: "ok",
-      text: action === "publish" ? "Published. It's live on the site." : action === "unpublish" ? "Unpublished. It's now a draft." : "Saved.",
+      text:
+        action === "publish"
+          ? goLiveInFuture && form.publishedAt
+            ? `Scheduled. It goes live ${formatWhen(form.publishedAt)}.`
+            : "Published. It's live on the site."
+          : action === "unpublish"
+            ? "Back to draft. It's not on the site."
+            : "Saved.",
     });
     if (!guide) router.replace(`/admin/guides/${result.id}`);
     else router.refresh();
@@ -143,7 +164,7 @@ export function GuideEditor({ guide, packs, otherGuides }: GuideEditorProps) {
           <div className="min-w-0 flex-1">
             <p className="truncate font-semibold text-white">{form.title || "New guide"}</p>
             <p className="text-xs text-text-subtle">
-              {form.published ? "Published" : "Draft"}
+              {status === "published" ? "Published" : status === "scheduled" && form.publishedAt ? `Scheduled for ${formatWhen(form.publishedAt)}` : "Draft"}
               {dirty && " · Unsaved changes"}
             </p>
           </div>
@@ -161,7 +182,7 @@ export function GuideEditor({ guide, packs, otherGuides }: GuideEditorProps) {
           </button>
           {form.published ? (
             <button type="button" onClick={() => submit("unpublish")} disabled={!!saving} className="btn-secondary text-sm px-4 py-2 flex items-center gap-2">
-              {saving === "unpublish" && <Loader2 className="h-4 w-4 animate-spin" />} Unpublish
+              {saving === "unpublish" && <Loader2 className="h-4 w-4 animate-spin" />} {status === "scheduled" ? "Unschedule" : "Unpublish"}
             </button>
           ) : (
             <button
@@ -171,7 +192,7 @@ export function GuideEditor({ guide, packs, otherGuides }: GuideEditorProps) {
               title={blocking.length ? blocking.map((b) => b.message).join("\n") : undefined}
               className="btn-primary text-sm px-4 py-2 flex items-center gap-2 disabled:opacity-40"
             >
-              {saving === "publish" && <Loader2 className="h-4 w-4 animate-spin" />} Publish
+              {saving === "publish" && <Loader2 className="h-4 w-4 animate-spin" />} {goLiveInFuture ? "Schedule" : "Publish"}
             </button>
           )}
         </div>
@@ -426,11 +447,25 @@ export function GuideEditor({ guide, packs, otherGuides }: GuideEditorProps) {
           <div className="rounded-2xl border border-grey-700 p-5 text-sm text-text-muted space-y-1.5">
             <p className="text-label text-text-muted mb-2">Status</p>
             <p>
-              <Badge variant={form.published ? "success" : "default"}>{form.published ? "Published" : "Draft"}</Badge>
+              <Badge variant={status === "published" ? "success" : "default"}>
+                {status === "published" ? "Published" : status === "scheduled" ? "Scheduled" : "Draft"}
+              </Badge>
             </p>
-            {guide?.publishedAt && <p>First published {new Date(guide.publishedAt).toLocaleDateString()}</p>}
-            {guide && <p>Last saved {new Date(guide.updatedAt).toLocaleString()}</p>}
-            {!form.published && <p className="text-xs text-text-subtle">Drafts are only visible to admins.</p>}
+            <div className="pt-2">
+              <span className="label">Go-live date</span>
+              <input
+                type="datetime-local"
+                className="input !rounded-xl !px-3 text-sm [color-scheme:dark]"
+                value={toLocalInput(form.publishedAt)}
+                onChange={(e) => set("publishedAt", e.target.value ? new Date(e.target.value).toISOString() : null)}
+              />
+              <p className="mt-1.5 text-xs text-text-subtle">
+                Leave empty to go live when you press Publish. Pick a future date and the button becomes Schedule: it goes live on
+                its own at that time.
+              </p>
+            </div>
+            {guide && <p className="pt-2">Last saved {new Date(guide.updatedAt).toLocaleString()}</p>}
+            {status !== "published" && <p className="text-xs text-text-subtle">Until it&apos;s live, only admins can see it.</p>}
           </div>
         </aside>
       </div>

@@ -40,6 +40,18 @@ export const GUIDE_AUTHOR = {
 
 export const PLACEHOLDER_MARKER = "[!CHRIS]";
 
+export type GuideStatus = "draft" | "scheduled" | "published";
+
+/** Approved guides go live at publishedAt; a future date means scheduled */
+export function getGuideStatus(guide: Pick<Guide, "published" | "publishedAt">, now = new Date()): GuideStatus {
+  if (!guide.published) return "draft";
+  return guide.publishedAt && new Date(guide.publishedAt) > now ? "scheduled" : "published";
+}
+
+export function isGuideLive(guide: Pick<Guide, "published" | "publishedAt">): boolean {
+  return getGuideStatus(guide) === "published";
+}
+
 export function slugify(text: string): string {
   return text
     .toLowerCase()

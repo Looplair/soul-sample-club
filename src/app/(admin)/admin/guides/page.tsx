@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Plus, Edit, BookOpen, ExternalLink } from "lucide-react";
 import { Card, CardContent, Badge } from "@/components/ui";
 import { formatDate } from "@/lib/utils";
-import { getAllGuides, countPlaceholders } from "@/lib/guides";
+import { getAllGuides, countPlaceholders, getGuideStatus } from "@/lib/guides";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +12,8 @@ export const metadata = {
 
 export default async function AdminGuidesPage() {
   const guides = await getAllGuides();
-  const published = guides.filter((g) => g.published).length;
+  const published = guides.filter((g) => getGuideStatus(g) === "published").length;
+  const scheduled = guides.filter((g) => getGuideStatus(g) === "scheduled").length;
 
   return (
     <div className="space-y-6">
@@ -20,8 +21,8 @@ export default async function AdminGuidesPage() {
         <div>
           <h1 className="text-2xl font-bold text-white">Guides</h1>
           <p className="text-sm text-text-muted mt-1">
-            Articles that help Soul Sample Club rank on Google. {published} published, {guides.length - published} draft
-            {guides.length - published === 1 ? "" : "s"}.
+            Articles that help Soul Sample Club rank on Google. {published} published, {scheduled} scheduled,{" "}
+            {guides.length - published - scheduled} draft{guides.length - published - scheduled === 1 ? "" : "s"}.
           </p>
         </div>
         <Link href="/admin/guides/new" className="btn-primary flex items-center gap-2 flex-shrink-0">
@@ -66,8 +67,13 @@ export default async function AdminGuidesPage() {
                       <td className="px-6 py-4 text-body text-text-muted hidden md:table-cell">{g.cluster}</td>
                       <td className="px-6 py-4 text-body text-text-muted hidden sm:table-cell">{formatDate(g.updatedAt)}</td>
                       <td className="px-6 py-4">
-                        {g.published ? (
+                        {getGuideStatus(g) === "published" ? (
                           <Badge variant="success">Published</Badge>
+                        ) : getGuideStatus(g) === "scheduled" && g.publishedAt ? (
+                          <div className="flex flex-col items-start gap-1">
+                            <Badge variant="default">Scheduled</Badge>
+                            <span className="text-[11px] text-text-subtle">{formatDate(g.publishedAt)}</span>
+                          </div>
                         ) : (
                           <div className="flex flex-col items-start gap-1">
                             <Badge variant="default">Draft</Badge>

@@ -3,6 +3,9 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { SITE_URL } from "@/lib/site";
 import { getPublishedGuides } from "@/lib/guides";
 
+// Re-check hourly so scheduled guides show up on their go-live date
+export const revalidate = 3600;
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = SITE_URL;
 

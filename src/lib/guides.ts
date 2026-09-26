@@ -34,7 +34,11 @@ function guidesTable() {
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
 export async function getPublishedGuides(): Promise<Guide[]> {
-  const { data, error } = await guidesTable().select("*").eq("is_published", true).order("published_at", { ascending: true });
+  const { data, error } = await guidesTable()
+    .select("*")
+    .eq("is_published", true)
+    .lte("published_at", new Date().toISOString())
+    .order("published_at", { ascending: true });
   if (error) {
     console.error("getPublishedGuides:", error.message);
     return [];
@@ -44,13 +48,21 @@ export async function getPublishedGuides(): Promise<Guide[]> {
 
 /** Cheap check used to decide whether to show links to guides */
 export async function isGuidePublished(slug: string): Promise<boolean> {
-  const { data } = await guidesTable().select("id").eq("slug", slug).eq("is_published", true).maybeSingle();
+  const { data } = await guidesTable()
+    .select("id")
+    .eq("slug", slug)
+    .eq("is_published", true)
+    .lte("published_at", new Date().toISOString())
+    .maybeSingle();
   return !!data;
 }
 
 /** Whether any guide is live (footers only link to /guides once one is) */
 export async function hasPublishedGuides(): Promise<boolean> {
-  const { count } = await guidesTable().select("id", { count: "exact", head: true }).eq("is_published", true);
+  const { count } = await guidesTable()
+    .select("id", { count: "exact", head: true })
+    .eq("is_published", true)
+    .lte("published_at", new Date().toISOString());
   return (count ?? 0) > 0;
 }
 

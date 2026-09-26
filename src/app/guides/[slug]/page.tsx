@@ -14,6 +14,8 @@ import {
   getGuidePackIds,
   getPublishedGuides,
   getReadingMinutes,
+  getGuideStatus,
+  isGuideLive,
   viewerIsAdmin,
 } from "@/lib/guides";
 import type { Profile, NotificationWithReadStatus } from "@/types/database";
@@ -27,7 +29,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     description: guide.description,
     alternates: { canonical: url },
     // Drafts can be previewed by admins but must never be indexed
-    ...(!guide.published && { robots: { index: false, follow: false } }),
+    ...(!isGuideLive(guide) && { robots: { index: false, follow: false } }),
     openGraph: {
       type: "article",
       title: guide.title,
@@ -56,12 +58,14 @@ export default async function GuidePage({ params }: { params: { slug: string } }
   const guide = await getGuideBySlug(params.slug);
   if (!guide) notFound();
   // Drafts are only visible to admins (for previewing before publishing)
-  if (!guide.published && !(await viewerIsAdmin(supabase, user?.id))) notFound();
+  if (!isGuideLive(guide) && !(await viewerIsAdmin(supabase, user?.id))) notFound();
+  const status = getGuideStatus(guide);
 
   const body = guide.body;
   const headings = getGuideHeadings(body);
   const url = `${SITE_URL}/guides/${guide.slug}`;
-  const related = (await getPublishedGuides()).filter((g) => guide.related.includes(g.slug));
+  const liveGuides = await getPublishedGuides();
+  const related = liveGuides.filter((g) => guide.related.includes(g.slug));
   const [packs, profile, { notifications, unreadCount }] = await Promise.all([
     getGuidePacks(getGuidePackIds(body)).then((list) => Object.fromEntries(list.map((p) => [p.id, p]))),
     user
@@ -119,9 +123,11 @@ export default async function GuidePage({ params }: { params: { slug: string } }
       <Navbar user={profile} notifications={notifications} unreadCount={unreadCount} />
 
       <main className="flex-1 pb-24">
-        {!guide.published && (
+        {status !== "published" && (
           <div className="bg-yellow-300/10 border-b border-yellow-300/30 py-2 text-center text-xs font-medium text-yellow-200">
-            Draft. Only admins can see this page until it&apos;s published.
+            {status === "scheduled" && guide.publishedAt
+              ? `Scheduled for ${formatDate(guide.publishedAt)}. Only admins can see this page until then.`
+              : "Draft. Only admins can see this page until it's published."}
           </div>
         )}
 
@@ -184,7 +190,7 @@ export default async function GuidePage({ params }: { params: { slug: string } }
           </aside>
 
           <article className="max-w-3xl">
-            <GuideMarkdown body={body} packs={packs} />
+            <GuideMarkdown body={body} packs={packs} liveGuideSlugs={liveGuides.map((g) => g.slug)} />
 
             {/* FAQ */}
             {guide.faqs.length > 0 && (
