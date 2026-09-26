@@ -234,14 +234,14 @@ export function GuideEditor({ guide, packs, otherGuides }: GuideEditorProps) {
               <input className="input" value={form.seoTitle ?? ""} onChange={(e) => set("seoTitle", e.target.value || null)} placeholder={form.title} />
             </Field>
             <Field label="Search description" hint="The grey text under the link in Google. Also used on the Guides page." count={form.description.length} max={155}>
-              <textarea className="input min-h-[80px]" value={form.description} onChange={(e) => set("description", e.target.value)} />
+              <textarea className="input !rounded-2xl min-h-[80px]" value={form.description} onChange={(e) => set("description", e.target.value)} />
             </Field>
           </Section>
 
           {/* Intro */}
           <Section title="Intro">
             <Field label="Opening paragraph" hint="Shown large under the headline.">
-              <textarea className="input min-h-[90px]" value={form.lead} onChange={(e) => set("lead", e.target.value)} />
+              <textarea className="input !rounded-2xl min-h-[90px]" value={form.lead} onChange={(e) => set("lead", e.target.value)} />
             </Field>
             <ListEditor
               label="Key takeaways"
@@ -300,7 +300,7 @@ export function GuideEditor({ guide, packs, otherGuides }: GuideEditorProps) {
                 </div>
                 <textarea
                   ref={bodyRef}
-                  className="input min-h-[600px] font-mono text-[13px] leading-relaxed"
+                  className="input !rounded-2xl min-h-[600px] font-mono text-[13px] leading-relaxed"
                   value={form.body}
                   onChange={(e) => set("body", e.target.value)}
                   spellCheck
@@ -331,7 +331,7 @@ export function GuideEditor({ guide, packs, otherGuides }: GuideEditorProps) {
                   <RemoveButton onClick={() => set("faqs", form.faqs.filter((_, j) => j !== i))} />
                 </div>
                 <textarea
-                  className="input min-h-[70px]"
+                  className="input !rounded-2xl min-h-[70px]"
                   value={f.a}
                   placeholder="Answer"
                   onChange={(e) => set("faqs", form.faqs.map((x, j) => (j === i ? { ...x, a: e.target.value } : x)))}
