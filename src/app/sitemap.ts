@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { SITE_URL } from "@/lib/site";
+import { getPublishedGuides } from "@/lib/guides";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = SITE_URL;
@@ -73,5 +74,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     console.error("Error generating sitemap pack pages:", error);
   }
 
-  return [...staticPages, ...packPages];
+  // Guides: published only (drafts are visible on previews but never listed)
+  const published = await getPublishedGuides();
+  const guidePages: MetadataRoute.Sitemap = published.length
+    ? [
+        { url: `${baseUrl}/guides`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.7 },
+        ...published.map((g) => ({
+          url: `${baseUrl}/guides/${g.slug}`,
+          lastModified: new Date(g.updatedAt),
+          changeFrequency: "monthly" as const,
+          priority: g.isPillar ? 0.8 : 0.6,
+        })),
+      ]
+    : [];
+
+  return [...staticPages, ...guidePages, ...packPages];
 }

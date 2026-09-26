@@ -16,6 +16,7 @@ import {
   CreditCard,
   Bell,
   Megaphone,
+  BookOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DrumIcon } from "@/components/icons/DrumIcon";
@@ -28,6 +29,7 @@ const adminLinks = [
   { href: "/admin/users", label: "Users", icon: Users },
   { href: "/admin/notifications", label: "Notifications", icon: Bell },
   { href: "/admin/announcements", label: "Announcements", icon: Megaphone },
+  { href: "/admin/guides", label: "Guides", icon: BookOpen },
   { href: "/admin/analytics", label: "Analytics", icon: TrendingUp },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ];

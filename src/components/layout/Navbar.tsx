@@ -25,6 +25,7 @@ import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { UserDropdown } from "./UserDropdown";
 import type { Profile, NotificationWithReadStatus } from "@/types/database";
 
 interface NavbarProps {
@@ -45,6 +46,8 @@ export function Navbar({ user, notifications = [], unreadCount = 0 }: NavbarProp
   const [menuOpen, setMenuOpen] = useState(false);
   const supabase = createClient();
   const isLoggedIn = !!user;
+  // Library is a member's own collection, so hide it from logged-out visitors
+  const navLinks = NAV_LINKS.filter((link) => isLoggedIn || link.href !== "/library");
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -71,7 +74,7 @@ export function Navbar({ user, notifications = [], unreadCount = 0 }: NavbarProp
 
         {/* Desktop Navigation */}
         <div className="hidden md:flex items-center gap-8">
-          {NAV_LINKS.map((link) => (
+          {navLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
@@ -93,12 +96,14 @@ export function Navbar({ user, notifications = [], unreadCount = 0 }: NavbarProp
                 initialNotifications={notifications}
                 initialUnreadCount={unreadCount}
               />
-              {/* Desktop-only account button — mobile gets the same action via the menu below */}
-              <Link href="/account" className="hidden md:block">
-                <Button variant="secondary" size="sm">
-                  {user.username || user.full_name || user.email?.split("@")[0] || "Account"}
-                </Button>
-              </Link>
+              {/* Desktop-only account menu (incl. Admin Panel for admins); mobile gets the same via the menu below */}
+              <div className="hidden md:block">
+                <UserDropdown
+                  email={user.email}
+                  displayName={user.username || user.full_name || user.email?.split("@")[0] || "Account"}
+                  isAdmin={user.is_admin}
+                />
+              </div>
             </>
           ) : (
             <div className="hidden md:flex items-center gap-2">
@@ -135,7 +140,7 @@ export function Navbar({ user, notifications = [], unreadCount = 0 }: NavbarProp
             className="md:hidden bg-charcoal-elevated border-b border-grey-700 overflow-hidden"
           >
             <div className="container-app py-4 space-y-1">
-              {NAV_LINKS.map((link) => {
+              {navLinks.map((link) => {
                 const Icon = link.icon;
                 return (
                   <Link
