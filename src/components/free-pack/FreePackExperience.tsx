@@ -11,6 +11,7 @@ import { SmoothWaveform } from "./SmoothWaveform";
 import { useHighlightReel } from "./useHighlightReel";
 import { FreePackSignUpSheet } from "./FreePackSignUpSheet";
 import type { FreePack } from "@/lib/free-pack";
+import { TrackView, track } from "@/lib/track";
 
 // Same artists and quotes the homepage uses
 const ARTISTS = [
@@ -71,6 +72,9 @@ export function FreePackExperience({ pack, isLoggedIn, hasAccess, downloadHref, 
           <Image src="/logo.svg" alt="Soul Sample Club" width={140} height={32} className="h-6 w-auto" priority />
         </Link>
       </header>
+
+      {/* Funnel reporting: logged-out visits only, so it counts new people */}
+      {!isLoggedIn && <TrackView path="/free" />}
 
       <main className="mx-auto max-w-xl px-5">
         <h1 className="mt-6 text-center text-[11px] font-semibold uppercase tracking-[0.22em] text-white/55">
@@ -286,7 +290,10 @@ export function FreePackExperience({ pack, isLoggedIn, hasAccess, downloadHref, 
           <div className="mx-auto max-w-xl text-center">
             <button
               type="button"
-              onClick={() => setSheetOpen(true)}
+              onClick={() => {
+                track("free_cta", "/free");
+                setSheetOpen(true);
+              }}
               className="h-[54px] w-full rounded-2xl bg-white text-base font-bold text-charcoal active:scale-[0.99]"
             >
               Get it free

@@ -105,6 +105,26 @@ export async function claimFreePack(userId: string, email: string | undefined, p
   return first;
 }
 
+/** Funnel reporting: first time they hit Download */
+export async function markDownloaded(userId: string, packId: string) {
+  await db()
+    .from("free_pack_claims")
+    .update({ downloaded_at: new Date().toISOString() })
+    .eq("user_id", userId)
+    .eq("pack_id", packId)
+    .is("downloaded_at", null);
+}
+
+/** Funnel reporting: first time they open checkout from the welcome offer */
+export async function markOfferCheckout(userId: string) {
+  await db()
+    .from("free_pack_claims")
+    .update({ offer_checkout_at: new Date().toISOString() })
+    .eq("user_id", userId)
+    .not("offer_started_at", "is", null)
+    .is("offer_checkout_at", null);
+}
+
 /** When this user's one-time welcome offer ends, or null if it hasn't started */
 export async function getOfferDeadline(userId: string): Promise<Date | null> {
   const { data } = await db()

@@ -18,6 +18,7 @@ import {
 import { Card, CardHeader, CardTitle, CardContent, Badge } from "@/components/ui";
 import { formatDate, getDaysUntilEndDate, getExpiryBadgeText } from "@/lib/utils";
 import { getAppDownloadStats } from "@/lib/app-downloads";
+import { getFreePackFunnel } from "@/lib/site-stats";
 
 export const metadata = {
   title: "Admin Dashboard | Soul Sample Club",
@@ -484,6 +485,9 @@ export default async function AdminDashboardPage() {
         />
       </div>
 
+      {/* Free pack funnel (/free) */}
+      <FreePackFunnelCard />
+
       {/* Desktop app */}
       <AppDownloadsCard />
 
@@ -806,6 +810,59 @@ async function AppDownloadsCard() {
             </div>
             <p className="mt-4 text-caption text-snow/40">
               Counts clicks on the download buttons on /app. {stats.signedIn.toLocaleString()} came from signed-in users.
+            </p>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+async function FreePackFunnelCard() {
+  const funnel = await getFreePackFunnel();
+  const pct = (n: number, of: number) => (of > 0 ? `${Math.round((n / of) * 100)}%` : "–");
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Gift className="w-5 h-5" />
+          Free pack funnel
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {!funnel ? (
+          <p className="text-sm text-snow/50">Funnel tracking isn&apos;t set up yet (run migration 014 in Supabase).</p>
+        ) : (
+          <>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-caption text-snow/50">
+                  <th className="pb-2 font-normal">Step</th>
+                  <th className="pb-2 font-normal text-right">All time</th>
+                  <th className="pb-2 font-normal text-right">Last 7 days</th>
+                  <th className="pb-2 font-normal text-right hidden sm:table-cell">From previous step</th>
+                </tr>
+              </thead>
+              <tbody>
+                {funnel.steps.map((s, i) => (
+                  <tr key={s.label} className="border-t border-grey-700/50">
+                    <td className="py-2.5 text-snow">
+                      {s.label}
+                      {s.since && <span className="ml-2 text-[11px] text-snow/35">since {s.since}</span>}
+                    </td>
+                    <td className="py-2.5 text-right text-snow tabular-nums">{s.total.toLocaleString()}</td>
+                    <td className="py-2.5 text-right text-snow/70 tabular-nums">{s.last7.toLocaleString()}</td>
+                    <td className="py-2.5 text-right text-snow/50 tabular-nums hidden sm:table-cell">
+                      {i === 0 ? "" : pct(s.total, funnel.steps[i - 1].total)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <p className="mt-4 text-caption text-snow/40">
+              Paying members: {funnel.paidViaOffer} joined within the 30-minute $1.99 offer, {funnel.paidLater} joined later.{" "}
+              {funnel.stillMembers} still members. {funnel.alreadyMembers} of the claims came from people who were already members.
+              Steps marked &ldquo;since&rdquo; started counting on that date, so early percentages next to them are low.
             </p>
           </>
         )}

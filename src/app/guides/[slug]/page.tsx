@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getGuidePacks } from "@/lib/guide-packs";
 import { getNotificationsForUser } from "@/lib/notifications";
 import { SITE_URL } from "@/lib/site";
+import { TrackView } from "@/lib/track";
 import {
   GUIDE_AUTHOR,
   getGuideBySlug,
@@ -120,6 +121,7 @@ export default async function GuidePage({ params }: { params: { slug: string } }
   return (
     <div className="min-h-screen flex flex-col bg-charcoal">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <TrackView path={`/guides/${guide.slug}`} />
       <Navbar user={profile} notifications={notifications} unreadCount={unreadCount} />
 
       <main className="flex-1 pb-24">

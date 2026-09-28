@@ -3,7 +3,7 @@ import { stripe, STRIPE_PRICE_ID, STRIPE_YEARLY_PRICE_ID } from "@/lib/stripe";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getBlockingPastDueSubscription } from "@/lib/payment-status";
-import { FREE_PACK_OFFER_COUPON, offerIsLive } from "@/lib/free-pack";
+import { FREE_PACK_OFFER_COUPON, markOfferCheckout, offerIsLive } from "@/lib/free-pack";
 
 // Yearly offer: $14 off forever ($49 -> $35, locked in for life). Set to "" to end the offer.
 const YEARLY_OFFER_COUPON: string = "wjveVSUF";
@@ -177,6 +177,7 @@ export async function POST(request: Request) {
         : [null, null];
     // Welcome offer only while the 30-minute window after the free pack download is open
     const useFreePackOffer = wantsFreePackOffer && !!FREE_PACK_OFFER_COUPON && (await offerIsLive(user.id));
+    if (useFreePackOffer) await markOfferCheckout(user.id);
     const monthlyCoupon = useFreePackOffer ? FREE_PACK_OFFER_COUPON : "ktZFClXu";
 
     let firstChargeValue = yearlyPrice?.unit_amount

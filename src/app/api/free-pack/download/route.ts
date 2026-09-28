@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { claimFreePack, getFreePack } from "@/lib/free-pack";
+import { claimFreePack, getFreePack, markDownloaded } from "@/lib/free-pack";
 import { SITE_URL } from "@/lib/site";
 
 // The free pack's download button. Signed-in users only; redirects to a
@@ -18,6 +18,7 @@ export async function GET() {
 
   // Covers anyone who reaches the download without the page having claimed first
   await claimFreePack(user.id, user.email, pack);
+  await markDownloaded(user.id, pack.id);
 
   const { data, error } = await createAdminClient()
     .storage.from("samples")

@@ -3,6 +3,7 @@ import { Plus, Edit, BookOpen, ExternalLink } from "lucide-react";
 import { Card, CardContent, Badge } from "@/components/ui";
 import { formatDate } from "@/lib/utils";
 import { getAllGuides, countPlaceholders, getGuideStatus } from "@/lib/guides";
+import { getGuideViews } from "@/lib/site-stats";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +12,7 @@ export const metadata = {
 };
 
 export default async function AdminGuidesPage() {
-  const guides = await getAllGuides();
+  const [guides, views] = await Promise.all([getAllGuides(), getGuideViews()]);
   const published = guides.filter((g) => getGuideStatus(g) === "published").length;
   const scheduled = guides.filter((g) => getGuideStatus(g) === "scheduled").length;
 
@@ -23,6 +24,11 @@ export default async function AdminGuidesPage() {
           <p className="text-sm text-text-muted mt-1">
             Articles that help Soul Sample Club rank on Google. {published} published, {scheduled} scheduled,{" "}
             {guides.length - published - scheduled} draft{guides.length - published - scheduled === 1 ? "" : "s"}.
+          </p>
+          <p className="text-xs text-text-subtle mt-1">
+            {views
+              ? "Views count real visitors since 28 Sep (not bots, not you, not refreshes). Shown as all time, with the last 30 days underneath."
+              : "View counts aren't set up yet (run migration 014 in Supabase)."}
           </p>
         </div>
         <Link href="/admin/guides/new" className="btn-primary flex items-center gap-2 flex-shrink-0">
@@ -48,6 +54,7 @@ export default async function AdminGuidesPage() {
                   <th className="text-left text-label text-text-muted px-6 py-3">Guide</th>
                   <th className="text-left text-label text-text-muted px-6 py-3 hidden md:table-cell">Section</th>
                   <th className="text-left text-label text-text-muted px-6 py-3 hidden sm:table-cell">Updated</th>
+                  <th className="text-right text-label text-text-muted px-6 py-3">Views</th>
                   <th className="text-left text-label text-text-muted px-6 py-3">Status</th>
                   <th className="px-6 py-3" />
                 </tr>
@@ -55,6 +62,7 @@ export default async function AdminGuidesPage() {
               <tbody>
                 {guides.map((g) => {
                   const gaps = countPlaceholders(g);
+                  const v = views?.get(g.slug);
                   return (
                     <tr key={g.id} className="border-b border-grey-700/50 hover:bg-white/[0.02] transition-colors">
                       <td className="px-6 py-4">
@@ -66,6 +74,16 @@ export default async function AdminGuidesPage() {
                       </td>
                       <td className="px-6 py-4 text-body text-text-muted hidden md:table-cell">{g.cluster}</td>
                       <td className="px-6 py-4 text-body text-text-muted hidden sm:table-cell">{formatDate(g.updatedAt)}</td>
+                      <td className="px-6 py-4 text-right tabular-nums">
+                        {getGuideStatus(g) === "published" ? (
+                          <>
+                            <p className="text-body text-white">{(v?.total ?? 0).toLocaleString()}</p>
+                            <p className="text-[11px] text-text-subtle">{(v?.last30 ?? 0).toLocaleString()} in 30 days</p>
+                          </>
+                        ) : (
+                          <span className="text-text-subtle">–</span>
+                        )}
+                      </td>
                       <td className="px-6 py-4">
                         {getGuideStatus(g) === "published" ? (
                           <Badge variant="success">Published</Badge>
