@@ -1,7 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { Navbar } from "@/components/layout";
 import { SubscribeCTA } from "@/components/ui/SubscribeCTA";
 import { GlassBox, Pill, Section, SectionHead } from "@/components/ssc/Glass";
@@ -21,7 +20,7 @@ import { isGuidePublished, hasPublishedGuides } from "@/lib/guides";
 import { faqs } from "@/lib/faqs";
 import { withCoverColors } from "@/lib/cover-color";
 import { packPath } from "@/lib/pack-url";
-import { hidePaths } from "@/lib/hide-paths";
+import { getCatalogPacks } from "@/lib/catalog-data";
 import type { Sample, Profile, NotificationWithReadStatus } from "@/types/database";
 
 export const metadata = {
@@ -69,12 +68,12 @@ interface PackWithSamples {
 // DATA
 // ============================================
 async function getAllPacks(): Promise<PackWithSamples[]> {
-  const result = await createAdminClient()
-    .from("packs")
-    .select(`*, samples(*)`)
-    .eq("is_published", true)
-    .order("release_date", { ascending: false });
-  return hidePaths((result.data as PackWithSamples[]) || []);
+  try {
+    return (await getCatalogPacks()) as unknown as PackWithSamples[];
+  } catch (error) {
+    console.error("Homepage packs:", error);
+    return [];
+  }
 }
 
 async function getUserState(): Promise<{

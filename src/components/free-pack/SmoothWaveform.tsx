@@ -2,27 +2,33 @@
 
 import { useId, useMemo } from "react";
 
-const W = 300;
-const H = 28;
+// Integer coordinates on a 600x56 grid: same look as before, far shorter paths
+const W = 600;
+const H = 56;
 
 /** Smooth, filled, mirrored waveform from stored peaks. `progress` (0 to 1) is drawn in white. */
 export function SmoothWaveform({ peaks, progress = 0, className }: { peaks: number[]; progress?: number; className?: string }) {
-  const clipId = useId();
+  const id = useId();
+  const clipId = `${id}c`;
+  const pathId = `${id}p`;
   const path = useMemo(() => buildPath(peaks), [peaks]);
+  const played = Math.min(1, Math.max(0, progress));
+  // The shape is written once and reused for the played part
   return (
     <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className={className} aria-hidden>
       <defs>
+        <path id={pathId} d={path} />
         <clipPath id={clipId}>
-          <rect width={W * Math.min(1, Math.max(0, progress))} height={H} />
+          <rect width={Math.round(W * played)} height={H} />
         </clipPath>
       </defs>
-      <path d={path} fill="rgba(255,255,255,0.22)" />
-      <path d={path} fill="#fff" clipPath={`url(#${clipId})`} />
+      <use href={`#${pathId}`} fill="rgba(255,255,255,0.22)" />
+      {played > 0 && <use href={`#${pathId}`} fill="#fff" clipPath={`url(#${clipId})`} />}
     </svg>
   );
 }
 
-function buildPath(peaks: number[], n = 120): string {
+function buildPath(peaks: number[], n = 84): string {
   const src = peaks.length ? peaks : Array.from({ length: n }, () => 0.5);
   const step = src.length / n;
   const vals: number[] = [];
@@ -48,7 +54,8 @@ function buildPath(peaks: number[], n = 120): string {
   const xs = amps.map((_, i) => (i * W) / (n - 1));
 
   const curve = (pts: [number, number][]) => {
-    let d = `M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)}`;
+    const r = (v: number) => Math.round(v);
+    let d = `M${r(pts[0][0])},${r(pts[0][1])}`;
     for (let i = 0; i < pts.length - 1; i++) {
       const p0 = pts[Math.max(0, i - 1)];
       const p1 = pts[i];
@@ -56,7 +63,7 @@ function buildPath(peaks: number[], n = 120): string {
       const p3 = pts[Math.min(pts.length - 1, i + 2)];
       const c1 = [p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6];
       const c2 = [p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6];
-      d += ` C${c1[0].toFixed(1)},${c1[1].toFixed(1)} ${c2[0].toFixed(1)},${c2[1].toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`;
+      d += `C${r(c1[0])},${r(c1[1])} ${r(c2[0])},${r(c2[1])} ${r(p2[0])},${r(p2[1])}`;
     }
     return d;
   };

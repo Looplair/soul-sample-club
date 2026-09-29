@@ -5,16 +5,18 @@ import { Pause, Play, Volume2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // "Complete control" film with Curtiss King. On desktop it plays silently on a
-// loop once it scrolls into view, with a blurred copy behind it for ambient
-// light. Phones get the first frame and a play button (it's a 30MB file).
-// "Watch with sound" restarts it from the top with audio.
+// loop once it scrolls into view; phones show the poster until tapped.
+// Ambient light behind the frame is a tiny still of the film, scaled up and
+// blurred once (no second video). "Watch with sound" restarts it with audio.
+// The film is a 720p re-encode (1.8MB); nothing downloads until it's needed.
 
-const SRC = "/videos/completecontrolvideo_curtiss.mp4";
+const SRC = "/videos/complete-control-720.mp4";
+const POSTER = "/videos/complete-control-poster.jpg";
+const AMBIENT = "/videos/complete-control-ambient.jpg";
 
 export function ControlFilm() {
   const wrap = useRef<HTMLDivElement>(null);
   const film = useRef<HTMLVideoElement>(null);
-  const ambient = useRef<HTMLVideoElement>(null);
   const [playing, setPlaying] = useState(false);
   const [withSound, setWithSound] = useState(false);
 
@@ -30,10 +32,8 @@ export function ControlFilm() {
         if (entry.isIntersecting && loopHere) {
           v.muted = true;
           void v.play().then(() => setPlaying(true)).catch(() => {});
-          void ambient.current?.play().catch(() => {});
         } else {
           v.pause();
-          ambient.current?.pause();
           setPlaying(false);
         }
       },
@@ -43,18 +43,6 @@ export function ControlFilm() {
     return () => io.disconnect();
   }, [withSound]);
 
-  // Keep the ambient copy in step with the film
-  useEffect(() => {
-    const v = film.current;
-    if (!v) return;
-    const sync = () => {
-      const a = ambient.current;
-      if (a && Math.abs(a.currentTime - v.currentTime) > 0.3) a.currentTime = v.currentTime;
-    };
-    v.addEventListener("timeupdate", sync);
-    return () => v.removeEventListener("timeupdate", sync);
-  }, []);
-
   const watchWithSound = () => {
     const v = film.current;
     if (!v) return;
@@ -63,10 +51,6 @@ export function ControlFilm() {
     v.muted = false;
     v.loop = false;
     void v.play().then(() => setPlaying(true));
-    if (ambient.current) {
-      ambient.current.currentTime = 0;
-      void ambient.current.play().catch(() => {});
-    }
   };
 
   const toggle = () => {
@@ -75,26 +59,21 @@ export function ControlFilm() {
     if (v.paused) {
       if (!withSound) return watchWithSound();
       void v.play().then(() => setPlaying(true));
-      void ambient.current?.play().catch(() => {});
     } else {
       v.pause();
-      ambient.current?.pause();
       setPlaying(false);
     }
   };
 
   return (
     <div ref={wrap} className="relative mx-auto w-full max-w-[560px]">
-      {/* Ambient light: the film itself, blurred and dimmed behind the frame */}
-      <video
-        ref={ambient}
+      {/* Ambient light: a 48px still of the film, scaled up and blurred */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={AMBIENT}
+        alt=""
         aria-hidden
-        muted
-        loop
-        playsInline
-        preload="metadata"
-        src={`${SRC}#t=0.001`}
-        className="pointer-events-none absolute inset-0 h-full w-full scale-110 object-cover opacity-50 blur-[60px] saturate-150"
+        className="pointer-events-none absolute inset-0 h-full w-full scale-110 object-cover opacity-60 blur-[50px] saturate-150"
       />
       <div className="ssc-glass ssc-glass--plain relative rounded-[28px] p-2.5">
         <div className="relative aspect-square overflow-hidden rounded-[20px] bg-black">
@@ -103,8 +82,9 @@ export function ControlFilm() {
             playsInline
             muted
             loop
-            preload="metadata"
-            src={`${SRC}#t=0.001`}
+            preload="none"
+            poster={POSTER}
+            src={SRC}
             onClick={toggle}
             onEnded={() => {
               setPlaying(false);

@@ -41,7 +41,7 @@ export function ArtistRoll({ artists }: { artists: Artist[] }) {
             >
               <div className="relative h-full w-full overflow-hidden rounded-[18px]">
                 <Image src={a.image} alt={a.name} fill sizes="380px" className="object-cover" priority={i < 2} />
-                <span className="absolute bottom-3 left-3 rounded-full border border-white/15 bg-black/55 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-white backdrop-blur-md">
+                <span className="absolute bottom-3 left-3 rounded-full border border-white/15 bg-black/70 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-white">
                   {a.name}
                 </span>
               </div>

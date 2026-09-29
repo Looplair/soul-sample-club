@@ -149,7 +149,7 @@ export function CatalogBrowser({ packs, hasAccess, isLoggedIn }: { packs: Catalo
       {/* Filter bar: sits under the floating menu while you scroll */}
       <div className="sticky top-16 z-30 -mx-2 px-2 pb-3 pt-1">
         <div
-          className="ssc-glass ssc-glass--plain flex flex-wrap items-center gap-2 rounded-2xl p-2"
+          className="ssc-glass ssc-glass--plain ssc-glass--blur flex flex-wrap items-center gap-2 rounded-2xl p-2"
           style={{ background: "linear-gradient(180deg, rgba(18,18,18,0.9), rgba(8,8,8,0.88))" }}
         >
           <div className="flex rounded-xl border border-white/10 bg-black/40 p-1" role="tablist">
@@ -206,7 +206,7 @@ export function CatalogBrowser({ packs, hasAccess, isLoggedIn }: { packs: Catalo
           </div>
         ) : (
           <div className="mt-8 flex flex-col gap-14">
-            {rails.map((r) => (
+            {rails.map((r, railIndex) => (
               <Rail
                 key={r.title}
                 title={
@@ -215,7 +215,7 @@ export function CatalogBrowser({ packs, hasAccess, isLoggedIn }: { packs: Catalo
                     <span className="text-[13px] text-white/55">{r.list.length}</span>
                   </h2>
                 }
-                tabs={[{ label: r.title, items: r.list.map((p) => <PackCard key={p.id} pack={p} />) }]}
+                tabs={[{ label: r.title, items: r.list.map((p, i) => <PackCard key={p.id} pack={p} priority={railIndex === 0 && i < 4} />) }]}
               />
             ))}
           </div>

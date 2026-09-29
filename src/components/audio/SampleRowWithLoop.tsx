@@ -181,9 +181,11 @@ export function SampleRowWithLoop({
     return audioContextRef.current;
   }, []);
 
-  // Load audio buffer for Web Audio API playback
+  // Load the audio buffer for Web Audio (loop/pitch) only once loop mode is
+  // switched on. Loading it for every row up front downloaded and decoded
+  // every preview on page load (~1MB each) before anyone pressed play.
   useEffect(() => {
-    if (!previewUrl) return;
+    if (!previewUrl || !isLooping || audioBufferRef.current) return;
 
     const loadAudioBuffer = async () => {
       try {
@@ -201,7 +203,7 @@ export function SampleRowWithLoop({
     };
 
     loadAudioBuffer();
-  }, [previewUrl, getAudioContext]);
+  }, [previewUrl, isLooping, getAudioContext]);
 
   // Initialize WaveSurfer for waveform display
   useEffect(() => {
@@ -226,8 +228,11 @@ export function SampleRowWithLoop({
     const audio = new Audio();
     audioRef.current = audio;
 
-    // Check if we have pre-computed peaks for faster loading
+    // With stored peaks and duration the waveform draws without touching the
+    // audio file, so nothing downloads until someone presses play
     const hasPeaks = sample.waveform_peaks && sample.waveform_peaks.length > 0;
+    const knownDuration = hasPeaks && sample.duration ? Number(sample.duration) : undefined;
+    audio.preload = knownDuration ? "none" : "metadata";
 
     const wavesurfer = WaveSurfer.create({
       container: containerRef.current,
@@ -244,6 +249,8 @@ export function SampleRowWithLoop({
       media: audio,
       // Use pre-computed peaks if available (much faster!)
       ...(hasPeaks && { peaks: [sample.waveform_peaks as number[]] }),
+      // No `duration` here: with peaks + duration WaveSurfer queues its own
+      // load("") on init, which wipes the audio src set by load() below
     });
 
     wavesurferRef.current = wavesurfer;
@@ -304,7 +311,13 @@ export function SampleRowWithLoop({
     wavesurfer.on("timeupdate", handleTimeUpdate);
     wavesurfer.on("error", handleError);
 
-    wavesurfer.load(previewUrl);
+    // Passing peaks + duration here (not just in create) is what stops
+    // WaveSurfer fetching and decoding the whole file to draw the waveform
+    if (hasPeaks && knownDuration) {
+      wavesurfer.load(previewUrl, [sample.waveform_peaks as number[]], knownDuration);
+    } else {
+      wavesurfer.load(previewUrl);
+    }
 
     return () => {
       unregisterWaveSurfer(sampleIdRef.current);

@@ -28,7 +28,7 @@ export function packBadge(p: CardPack): string | null {
 }
 
 /** Cover-lit glass card: the box glows in the cover's own colour */
-export function PackCard({ pack, size = "md", className }: { pack: CardPack; size?: "md" | "lg"; className?: string }) {
+export function PackCard({ pack, size = "md", className, priority }: { pack: CardPack; size?: "md" | "lg"; className?: string; priority?: boolean }) {
   const badge = packBadge(pack);
   return (
     <Link
@@ -47,13 +47,14 @@ export function PackCard({ pack, size = "md", className }: { pack: CardPack; siz
             src={pack.cover_image_url}
             alt={pack.name}
             fill
-            sizes="(max-width: 640px) 62vw, 300px"
+            sizes={size === "lg" ? "(max-width: 640px) 78vw, 300px" : "(max-width: 640px) 62vw, 232px"}
+            priority={priority}
             className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
           />
         )}
         {badge && (
           <span
-            className="absolute left-2.5 top-2.5 rounded-full border border-white/15 bg-black/55 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-white backdrop-blur-md"
+            className="absolute left-2.5 top-2.5 rounded-full border border-white/15 bg-black/70 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-white"
             style={glowStyle(pack.glow)}
           >
             {badge}

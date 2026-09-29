@@ -17,7 +17,7 @@ import { withCoverColors } from "@/lib/cover-color";
 import { compactPeaks } from "@/lib/peaks";
 import type { Sample, NotificationWithReadStatus, Profile } from "@/types/database";
 import { packPath } from "@/lib/pack-url";
-import { hidePaths } from "@/lib/hide-paths";
+import { getCatalogPacks } from "@/lib/catalog-data";
 
 export const metadata = {
   title: "Catalog | Soul Sample Club",
@@ -46,22 +46,14 @@ interface PackWithSamples {
   samples: Sample[];
 }
 
-// Get ALL published packs for the feed
+// Every published pack (shared 60-second cache with the homepage)
 async function getAllPacks(): Promise<PackWithSamples[]> {
-  const adminSupabase = createAdminClient();
-
-  const result = await adminSupabase
-    .from("packs")
-    .select(`*, samples(*)`)
-    .eq("is_published", true)
-    .order("release_date", { ascending: false });
-
-  if (result.error) {
-    console.error("Error fetching packs:", result.error);
+  try {
+    return (await getCatalogPacks()) as unknown as PackWithSamples[];
+  } catch (error) {
+    console.error("Error fetching packs:", error);
     return [];
   }
-
-  return hidePaths((result.data as PackWithSamples[]) || []);
 }
 
 // Check if user is logged in and has subscription

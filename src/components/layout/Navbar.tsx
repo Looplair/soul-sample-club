@@ -4,7 +4,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import {
   Menu,
   X,
@@ -71,7 +70,7 @@ export function Navbar({ user, notifications = [], unreadCount = 0, latest }: Na
     // Floating glass bar inside the same 64px band the old bar used, so page offsets don't change
     <nav className="sticky top-0 z-40 h-16 px-3 pt-2 sm:px-5">
       <div
-        className="ssc-glass ssc-glass--plain relative mx-auto flex h-12 max-w-[1240px] items-center justify-between gap-3 rounded-2xl px-2.5 sm:px-3"
+        className="ssc-glass ssc-glass--plain ssc-glass--blur relative mx-auto flex h-12 max-w-[1240px] items-center justify-between gap-3 rounded-2xl px-2.5 sm:px-3"
         style={{ background: "linear-gradient(180deg, rgba(20,20,20,0.82), rgba(8,8,8,0.78))" }}
       >
         <div className="flex min-w-0 items-center gap-3">
@@ -157,15 +156,9 @@ export function Navbar({ user, notifications = [], unreadCount = 0, latest }: Na
       </div>
 
       {/* Mobile menu — nav links + account actions together, one surface */}
-      <AnimatePresence>
-        {menuOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="md:hidden mx-auto mt-2 max-w-[1240px] overflow-hidden rounded-2xl border border-white/10 bg-black/90 backdrop-blur-xl"
-          >
+      {/* CSS open animation (no animation library on every page) */}
+      {menuOpen && (
+          <div className="ssc-menu-in md:hidden mx-auto mt-2 max-w-[1240px] overflow-hidden rounded-2xl border border-white/10 bg-black/90 backdrop-blur-xl">
             <div className="p-2 space-y-1">
               {navLinks.map((link) => {
                 const Icon = link.icon;
@@ -254,9 +247,8 @@ export function Navbar({ user, notifications = [], unreadCount = 0, latest }: Na
                 </>
               )}
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>
+      )}
     </nav>
   );
 }

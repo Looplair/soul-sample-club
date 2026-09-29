@@ -81,7 +81,7 @@ export function HomeHero({
                 href={c.href}
                 aria-label={c.name}
                 className={cn(
-                  "ssc-glass absolute w-[58%] rounded-[22px] p-2 transition-transform duration-500 hover:z-20",
+                  "ssc-glass ssc-glass--float absolute w-[58%] rounded-[22px] p-2 transition-transform duration-500 hover:z-20",
                   i === 0 ? "-left-[2%] top-[6%] -rotate-[9deg] hover:-rotate-[5deg]" : "-right-[1%] top-[2%] rotate-[8deg] hover:rotate-[4deg]"
                 )}
                 style={glowStyle(c.glow)}
@@ -91,7 +91,7 @@ export function HomeHero({
                 </div>
               </Link>
             ))}
-            <div className="ssc-glass absolute bottom-0 left-1/2 z-10 w-[74%] -translate-x-1/2 rounded-[26px] p-2.5" style={glowStyle(front.glow)}>
+            <div className="ssc-glass ssc-glass--float absolute bottom-0 left-1/2 z-10 w-[74%] -translate-x-1/2 rounded-[26px] p-2.5" style={glowStyle(front.glow)}>
               <Link href={front.href} className="relative block aspect-square overflow-hidden rounded-[20px]">
                 {front.cover_image_url && (
                   <Image src={front.cover_image_url} alt={front.name} fill priority sizes="(max-width: 1024px) 70vw, 380px" className="object-cover" />

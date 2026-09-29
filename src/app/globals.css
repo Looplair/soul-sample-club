@@ -580,17 +580,17 @@
   color: var(--soft);
 }
 
-/* The glass box: edge, faint top tint, blur, and always three shadows */
+/* The glass box: edge, faint top tint, cover-colour glow bleed, top light edge.
+   Performance: no backdrop blur by default (nothing to blur on a black page,
+   and it's expensive on phones); the float shadow is only used where boxes
+   sit over other content (.ssc-glass--float). */
 .ssc-glass {
   border: 1px solid var(--edge, rgba(255, 255, 255, 0.08));
   border-radius: 24px;
   background:
     radial-gradient(110% 90% at 50% 0%, rgba(var(--glow), 0.14) 0%, rgba(var(--glow), 0) 60%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.012));
-  -webkit-backdrop-filter: blur(14px);
-  backdrop-filter: blur(14px);
   box-shadow:
-    0 40px 90px -30px rgba(0, 0, 0, 0.9),
     0 0 70px -22px rgba(var(--glow), 0.42),
     inset 0 1px 0 0 rgba(255, 255, 255, 0.07);
 }
@@ -598,8 +598,18 @@
 .ssc-glass--plain {
   --glow: 255, 255, 255;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.012));
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.07);
+}
+/* For glass that floats over content (menu bar, sticky filter bars) */
+.ssc-glass--blur {
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+}
+/* For glass stacked over other glass (hero covers): the dark lift shadow */
+.ssc-glass--float {
   box-shadow:
-    0 40px 90px -30px rgba(0, 0, 0, 0.9),
+    0 30px 60px -24px rgba(0, 0, 0, 0.95),
+    0 0 70px -22px rgba(var(--glow), 0.42),
     inset 0 1px 0 0 rgba(255, 255, 255, 0.07);
 }
 
@@ -650,12 +660,31 @@
 }
 .ssc-btn--ghost:hover { border-color: rgba(255, 255, 255, 0.3); }
 
-/* Live things breathe */
+/* Live things breathe. The glow sits on its own layer and only its opacity
+   animates, so the GPU does it without repainting the box every frame. */
 @keyframes ssc-breathe {
-  0%, 100% { box-shadow: 0 40px 90px -30px rgba(0, 0, 0, 0.9), 0 0 60px -24px rgba(var(--glow), 0.35), inset 0 1px 0 0 rgba(255, 255, 255, 0.07); }
-  50% { box-shadow: 0 40px 90px -30px rgba(0, 0, 0, 0.9), 0 0 90px -18px rgba(var(--glow), 0.55), inset 0 1px 0 0 rgba(255, 255, 255, 0.07); }
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; }
 }
-.ssc-breathe { animation: ssc-breathe 5s ease-in-out infinite; }
+.ssc-breathe { position: relative; isolation: isolate; }
+.ssc-breathe::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  box-shadow: 0 0 90px -18px rgba(var(--glow), 0.55);
+  pointer-events: none;
+  will-change: opacity;
+  animation: ssc-breathe 5s ease-in-out infinite;
+}
+
+/* Phone menu opening */
+@keyframes ssc-menu-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: none; }
+}
+.ssc-menu-in { animation: ssc-menu-in 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
 
 /* Rails: snap-scrolling rows of equivalents */
 .ssc-rail {

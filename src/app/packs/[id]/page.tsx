@@ -404,7 +404,7 @@ export default async function PackDetailPage({
                   />
                 )}
                 {expiryBadgeText && (
-                  <span className="absolute left-3 top-3 rounded-full border border-white/15 bg-black/55 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-white backdrop-blur-md">
+                  <span className="absolute left-3 top-3 rounded-full border border-white/15 bg-black/70 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-white">
                     {expiryBadgeText}
                   </span>
                 )}
