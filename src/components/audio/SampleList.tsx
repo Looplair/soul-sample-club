@@ -50,7 +50,7 @@ export function SampleList({
   }
 
   return (
-    <div className="space-y-2 sm:space-y-3">
+    <div className="space-y-1">
       {samples.map((sample, index) => (
         <SampleRow
           key={sample.id}

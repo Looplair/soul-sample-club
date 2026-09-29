@@ -6,15 +6,12 @@ import { cache } from "react";
 import { notFound, permanentRedirect } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, Calendar, Music2, Download, Lock, Archive, Sparkles, Star, Play, Gift, Clock, RotateCcw } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { formatDate, isPackNew, isPackExpiredWithEndDate, getDaysUntilEndDate, getExpiryBadgeText } from "@/lib/utils";
 import { SampleListWithModal } from "@/components/audio/SampleListWithModal";
-import { Button } from "@/components/ui";
-import { Badge } from "@/components/ui";
 import { cn } from "@/lib/utils";
-import { SubscribeButton } from "@/components/subscription/SubscribeButton";
 import { SubscribeCTA } from "@/components/ui/SubscribeCTA";
 import { ShareButtonsInline } from "@/components/social/ShareButtons";
 import { VoteBringBack } from "@/components/packs/VoteBringBack";
@@ -25,6 +22,11 @@ import { SITE_URL } from "@/lib/site";
 import { isPackUuid, packPath } from "@/lib/pack-url";
 import type { Pack, Sample, NotificationWithReadStatus, Profile } from "@/types/database";
 import { hidePaths } from "@/lib/hide-paths";
+import { getCoverColor, withCoverColors } from "@/lib/cover-color";
+import { GlassBox, Pill } from "@/components/ssc/Glass";
+import { PackCard, type CardPack } from "@/components/ssc/PackCard";
+import { Rail } from "@/components/ssc/Rail";
+import { SiteFooter } from "@/components/ssc/SiteFooter";
 
 // -----------------------------------------
 // TYPE DEFINITIONS
@@ -271,6 +273,34 @@ async function getVoteData(packId: string): Promise<{ hasVoted: boolean; voteCou
 // -----------------------------------------
 // PAGE COMPONENT
 // -----------------------------------------
+// Other packs still in the catalog, newest first, for the rail under the tracks
+async function getMorePacks(excludeId: string): Promise<CardPack[]> {
+  const { data } = await createAdminClient()
+    .from("packs")
+    .select("id, slug, name, cover_image_url, release_date, end_date, is_returned, is_bonus, samples(id)")
+    .eq("is_published", true)
+    .eq("is_bonus", false)
+    .neq("id", excludeId)
+    .order("release_date", { ascending: false })
+    .limit(24);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const rows = ((data as any[]) ?? []).filter((p) =>
+    p.is_returned ? !p.end_date || new Date() <= new Date(p.end_date) : !isPackExpiredWithEndDate(p.release_date, p.end_date)
+  );
+  const lit = await withCoverColors(rows.slice(0, 10));
+  return lit.map((p) => ({
+    id: p.id,
+    slug: p.slug,
+    name: p.name,
+    cover_image_url: p.cover_image_url,
+    release_date: p.release_date,
+    end_date: p.end_date,
+    is_returned: p.is_returned,
+    glow: p.glow,
+    sampleCount: p.samples?.length ?? 0,
+  }));
+}
+
 export default async function PackDetailPage({
   params,
 }: {
@@ -308,7 +338,6 @@ export default async function PackDetailPage({
   const isExpired = isReturned
     ? (endDate ? isPackExpiredWithEndDate(pack.release_date, endDate) : false)
     : isPackExpiredWithEndDate(pack.release_date, endDate);
-  const isStaffPick = pack.is_staff_pick ?? false;
 
   // Calculate expiry countdown for non-expired packs
   const daysRemaining = !isExpired ? getDaysUntilEndDate(pack.release_date, endDate, isBonus ? 1 : 3) : 0;
@@ -329,8 +358,22 @@ export default async function PackDetailPage({
   const totalSizeMB = (totalSize / (1024 * 1024)).toFixed(1);
   const hasStemsAvailable = pack.samples.some((s: Sample) => !!s.stems_path);
 
+  const glow = await getCoverColor(pack.cover_image_url);
+  const more = await getMorePacks(pack.id);
+  const bpms = pack.samples.map((s: Sample) => s.bpm).filter((b): b is number => !!b);
+  const keys = Array.from(new Set(pack.samples.map((s: Sample) => s.key).filter((k): k is string => !!k)));
+  const status = isExpired
+    ? "Archived"
+    : isBonus
+      ? "Member bonus"
+      : isReturned
+        ? "Back by popular demand"
+        : isNew
+          ? "New this week"
+          : "In the catalog";
+
   return (
-    <div className="min-h-screen bg-charcoal">
+    <div className="ssc min-h-screen overflow-x-clip">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
@@ -339,316 +382,129 @@ export default async function PackDetailPage({
       />
       <Navbar user={profile} notifications={notifications} unreadCount={unreadCount} />
 
-      <main className={`section ${isLoggedIn ? 'pb-24 sm:pb-0' : ''}`}>
-        <div className="container-app">
-          {/* Back Link */}
-          <Link
-            href="/feed"
-            className="inline-flex items-center gap-2 text-body text-text-muted hover:text-white transition-colors mb-8"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Catalog
+      <main className="px-5 pb-24 pt-6 sm:px-8 sm:pt-10">
+        <div className="mx-auto max-w-[1240px]">
+          <Link href="/feed" className="inline-flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.14em] text-white/55 transition-colors hover:text-white">
+            <ArrowLeft className="h-4 w-4" />
+            Catalog
           </Link>
 
-          {/* Pack Header */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12 mb-8 lg:mb-12">
-            {/* Cover Image */}
-            <div className="relative aspect-square rounded-card overflow-hidden bg-grey-800">
-              {pack.cover_image_url ? (
-                <Image
-                  src={pack.cover_image_url}
-                  alt={pack.name}
-                  fill
-                  className={cn(
-                    "object-cover",
-                    isExpired && "blur-[3px] brightness-[0.5] saturate-[0.6]"
-                  )}
-                  priority
-                  sizes="(max-width: 1024px) 100vw, 33vw"
-                />
-              ) : (
-                <div className={cn(
-                  "absolute inset-0 flex items-center justify-center bg-gradient-to-br from-grey-700 to-grey-800",
-                  isExpired && "opacity-50"
-                )}>
-                  <Music2 className="w-24 h-24 text-text-subtle" />
-                </div>
-              )}
-
-              {/* Badges - Top Left */}
-              <div className="absolute top-4 left-4 flex flex-col gap-2 z-10">
-                <div className="flex items-center gap-2">
-                  {isBonus && !isExpired && (
-                    <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-amber-500 text-charcoal text-label font-semibold">
-                      <Gift className="w-4 h-4" />
-                      BONUS
-                    </span>
-                  )}
-                  {isNew && !isExpired && (
-                    <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-success text-charcoal text-label font-semibold">
-                      <Sparkles className="w-4 h-4" />
-                      NEW
-                    </span>
-                  )}
-                  {isStaffPick && !isExpired && (
-                    <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-white/90 text-charcoal text-label font-semibold">
-                      <Star className="w-4 h-4" />
-                      Staff Pick
-                    </span>
-                  )}
-                  {isReturned && (
-                    <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-emerald-500 text-charcoal text-label font-semibold">
-                      <RotateCcw className="w-4 h-4" />
-                      Back by Demand
-                    </span>
-                  )}
-                </div>
-                {/* Expiry countdown badge */}
+          {/* Header: the cover lights the page */}
+          <section className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-12">
+            <GlassBox glow={glow} className="self-start rounded-[28px] p-3">
+              <div className="relative aspect-square overflow-hidden rounded-[20px] bg-white/[0.04]">
+                {pack.cover_image_url && (
+                  <Image
+                    src={pack.cover_image_url}
+                    alt={pack.name}
+                    fill
+                    priority
+                    sizes="(max-width: 1024px) 92vw, 520px"
+                    className={cn("object-cover", isExpired && "brightness-[0.55] saturate-[0.6]")}
+                  />
+                )}
                 {expiryBadgeText && (
-                  <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-orange-500 text-white text-label font-medium">
-                    <Clock className="w-4 h-4" />
+                  <span className="absolute left-3 top-3 rounded-full border border-white/15 bg-black/55 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-white backdrop-blur-md">
                     {expiryBadgeText}
                   </span>
                 )}
               </div>
+            </GlassBox>
 
-              {/* Expired Overlay */}
-              {isExpired && (
-                <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="w-16 h-16 rounded-full bg-grey-700/80 flex items-center justify-center mx-auto mb-4">
-                      <Archive className="w-8 h-8 text-text-muted" />
-                    </div>
-                    <p className="text-h4 text-text-muted font-medium">Archived</p>
-                    <p className="text-body text-text-subtle mt-1">Preview only</p>
-                  </div>
-                </div>
-              )}
-            </div>
+            <div className="flex min-w-0 flex-col">
+              <div className="flex flex-wrap items-center gap-2">
+                <Pill dot={!isExpired} glow={glow}>
+                  {status}
+                </Pill>
+                <span className="text-[12px] text-white/55">Released {formatDate(pack.release_date)}</span>
+              </div>
+              <h1 className="ssc-display mt-5 break-words text-[clamp(2.6rem,6.4vw,5.4rem)]">{pack.name}</h1>
+              {pack.description && <p className="ssc-body mt-4 max-w-2xl text-[clamp(1.05rem,1.4vw,1.2rem)] leading-relaxed">{pack.description}</p>}
 
-            {/* Pack Info */}
-            <div className="lg:col-span-2">
-              {/* Status Badges */}
-              <div className="flex flex-wrap items-center gap-2 mb-4">
-                {isReturned && (
-                  <Badge variant="default" className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
-                    <RotateCcw className="w-3 h-3 mr-1" />
-                    Back by Demand
-                  </Badge>
-                )}
-                {isBonus && (
-                  <Badge variant="default" className="bg-amber-500/20 text-amber-400 border-amber-500/30">
-                    <Gift className="w-3 h-3 mr-1" />
-                    Bonus Pack
-                  </Badge>
-                )}
+              <div className="mt-6 flex flex-wrap gap-2">
+                {[
+                  `${pack.samples.length} composition${pack.samples.length === 1 ? "" : "s"}`,
+                  hasStemsAvailable ? "Full stems" : null,
+                  bpms.length ? (Math.min(...bpms) === Math.max(...bpms) ? `${bpms[0]} BPM` : `${Math.min(...bpms)}–${Math.max(...bpms)} BPM`) : null,
+                  keys.length ? `${keys.length} key${keys.length === 1 ? "" : "s"}` : null,
+                  totalSize ? `${totalSizeMB} MB WAV` : null,
+                ]
+                  .filter(Boolean)
+                  .map((chip) => (
+                    <span key={chip} className="rounded-full border border-white/12 bg-white/[0.04] px-3 py-1.5 text-[12px] font-medium text-white/75">
+                      {chip}
+                    </span>
+                  ))}
+              </div>
+
+              {/* One clear next step for each kind of visitor */}
+              <div className="mt-8">
                 {isExpired ? (
-                  <Badge variant="default">
-                    <Archive className="w-3 h-3 mr-1" />
-                    Archived
-                  </Badge>
+                  <GlassBox plain className="rounded-[22px] p-5 sm:p-6">
+                    <p className="text-[15px] font-semibold text-white">This pack is archived</p>
+                    <p className="ssc-body mt-1 text-[14px]">Every track still plays below. Vote and it could come back for members to download.</p>
+                    <div className="mt-4">
+                      <VoteBringBack packId={pack.id} initialHasVoted={voteData.hasVoted} initialVoteCount={voteData.voteCount} isLoggedIn={isLoggedIn} />
+                    </div>
+                  </GlassBox>
                 ) : canDownload ? (
-                  <Badge variant="success">
-                    <Download className="w-3 h-3 mr-1" />
-                    Available
-                  </Badge>
+                  <div className="flex flex-wrap items-center gap-3">
+                    {pack.pack_zip_path && <DownloadAllButton packId={pack.id} />}
+                    <span className="text-[14px] text-white/55">
+                      {isReturned || isBonus ? `${expiryBadgeText ?? "Here for a limited time"}. ` : ""}Or grab tracks one at a time below.
+                    </span>
+                  </div>
                 ) : (
-                  <Badge variant="warning">
-                    <Lock className="w-3 h-3 mr-1" />
-                    Subscribe to Download
-                  </Badge>
+                  <div className="flex flex-col items-start gap-3">
+                    <div className="flex flex-col gap-3 sm:flex-row">
+                      <SubscribeCTA isLoggedIn={isLoggedIn} hasSubscription={false} plan="monthly" bare className="ssc-btn ssc-btn--primary">
+                        {isLoggedIn && hasUsedTrial ? "Subscribe to download" : "Start for $0.99"}
+                      </SubscribeCTA>
+                      <a href="#tracks" className="ssc-btn ssc-btn--ghost">
+                        Preview the tracks
+                      </a>
+                    </div>
+                    <p className="text-[13px] text-white/55">
+                      {isLoggedIn && hasUsedTrial ? "$6.99 a month" : "Then $6.99 a month"}, cancel anytime. Or{" "}
+                      <SubscribeCTA isLoggedIn={isLoggedIn} hasSubscription={false} plan="yearly" bare className="font-medium text-white underline underline-offset-4">
+                        $35 a year
+                      </SubscribeCTA>
+                      , offer price.
+                    </p>
+                  </div>
                 )}
-                {expiryBadgeText && (
-                  <Badge variant="default" className="bg-orange-500/20 text-orange-400 border-orange-500/30">
-                    <Clock className="w-3 h-3 mr-1" />
-                    {expiryBadgeText}
-                  </Badge>
-                )}
-                <span className="text-label text-text-muted">
-                  {formatDate(pack.release_date)}
-                </span>
               </div>
 
-              <h1 className={cn(
-                "text-h1 text-white mb-4",
-                isExpired && "text-text-muted"
-              )}>
-                {pack.name}
-              </h1>
-
-              <p className={cn(
-                "text-body-lg text-text-muted mb-6",
-                isExpired && "text-text-subtle"
-              )}>
-                {pack.description}
-              </p>
-
-              {/* Stats */}
-              <div className="flex flex-wrap items-center gap-4 sm:gap-6 mb-6">
-                <div className="flex items-center gap-2 text-body text-text-muted">
-                  <Music2 className="w-5 h-5 text-white" />
-                  <span>{pack.samples.length} tracks</span>
-                </div>
-                <div className="flex items-center gap-2 text-body text-text-muted">
-                  <Download className="w-5 h-5 text-white" />
-                  <span>{totalSizeMB} MB{hasStemsAvailable ? " (WAV) + stems" : ""}</span>
-                </div>
-                <div className="flex items-center gap-2 text-body text-text-muted">
-                  <Calendar className="w-5 h-5 text-white" />
-                  <span>Released {formatDate(pack.release_date)}</span>
-                </div>
-                <div className="ml-auto">
-                  <ShareButtonsInline
-                    url={`${SITE_URL}${packPath(pack)}`}
-                    title={`${pack.name} - Soul Sample Club`}
-                    description={pack.description}
-                  />
-                </div>
+              <div className="mt-8">
+                <ShareButtonsInline url={`${SITE_URL}${packPath(pack)}`} title={`${pack.name} - Soul Sample Club`} description={pack.description} />
               </div>
-
-              {/* Returned Pack Notice */}
-              {isReturned && (
-                <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-card p-4 flex items-start sm:items-center gap-3 mb-4">
-                  <RotateCcw className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5 sm:mt-0" />
-                  <div>
-                    <p className="text-body text-emerald-200 font-medium">
-                      Back by Popular Demand
-                    </p>
-                    <p className="text-body-sm text-emerald-200/70 mt-1">
-                      This pack was previously archived and has been brought back for a limited time. {expiryBadgeText ? `${expiryBadgeText}.` : 'Download before it expires!'}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Bonus Pack Notice */}
-              {isBonus && !isExpired && (
-                <div className="bg-amber-500/10 border border-amber-500/30 rounded-card p-4 flex items-start sm:items-center gap-3 mb-4">
-                  <Gift className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5 sm:mt-0" />
-                  <div>
-                    <p className="text-body text-amber-200 font-medium">
-                      Bonus Pack from Partner Library
-                    </p>
-                    <p className="text-body-sm text-amber-200/70 mt-1">
-                      This is a limited-time bonus release. {expiryBadgeText ? `${expiryBadgeText}.` : 'Download before it expires!'}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Status Messages */}
-              {isExpired ? (
-                <div className="space-y-4">
-                  <div className="bg-grey-800/50 border border-grey-700 rounded-card p-4 flex items-start sm:items-center gap-3">
-                    <Archive className="w-5 h-5 text-text-muted flex-shrink-0 mt-0.5 sm:mt-0" />
-                    <div>
-                      <p className="text-body text-text-secondary font-medium">
-                        This release has been archived
-                      </p>
-                      <p className="text-body-sm text-text-muted mt-1">
-                        You can still preview all tracks. Downloads are no longer available.
-                      </p>
-                    </div>
-                  </div>
-                  <VoteBringBack
-                    packId={pack.id}
-                    initialHasVoted={voteData.hasVoted}
-                    initialVoteCount={voteData.voteCount}
-                    isLoggedIn={isLoggedIn}
-                  />
-                </div>
-              ) : !isLoggedIn ? (
-                <div className="bg-white/5 border border-white/10 rounded-card p-4 flex items-start sm:items-center gap-3">
-                  <Play className="w-5 h-5 text-white flex-shrink-0 mt-0.5 sm:mt-0" />
-                  <div className="flex-1">
-                    <p className="text-body text-text-secondary font-medium">
-                      Preview all {pack.samples.length} tracks
-                    </p>
-                    <p className="text-body-sm text-text-muted mt-1">
-                      Sign up free to save favorites. Subscribe to download.
-                    </p>
-                  </div>
-                  <Link href="/signup">
-                    <Button size="sm">Sign up</Button>
-                  </Link>
-                </div>
-              ) : !canDownload ? (
-                <div className="bg-white/5 border border-white/20 rounded-card p-5">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <div className="flex items-start gap-3">
-                      <Lock className="w-5 h-5 text-white flex-shrink-0 mt-0.5" />
-                      <div>
-                        <p className="text-body text-white font-medium">
-                          Subscribe to download
-                        </p>
-                        <p className="text-body-sm text-text-muted mt-1">
-                          Subscribe to download all {pack.samples.length} tracks.{!hasUsedTrial && " First month just $0.99."}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex flex-col items-end gap-1.5">
-                          <SubscribeButton />
-                          <SubscribeCTA
-                            isLoggedIn={true}
-                            hasSubscription={false}
-                            plan="yearly"
-                            variant="ghost"
-                            size="sm"
-                            hideArrow
-                            className="text-xs text-text-muted hover:text-white underline !bg-transparent !border-0 !p-0 !h-auto"
-                          >
-                            or $29/year
-                          </SubscribeCTA>
-                        </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="bg-success/10 border border-success/30 rounded-card p-4 flex items-start sm:items-center gap-3">
-                  <Play className="w-5 h-5 text-success flex-shrink-0 mt-0.5 sm:mt-0" />
-                  <div className="flex-1">
-                    <p className="text-body text-text-secondary font-medium">
-                      Ready to download
-                    </p>
-                    <p className="text-body-sm text-text-muted mt-1">
-                      All {pack.samples.length} tracks are available for download.
-                    </p>
-                  </div>
-                  {pack.pack_zip_path && (
-                    <DownloadAllButton packId={pack.id} />
-                  )}
-                </div>
-              )}
             </div>
-          </div>
+          </section>
 
-          {/* Sample List */}
-          <div>
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-h2 text-white">Tracks</h2>
-              {isExpired && (
-                <Badge variant="default" size="sm">
-                  Preview Only
-                </Badge>
-              )}
+          {/* Tracks */}
+          <section id="tracks" className="mt-14 scroll-mt-24">
+            <div className="mb-5 flex items-baseline gap-3">
+              <h2 className="ssc-display text-[clamp(1.4rem,2.6vw,2rem)]">Tracks</h2>
+              <span className="text-[13px] text-white/55">{isExpired ? "Preview only" : `${pack.samples.length} with previews`}</span>
             </div>
-            <SampleListWithModal
-              samples={pack.samples}
-              packId={pack.id}
-              canDownload={canDownload}
-              hasUsedTrial={hasUsedTrial}
-              isLoggedIn={isLoggedIn}
-            />
-          </div>
+            <GlassBox plain className="rounded-[24px] p-2 sm:p-4">
+              <SampleListWithModal samples={pack.samples} packId={pack.id} canDownload={canDownload} hasUsedTrial={hasUsedTrial} isLoggedIn={isLoggedIn} />
+            </GlassBox>
+          </section>
+
+          {/* More */}
+          {more.length > 0 && (
+            <section className="mt-16">
+              <Rail
+                title={<h2 className="ssc-display text-[clamp(1.4rem,2.6vw,2rem)]">More from the catalog</h2>}
+                tabs={[{ label: "More", items: more.map((m) => <PackCard key={m.id} pack={m} />) }]}
+              />
+            </section>
+          )}
         </div>
       </main>
 
-      <footer className="border-t border-grey-700 py-8 mt-16">
-        <div className="container-app text-center">
-          <p className="text-body-sm text-text-subtle">
-            Soul Sample Club - Premium sounds for music producers
-          </p>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

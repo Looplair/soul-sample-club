@@ -1021,8 +1021,8 @@ export function SampleRowWithLoop({
   return (
     <div
       className={cn(
-        "bg-grey-800/50 border rounded-card p-3 sm:p-4 transition-all duration-200",
-        isThisPlaying ? "border-white/30 bg-grey-800/70" : "border-grey-700 hover:border-grey-600"
+        "rounded-2xl border p-3 sm:p-4 transition-colors duration-200",
+        isThisPlaying ? "border-white/12 bg-white/[0.05]" : "border-transparent hover:bg-white/[0.025]"
       )}
     >
       {/* Top row: Info and actions */}
@@ -1192,7 +1192,7 @@ export function SampleRowWithLoop({
       ) : null}
 
       {/* Loop/Pitch Controls Row */}
-      <div className="flex items-center justify-between gap-2 mt-3 pt-3 border-t border-grey-700/50">
+      <div className="flex items-center justify-between gap-2 mt-3 pt-3 border-t border-white/[0.06]">
         <div className="flex items-center gap-1.5">
           {/* Loop Toggle */}
           <button
