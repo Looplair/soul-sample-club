@@ -12,15 +12,24 @@ export interface Faq {
   linkLabel?: string;
 }
 
-/** Each question its own glass box; one open at a time, the first open on load */
-export function FaqList({ faqs }: { faqs: Faq[] }) {
+/**
+ * Each question its own glass box; one open at a time, the first open on load.
+ * With `initialCount`, only that many show until "See all questions" is pressed.
+ * The rest stay in the page (just hidden) so search engines still read them.
+ */
+export function FaqList({ faqs, initialCount }: { faqs: Faq[]; initialCount?: number }) {
   const [open, setOpen] = useState(0);
+  const [showAll, setShowAll] = useState(false);
+  const limit = !showAll && initialCount && initialCount < faqs.length ? initialCount : faqs.length;
   return (
     <div className="flex flex-col gap-3">
       {faqs.map((f, i) => {
         const isOpen = open === i;
         return (
-          <div key={f.question} className={cn("ssc-glass ssc-glass--plain rounded-[20px] transition-colors", isOpen && "border-white/15")}>
+          <div
+            key={f.question}
+            className={cn("ssc-glass ssc-glass--plain rounded-[20px] transition-colors", isOpen && "border-white/15", i >= limit && "hidden")}
+          >
             <button
               type="button"
               aria-expanded={isOpen}
@@ -49,6 +58,11 @@ export function FaqList({ faqs }: { faqs: Faq[] }) {
           </div>
         );
       })}
+      {limit < faqs.length && (
+        <button type="button" onClick={() => setShowAll(true)} className="ssc-btn ssc-btn--ghost mt-2 self-start">
+          See all {faqs.length} questions
+        </button>
+      )}
     </div>
   );
 }

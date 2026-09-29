@@ -145,7 +145,8 @@ const QUOTES = [
   { name: "Pharoe", quote: "Looking forward to this. Appreciate it!" },
 ];
 
-// The questions a first-time visitor actually asks before joining
+// The questions a first-time visitor actually asks before joining. These show
+// first; the rest of the FAQ sits behind "See all questions".
 const HOME_FAQS = [
   "What exactly is the Soul Sample Club",
   "Are the samples really royalty free",
@@ -154,7 +155,7 @@ const HOME_FAQS = [
   "Why do packs expire after 90 days",
   "Do I keep access to samples if I cancel",
   "Are these compositions made with AI",
-  "Can I cancel anytime",
+  "Why is membership capped at 5,000",
 ];
 
 const STEPS = [
@@ -235,9 +236,8 @@ export default async function HomePage() {
   const recent = current.slice(0, 5).map((p) => ({ name: p.name, cover_image_url: p.cover_image_url, release_date: p.release_date, glow: glowOf(p) }));
   const stemPeaks = latestTracks.map((s) => (Array.isArray(s.waveform_peaks) ? (s.waveform_peaks as number[]) : [])).filter((p) => p.length);
 
-  const faqItems = HOME_FAQS.map((q) => faqs.find((f) => f.question === q))
-    .filter((f): f is (typeof faqs)[number] => !!f)
-    .map((f) => ({
+  const featured = HOME_FAQS.map((q) => faqs.find((f) => f.question === q)).filter((f): f is (typeof faqs)[number] => !!f);
+  const faqItems = [...featured, ...faqs.filter((f) => !featured.includes(f))].map((f) => ({
       question: `${f.question}?`,
       answer: f.answer,
       href: "guideLink" in f && f.guideLink && hasClearanceGuide ? "/guides/sample-clearance" : undefined,
@@ -555,7 +555,7 @@ export default async function HomePage() {
                 </>
               }
             />
-            <FaqList faqs={faqItems} />
+            <FaqList faqs={faqItems} initialCount={featured.length} />
           </div>
         </Section>
 
