@@ -558,19 +558,13 @@
   color: var(--ink);
 }
 
-/* Display face: Unbounded by default, wide Archivo when data-display="wide" */
+/* Display face: Unbounded (Chris picked it over wide Archivo, 29 Sep) */
 .ssc .ssc-display {
   font-family: var(--font-display), system-ui, sans-serif;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: -0.025em;
   line-height: 0.95;
-}
-.ssc[data-display="wide"] .ssc-display {
-  font-family: var(--font-display-alt), system-ui, sans-serif;
-  font-weight: 900;
-  font-variation-settings: "wdth" 125;
-  letter-spacing: -0.02em;
 }
 
 .ssc .ssc-body {

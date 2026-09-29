@@ -12,6 +12,8 @@ import { TrackList } from "@/components/ssc/TrackList";
 import { SiteFooter } from "@/components/ssc/SiteFooter";
 import { HomeHero } from "@/components/ssc/home/HomeHero";
 import { WhyBoxes } from "@/components/ssc/home/WhyBoxes";
+import { MemberCounter } from "@/components/ssc/MemberCounter";
+import { getMemberCount } from "@/lib/member-count";
 import { getNotificationsForUser } from "@/lib/notifications";
 import { SITE_URL } from "@/lib/site";
 import { isGuidePublished, hasPublishedGuides } from "@/lib/guides";
@@ -159,12 +161,13 @@ const PERKS = ["A new pack every week", "Full stems on every release", "Pre-clea
 // ============================================
 // PAGE
 // ============================================
-export default async function HomePage({ searchParams }: { searchParams: { font?: string } }) {
-  const [allPacks, userState, hasClearanceGuide, hasGuides] = await Promise.all([
+export default async function HomePage() {
+  const [allPacks, userState, hasClearanceGuide, hasGuides, members] = await Promise.all([
     getAllPacks(),
     getUserState(),
     isGuidePublished("sample-clearance"),
     hasPublishedGuides(),
+    getMemberCount(),
   ]);
   const { isLoggedIn, hasSubscription, profile, userId, hasUsedTrial } = userState;
   const { notifications, unreadCount } = userId
@@ -251,7 +254,7 @@ export default async function HomePage({ searchParams }: { searchParams: { font?
   );
 
   return (
-    <div className="ssc min-h-screen overflow-x-clip" data-display={searchParams.font === "wide" ? "wide" : undefined}>
+    <div className="ssc min-h-screen overflow-x-clip">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }} />
       <Navbar
         user={profile}
@@ -266,6 +269,7 @@ export default async function HomePage({ searchParams }: { searchParams: { font?
           covers={current.slice(0, 3).map((p) => ({ name: p.name, href: packPath(p), cover_image_url: p.cover_image_url, glow: glowOf(p) }))}
           tracks={reelTracks}
           primaryCta={primaryCta}
+          extra={!hasSubscription && members ? <MemberCounter count={members} glow={latest ? glowOf(latest) : undefined} /> : undefined}
           secondaryLine={
             !hasSubscription && (
               <>
@@ -475,7 +479,7 @@ export default async function HomePage({ searchParams }: { searchParams: { font?
         </Section>
 
         {/* FAQ */}
-        <Section>
+        <Section id="faq">
           <div className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr]">
             <SectionHead
               pill="Questions"
@@ -516,7 +520,7 @@ export default async function HomePage({ searchParams }: { searchParams: { font?
         )}
       </main>
 
-      <SiteFooter showGuides={hasGuides} />
+      <SiteFooter showGuides={hasGuides} cta={false} glow={latest ? glowOf(latest) : undefined} />
     </div>
   );
 }

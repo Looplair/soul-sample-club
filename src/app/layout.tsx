@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Bebas_Neue, Unbounded, Archivo } from "next/font/google";
+import { Inter, Bebas_Neue, Unbounded } from "next/font/google";
 import "./globals.css";
 import { Suspense } from "react";
 import { AudioProvider } from "@/contexts/AudioContext";
@@ -35,16 +35,11 @@ const bebasNeue = Bebas_Neue({
   variable: "--font-wordmark",
 });
 
-// Redesign display faces (compared side by side before picking one)
+// Redesign display face
 const unbounded = Unbounded({
   subsets: ["latin"],
   weight: ["700", "800"],
   variable: "--font-display",
-});
-const archivo = Archivo({
-  subsets: ["latin"],
-  axes: ["wdth"],
-  variable: "--font-display-alt",
 });
 
 const siteUrl = SITE_URL;
@@ -101,7 +96,7 @@ export default async function RootLayout({
   }
 
   return (
-    <html lang="en" className={`${inter.variable} ${bebasNeue.variable} ${unbounded.variable} ${archivo.variable}`}>
+    <html lang="en" className={`${inter.variable} ${bebasNeue.variable} ${unbounded.variable}`}>
       <body className="font-sans min-h-screen flex flex-col">
         {gaId && <GoogleAnalytics gaId={gaId} />}
         <MetaPixel hashedEmail={hashedEmail} />

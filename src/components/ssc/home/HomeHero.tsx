@@ -26,11 +26,13 @@ export function HomeHero({
   tracks,
   primaryCta,
   secondaryLine,
+  extra,
 }: {
   covers: HeroCover[];
   tracks: FreePackTrack[];
   primaryCta: ReactNode;
   secondaryLine?: ReactNode;
+  extra?: ReactNode;
 }) {
   const [front, ...back] = covers;
   const reel = useHighlightReel(tracks, front?.name ?? "");
@@ -67,6 +69,7 @@ export function HomeHero({
             )}
           </div>
           {secondaryLine && <div className="mt-5 text-[13px] text-white/55">{secondaryLine}</div>}
+          {extra && <div className="mt-8">{extra}</div>}
         </div>
 
         {/* Floating covers */}
