@@ -24,7 +24,7 @@ export function ArtistRoll({ artists }: { artists: Artist[] }) {
   }, [held, artists.length]);
 
   return (
-    <div className="grid items-center gap-10 lg:grid-cols-[1.25fr_1fr] lg:gap-16" onMouseLeave={() => setHeld(false)}>
+    <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-[1.25fr_1fr] lg:gap-16" onMouseLeave={() => setHeld(false)}>
       {/* Photo stack: the lit artist in front, the next one peeking behind */}
       <div className="relative mx-auto aspect-[4/5] w-[min(78vw,380px)] lg:order-2">
         {artists.map((a, i) => {
@@ -36,7 +36,7 @@ export function ArtistRoll({ artists }: { artists: Artist[] }) {
               aria-hidden={!isActive}
               className={cn(
                 "ssc-glass ssc-glass--plain absolute inset-0 rounded-[26px] p-2.5 transition-all duration-700 ease-out",
-                isActive ? "z-20 rotate-[-2deg] opacity-100" : isNext ? "z-10 translate-x-[7%] rotate-[5deg] scale-[0.94] opacity-60" : "z-0 scale-90 opacity-0"
+                isActive ? "z-20 rotate-[-2deg] opacity-100" : isNext ? "z-10 translate-x-[3%] rotate-[4deg] scale-[0.92] opacity-60 sm:translate-x-[7%] sm:rotate-[5deg] sm:scale-[0.94]" : "z-0 scale-90 opacity-0"
               )}
             >
               <div className="relative h-full w-full overflow-hidden rounded-[18px]">
@@ -51,7 +51,7 @@ export function ArtistRoll({ artists }: { artists: Artist[] }) {
       </div>
 
       {/* The roll of names */}
-      <ol className="flex flex-col lg:order-1">
+      <ol className="flex min-w-0 flex-col lg:order-1">
         {artists.map((a, i) => (
           <li key={a.name}>
             <button
@@ -65,11 +65,11 @@ export function ArtistRoll({ artists }: { artists: Artist[] }) {
                 setActive(i);
               }}
               className={cn(
-                "ssc-display flex w-full items-baseline gap-4 py-1 text-left text-[clamp(1.7rem,4.4vw,3.6rem)] transition-colors duration-500",
+                "ssc-display flex w-full min-w-0 items-baseline gap-3 py-1 text-left text-[clamp(1.3rem,6.4vw,3.6rem)] transition-colors duration-500 [overflow-wrap:anywhere] sm:gap-4",
                 i === active ? "text-white" : "text-white/[0.16] hover:text-white/40"
               )}
             >
-              <span className="w-8 flex-shrink-0 text-[12px] font-semibold tabular-nums tracking-[0.1em] text-white/55" style={{ fontFamily: "var(--font-inter)" }}>
+              <span className="w-6 flex-shrink-0 text-[11px] sm:w-8 sm:text-[12px] font-semibold tabular-nums tracking-[0.1em] text-white/55" style={{ fontFamily: "var(--font-inter)" }}>
                 {String(i + 1).padStart(2, "0")}
               </span>
               {a.name}

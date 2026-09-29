@@ -462,14 +462,14 @@ export default async function HomePage() {
               <GlassBox glow={latest ? glowOf(latest) : undefined} className="ssc-breathe flex flex-col rounded-[28px] p-8">
                 <p className="ssc-label">Monthly</p>
                 {isLoggedIn && hasUsedTrial ? (
-                  <p className="mt-4 flex items-baseline gap-2">
-                    <span className="ssc-display text-[3.4rem]">$6.99</span>
+                  <p className="mt-4 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                    <span className="ssc-display text-[clamp(2.6rem,13vw,3.4rem)]">$6.99</span>
                     <span className="text-white/55">a month</span>
                   </p>
                 ) : (
                   <>
-                    <p className="mt-4 flex items-baseline gap-2">
-                      <span className="ssc-display text-[3.4rem]">$0.99</span>
+                    <p className="mt-4 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                      <span className="ssc-display text-[clamp(2.6rem,13vw,3.4rem)]">$0.99</span>
                       <span className="text-white/55">first month</span>
                     </p>
                     <p className="mt-1 text-[14px] text-white/55">Then $6.99 a month. Cancel anytime.</p>
@@ -489,9 +489,9 @@ export default async function HomePage() {
               </GlassBox>
               <GlassBox plain className="flex flex-col rounded-[28px] p-8">
                 <p className="ssc-label">Yearly · offer price</p>
-                <p className="mt-4 flex items-baseline gap-2">
+                <p className="mt-4 flex flex-wrap items-baseline gap-x-2 gap-y-1">
                   <span className="text-2xl text-white/55 line-through">$49</span>
-                  <span className="ssc-display text-[3.4rem]">$35</span>
+                  <span className="ssc-display text-[clamp(2.6rem,13vw,3.4rem)]">$35</span>
                   <span className="text-white/55">a year</span>
                 </p>
                 <p className="mt-1 text-[14px] text-white/55">Locked in for life while you stay a member.</p>

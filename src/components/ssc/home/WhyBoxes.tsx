@@ -17,8 +17,8 @@ const day = (iso: string) => new Date(iso).toLocaleDateString("en-GB", { day: "n
 export function WhyBoxes({ latestName, stemPeaks, recent }: { latestName: string; stemPeaks: number[][]; recent: Recent[] }) {
   const glow = (i: number) => recent[i % Math.max(recent.length, 1)]?.glow;
   return (
-    <div className="grid gap-4 md:grid-cols-2">
-      <GlassBox glow={glow(0)} className="flex flex-col justify-between gap-8 p-7 sm:p-9">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <GlassBox glow={glow(0)} className="flex min-w-0 flex-col justify-between gap-8 p-6 sm:p-9">
         <div className="rounded-2xl border border-white/10 bg-black/40 p-5">
           <p className="ssc-label">License · {latestName}</p>
           {[
@@ -40,7 +40,7 @@ export function WhyBoxes({ latestName, stemPeaks, recent }: { latestName: string
         </div>
       </GlassBox>
 
-      <GlassBox glow={glow(1)} className="flex flex-col justify-between gap-8 p-7 sm:p-9">
+      <GlassBox glow={glow(1)} className="flex min-w-0 flex-col justify-between gap-8 p-6 sm:p-9">
         <div className="flex flex-col gap-2.5 rounded-2xl border border-white/10 bg-black/40 p-5">
           {stemPeaks.slice(0, 4).map((peaks, i) => (
             <div key={i} className="flex items-center gap-3">
@@ -57,14 +57,14 @@ export function WhyBoxes({ latestName, stemPeaks, recent }: { latestName: string
         </div>
       </GlassBox>
 
-      <GlassBox glow={glow(2)} className="flex flex-col justify-between gap-8 p-7 sm:p-9">
-        <div className="grid grid-cols-5 gap-2">
+      <GlassBox glow={glow(2)} className="flex min-w-0 flex-col justify-between gap-8 p-6 sm:p-9">
+        <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
           {recent.slice(0, 5).map((p) => (
-            <div key={p.name}>
-              <div className="relative aspect-square overflow-hidden rounded-xl border border-white/10">
+            <div key={p.name} className="min-w-0">
+              <div className="relative aspect-square overflow-hidden rounded-lg border border-white/10 sm:rounded-xl">
                 {p.cover_image_url && <Image src={p.cover_image_url} alt={p.name} fill sizes="90px" className="object-cover" />}
               </div>
-              <p className="mt-1.5 text-center text-[10px] font-semibold uppercase tracking-[0.12em] text-white/55">{day(p.release_date)}</p>
+              <p className="mt-1.5 truncate text-center text-[9px] font-semibold uppercase tracking-[0.08em] text-white/55 sm:text-[10px] sm:tracking-[0.12em]">{day(p.release_date)}</p>
             </div>
           ))}
         </div>
@@ -77,9 +77,9 @@ export function WhyBoxes({ latestName, stemPeaks, recent }: { latestName: string
         </div>
       </GlassBox>
 
-      <GlassBox glow={glow(3)} className="flex flex-col justify-between gap-8 p-7 sm:p-9">
-        <div className="flex min-h-[132px] items-center rounded-2xl border border-white/10 bg-black/40 px-6">
-          <p className="ssc-display text-[clamp(2.4rem,5vw,3.6rem)] text-white">Not AI.</p>
+      <GlassBox glow={glow(3)} className="flex min-w-0 flex-col justify-between gap-8 p-6 sm:p-9">
+        <div className="flex min-h-[132px] items-center rounded-2xl border border-white/10 bg-black/40 px-5 sm:px-6">
+          <p className="ssc-display text-[clamp(2rem,9vw,3.6rem)] text-white">Not AI.</p>
         </div>
         <div>
           <h3 className="ssc-display text-[clamp(1.5rem,2.6vw,2.1rem)]">Made by real musicians</h3>
