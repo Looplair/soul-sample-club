@@ -13,6 +13,11 @@ interface SampleData {
   } | null;
 }
 
+// Always build a fresh temporary link: a cached response would keep handing
+// out links after they expire and previews would stop playing.
+export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
+
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ sampleId: string }> }
