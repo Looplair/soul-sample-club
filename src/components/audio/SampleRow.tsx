@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { downloadFile } from "@/lib/sample-download";
 import { Download, Loader2, Lock, Archive, Heart, Play, Pause } from "lucide-react";
 import { DownloadProgress } from "@/components/ui/DownloadProgress";
 import WaveSurfer from "wavesurfer.js";
@@ -238,134 +239,30 @@ export function SampleRow({
   }, [localIsPlaying, waveformReady, playTrack, setDuration, sample, packName, previewUrl]);
 
   const handleDownload = async () => {
-  if (!canDownload) return;
-
-  setIsDownloading(true);
-  try {
-    const response = await fetch(`/api/download/${sample.id}`);
-    if (!response.ok) {
-      throw new Error("Download failed");
+    if (!canDownload) return;
+    setIsDownloading(true);
+    try {
+      await downloadFile({ endpoint: `/api/download/${sample.id}`, packName, fileName: `${sample.name}.wav`, onProgress: setDownloadProgress });
+    } catch (error) {
+      console.error("Download error:", error);
+    } finally {
+      setIsDownloading(false);
+      setDownloadProgress(0);
     }
+  };
 
-    const data = await response.json();
-
-    // ✅ DESKTOP APP PATH (Electron only)
-    if (typeof window !== "undefined" && (window as any).sscDesktop) {
-      await (window as any).sscDesktop.downloadFile({
-        url: data.url,
-        packName: packName || "Unknown Pack",
-        fileName: sample.name + ".wav",
-      });
-      return;
+  const handleDownloadStems = async () => {
+    if (!canDownload || !sample.stems_path) return;
+    setIsDownloadingStems(true);
+    try {
+      await downloadFile({ endpoint: `/api/download/${sample.id}/stems`, packName, fileName: `${sample.name}-stems.zip`, onProgress: setStemsProgress });
+    } catch (error) {
+      console.error("Stems download error:", error);
+    } finally {
+      setIsDownloadingStems(false);
+      setStemsProgress(0);
     }
-
-    // ✅ WEB BROWSER PATH
-    const fileResponse = await fetch(data.url);
-    const contentLength = fileResponse.headers.get("content-length");
-    if (contentLength && fileResponse.body) {
-      const total = parseInt(contentLength, 10);
-      const reader = fileResponse.body.getReader();
-      const chunks: Uint8Array[] = [];
-      let received = 0;
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        chunks.push(value);
-        received += value.length;
-        setDownloadProgress(Math.round((received / total) * 100));
-      }
-      const blob = new Blob(chunks as BlobPart[]);
-      const blobUrl = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = blobUrl;
-      link.download = sample.name + ".wav";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(blobUrl);
-    } else {
-      const blob = await fileResponse.blob();
-      const blobUrl = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = blobUrl;
-      link.download = sample.name + ".wav";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(blobUrl);
-    }
-  } catch (error) {
-    console.error("Download error:", error);
-  } finally {
-    setIsDownloading(false);
-    setDownloadProgress(0);
-  }
-}
-
-const handleDownloadStems = async () => {
-  if (!canDownload || !sample.stems_path) return;
-
-  setIsDownloadingStems(true);
-  try {
-    const response = await fetch(`/api/download/${sample.id}/stems`);
-    if (!response.ok) {
-      throw new Error("Stems download failed");
-    }
-
-    const data = await response.json();
-
-    // ✅ DESKTOP APP PATH (Electron only)
-    if (typeof window !== "undefined" && (window as any).sscDesktop) {
-      await (window as any).sscDesktop.downloadFile({
-        url: data.url,
-        packName: packName || "Unknown Pack",
-        fileName: sample.name + "-stems.zip",
-      });
-      return;
-    }
-
-    // ✅ WEB BROWSER PATH
-    const fileResponse = await fetch(data.url);
-    const contentLength = fileResponse.headers.get("content-length");
-    if (contentLength && fileResponse.body) {
-      const total = parseInt(contentLength, 10);
-      const reader = fileResponse.body.getReader();
-      const chunks: Uint8Array[] = [];
-      let received = 0;
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        chunks.push(value);
-        received += value.length;
-        setStemsProgress(Math.round((received / total) * 100));
-      }
-      const blob = new Blob(chunks as BlobPart[]);
-      const blobUrl = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = blobUrl;
-      link.download = sample.name + "-stems.zip";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(blobUrl);
-    } else {
-      const blob = await fileResponse.blob();
-      const blobUrl = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = blobUrl;
-      link.download = sample.name + "-stems.zip";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(blobUrl);
-    }
-  } catch (error) {
-    console.error("Stems download error:", error);
-  } finally {
-    setIsDownloadingStems(false);
-    setStemsProgress(0);
-  }
-};
+  };
 
 
   const handleToggleLike = async () => {

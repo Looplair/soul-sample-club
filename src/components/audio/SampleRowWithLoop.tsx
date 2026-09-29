@@ -14,6 +14,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { downloadFile } from "@/lib/sample-download";
 import { Download, Loader2, Lock, Archive, Heart, Play, Pause, Repeat, Minus, Plus } from "lucide-react";
 import { DownloadProgress } from "@/components/ui/DownloadProgress";
 import WaveSurfer from "wavesurfer.js";
@@ -976,53 +977,7 @@ export function SampleRowWithLoop({
     if (!canDownload) { onLockedClick?.(); return; }
     setIsDownloading(true);
     try {
-      const response = await fetch(`/api/download/${sample.id}`);
-      if (!response.ok) throw new Error("Download failed");
-      const data = await response.json();
-
-      if (typeof window !== "undefined" && (window as unknown as { sscDesktop?: { downloadFile: (opts: { url: string; packName: string; fileName: string }) => Promise<void> } }).sscDesktop) {
-        await (window as unknown as { sscDesktop: { downloadFile: (opts: { url: string; packName: string; fileName: string }) => Promise<void> } }).sscDesktop.downloadFile({
-          url: data.url,
-          packName: packName || "Unknown Pack",
-          fileName: sample.name + ".wav",
-        });
-        return;
-      }
-
-      const fileResponse = await fetch(data.url);
-      const contentLength = fileResponse.headers.get("content-length");
-      if (contentLength && fileResponse.body) {
-        const total = parseInt(contentLength, 10);
-        const reader = fileResponse.body.getReader();
-        const chunks: Uint8Array[] = [];
-        let received = 0;
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          chunks.push(value);
-          received += value.length;
-          setDownloadProgress(Math.round((received / total) * 100));
-        }
-        const blob = new Blob(chunks as BlobPart[]);
-        const blobUrl = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = blobUrl;
-        link.download = sample.name + ".wav";
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(blobUrl);
-      } else {
-        const blob = await fileResponse.blob();
-        const blobUrl = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = blobUrl;
-        link.download = sample.name + ".wav";
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(blobUrl);
-      }
+      await downloadFile({ endpoint: `/api/download/${sample.id}`, packName, fileName: `${sample.name}.wav`, onProgress: setDownloadProgress });
     } catch (error) {
       console.error("Download error:", error);
     } finally {
@@ -1036,53 +991,7 @@ export function SampleRowWithLoop({
     if (!sample.stems_path) return;
     setIsDownloadingStems(true);
     try {
-      const response = await fetch(`/api/download/${sample.id}/stems`);
-      if (!response.ok) throw new Error("Stems download failed");
-      const data = await response.json();
-
-      if (typeof window !== "undefined" && (window as unknown as { sscDesktop?: { downloadFile: (opts: { url: string; packName: string; fileName: string }) => Promise<void> } }).sscDesktop) {
-        await (window as unknown as { sscDesktop: { downloadFile: (opts: { url: string; packName: string; fileName: string }) => Promise<void> } }).sscDesktop.downloadFile({
-          url: data.url,
-          packName: packName || "Unknown Pack",
-          fileName: sample.name + "-stems.zip",
-        });
-        return;
-      }
-
-      const fileResponse = await fetch(data.url);
-      const contentLength = fileResponse.headers.get("content-length");
-      if (contentLength && fileResponse.body) {
-        const total = parseInt(contentLength, 10);
-        const reader = fileResponse.body.getReader();
-        const chunks: Uint8Array[] = [];
-        let received = 0;
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          chunks.push(value);
-          received += value.length;
-          setStemsProgress(Math.round((received / total) * 100));
-        }
-        const blob = new Blob(chunks as BlobPart[]);
-        const blobUrl = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = blobUrl;
-        link.download = sample.name + "-stems.zip";
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(blobUrl);
-      } else {
-        const blob = await fileResponse.blob();
-        const blobUrl = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = blobUrl;
-        link.download = sample.name + "-stems.zip";
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(blobUrl);
-      }
+      await downloadFile({ endpoint: `/api/download/${sample.id}/stems`, packName, fileName: `${sample.name}-stems.zip`, onProgress: setStemsProgress });
     } catch (error) {
       console.error("Stems download error:", error);
     } finally {
