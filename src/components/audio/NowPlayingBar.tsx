@@ -99,7 +99,7 @@ export function NowPlayingBar() {
     >
       {/* Progress bar - full width at top of bar with larger click area */}
       <div
-        className="relative h-1 bg-grey-700 cursor-pointer group"
+        className="relative h-1 bg-white/[0.12] cursor-pointer group"
         onClick={handleProgressClick}
         onMouseDown={() => setIsDragging(true)}
         onMouseUp={() => setIsDragging(false)}
@@ -122,7 +122,7 @@ export function NowPlayingBar() {
       </div>
 
       {/* Main bar content */}
-      <div className="bg-charcoal-elevated/95 backdrop-blur-xl border-t border-grey-700 safe-area-bottom">
+      <div className="bg-black/85 backdrop-blur-xl border-t border-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)] safe-area-bottom">
         <div className="container-app">
           <div className="h-16 sm:h-18 flex items-center gap-3 sm:gap-4">
             {/* Play/Pause Button */}
