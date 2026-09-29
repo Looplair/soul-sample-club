@@ -15,6 +15,10 @@ const nextConfig = {
       bodySizeLimit: "500mb",
     },
   },
+  // Retired pages: keep old links (bookmarks, search results) landing somewhere useful
+  async redirects() {
+    return [{ source: "/dashboard", destination: "/feed", permanent: true }];
+  },
   async headers() {
     return [
       {
