@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Menu,
   X,
@@ -34,6 +34,12 @@ interface NavbarProps {
   unreadCount?: number;
   /** This week's pack, shown as a chip next to the logo */
   latest?: { name: string; href: string; cover_image_url: string | null };
+  /**
+   * Slide the bar away while scrolling down and back on any scroll up. For
+   * pages with their own sticky toolbar (the catalog), so only one bar shows.
+   * Sets data-nav-hidden on <html> so `.ssc-under-nav` bars can move up.
+   */
+  autoHide?: boolean;
 }
 
 // Members get their tools; logged-out visitors (often cold traffic from ads)
@@ -51,9 +57,36 @@ const VISITOR_LINKS = [
   { href: "/app", label: "App", icon: Monitor },
 ];
 
-export function Navbar({ user, notifications = [], unreadCount = 0, latest }: NavbarProps) {
+export function Navbar({ user, notifications = [], unreadCount = 0, latest, autoHide = false }: NavbarProps) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [hidden, setHidden] = useState(false);
+
+  useEffect(() => {
+    if (!autoHide) return;
+    let lastY = window.scrollY;
+    const onScroll = () => {
+      const y = window.scrollY;
+      if (y < 140) setHidden(false);
+      else if (y > lastY + 6) setHidden(true);
+      else if (y < lastY - 6) setHidden(false);
+      else return; // tiny movements don't count
+      lastY = y;
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      delete document.documentElement.dataset.navHidden;
+    };
+  }, [autoHide]);
+
+  // Never hide while the phone menu is open
+  const isHidden = autoHide && hidden && !menuOpen;
+  useEffect(() => {
+    if (!autoHide) return;
+    if (isHidden) document.documentElement.dataset.navHidden = "1";
+    else delete document.documentElement.dataset.navHidden;
+  }, [autoHide, isHidden]);
   const supabase = createClient();
   const isLoggedIn = !!user;
   const navLinks = isLoggedIn ? MEMBER_LINKS : VISITOR_LINKS;
@@ -68,7 +101,12 @@ export function Navbar({ user, notifications = [], unreadCount = 0, latest }: Na
 
   return (
     // Floating glass bar inside the same 64px band the old bar used, so page offsets don't change
-    <nav className="sticky top-0 z-40 h-16 px-3 pt-2 sm:px-5">
+    <nav
+      className={cn(
+        "sticky top-0 z-40 h-16 px-3 pt-2 transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] sm:px-5",
+        isHidden && "-translate-y-full"
+      )}
+    >
       <div
         className="ssc-glass ssc-glass--plain ssc-glass--blur relative mx-auto flex h-12 max-w-[1240px] items-center justify-between gap-3 rounded-2xl px-2.5 sm:px-3"
         style={{ background: "linear-gradient(180deg, rgba(20,20,20,0.82), rgba(8,8,8,0.78))" }}

@@ -679,6 +679,16 @@
   animation: ssc-breathe 5s ease-in-out infinite;
 }
 
+/* A sticky toolbar under the menu bar (catalog filters). When the menu bar
+   slides away on scroll (Navbar autoHide), the toolbar takes its place. */
+.ssc-under-nav {
+  top: 64px;
+  transition: top 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+html[data-nav-hidden="1"] .ssc-under-nav {
+  top: 8px;
+}
+
 /* Phone menu opening */
 @keyframes ssc-menu-in {
   from { opacity: 0; transform: translateY(-6px); }

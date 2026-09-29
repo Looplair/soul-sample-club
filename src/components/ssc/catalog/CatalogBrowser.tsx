@@ -147,7 +147,7 @@ export function CatalogBrowser({ packs, hasAccess, isLoggedIn }: { packs: Catalo
   return (
     <div>
       {/* Filter bar: sits under the floating menu while you scroll */}
-      <div className="sticky top-16 z-30 -mx-2 px-2 pb-3 pt-1">
+      <div className="ssc-under-nav sticky z-30 -mx-2 px-2 pb-3 pt-1">
         <div
           className="ssc-glass ssc-glass--plain ssc-glass--blur flex flex-wrap items-center gap-2 rounded-2xl p-2"
           style={{ background: "linear-gradient(180deg, rgba(18,18,18,0.9), rgba(8,8,8,0.88))" }}

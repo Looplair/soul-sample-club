@@ -170,6 +170,7 @@ export default async function FeedPage() {
       </Suspense>
 
       <Navbar
+        autoHide
         user={profile}
         notifications={notifications}
         unreadCount={unreadCount}
