@@ -1,8 +1,12 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ChevronRight, ArrowRight } from "lucide-react";
-import { Navbar, Footer } from "@/components/layout";
+import { ArrowLeft, ArrowRight } from "lucide-react";
+import { Navbar } from "@/components/layout";
 import { GuideMarkdown } from "@/components/guides/GuideMarkdown";
+import { GlassBox, Pill } from "@/components/ssc/Glass";
+import { FaqList } from "@/components/ssc/FaqList";
+import { SiteFooter } from "@/components/ssc/SiteFooter";
+import { withCoverColors } from "@/lib/cover-color";
 import { createClient } from "@/lib/supabase/server";
 import { getGuidePacks } from "@/lib/guide-packs";
 import { getNotificationsForUser } from "@/lib/notifications";
@@ -68,7 +72,10 @@ export default async function GuidePage({ params }: { params: { slug: string } }
   const liveGuides = await getPublishedGuides();
   const related = liveGuides.filter((g) => guide.related.includes(g.slug));
   const [packs, profile, { notifications, unreadCount }] = await Promise.all([
-    getGuidePacks(getGuidePackIds(body)).then((list) => Object.fromEntries(list.map((p) => [p.id, p]))),
+    // Embedded packs glow in their own cover colour
+    getGuidePacks(getGuidePackIds(body))
+      .then((list) => withCoverColors(list))
+      .then((list) => Object.fromEntries(list.map((p) => [p.id, p]))),
     user
       ? supabase.from("profiles").select("*").eq("id", user.id).single().then((r) => r.data as Profile | null)
       : Promise.resolve(null),
@@ -118,135 +125,148 @@ export default async function GuidePage({ params }: { params: { slug: string } }
     ],
   };
 
+  // The closing ask takes its light from the first pack the guide features
+  const ctaGlow = Object.values(packs)[0]?.glow;
+  const meta = `Updated ${formatDate(guide.updatedAt)} · ${getReadingMinutes(body)} min read`;
+
   return (
-    <div className="min-h-screen flex flex-col bg-charcoal">
+    <div className="ssc min-h-screen overflow-x-clip">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <TrackView path={`/guides/${guide.slug}`} />
       <Navbar user={profile} notifications={notifications} unreadCount={unreadCount} />
 
-      <main className="flex-1 pb-24">
-        {status !== "published" && (
-          <div className="bg-yellow-300/10 border-b border-yellow-300/30 py-2 text-center text-xs font-medium text-yellow-200">
-            {status === "scheduled" && guide.publishedAt
-              ? `Scheduled for ${formatDate(guide.publishedAt)}. Only admins can see this page until then.`
-              : "Draft. Only admins can see this page until it's published."}
-          </div>
-        )}
+      {status !== "published" && (
+        <div className="border-b border-white/[0.08] bg-white/[0.04] px-5 py-2.5 text-center text-[12px] font-medium text-white/75">
+          {status === "scheduled" && guide.publishedAt
+            ? `Scheduled for ${formatDate(guide.publishedAt)}. Only admins can see this page until then.`
+            : "Draft. Only admins can see this page until it's published."}
+        </div>
+      )}
 
-        {/* Header */}
-        <header className="container-app max-w-3xl pt-10 sm:pt-16">
-          <nav className="flex items-center gap-1.5 text-xs text-white/40">
-            <Link href="/guides" className="hover:text-white">Guides</Link>
-            <ChevronRight className="h-3 w-3" />
-            <span>{guide.cluster}</span>
-          </nav>
-          <h1 className="mt-5 text-[2.25rem] sm:text-5xl font-bold leading-[1.08] tracking-tight text-white">
-            {guide.title}
-          </h1>
-          <p className="mt-6 text-lg sm:text-xl leading-relaxed text-white/60">{guide.lead}</p>
-          <div className="mt-8 flex items-center gap-3 border-t border-white/10 pt-6">
-            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-sm font-bold text-charcoal">
-              {GUIDE_AUTHOR.name[0]}
-            </span>
-            <div className="text-sm">
-              <p className="font-medium text-white">
-                {GUIDE_AUTHOR.name}, {GUIDE_AUTHOR.role}
-              </p>
-              <p className="text-white/40">
-                Updated {formatDate(guide.updatedAt)} · {getReadingMinutes(body)} min read
-              </p>
-            </div>
-          </div>
-        </header>
-
-        {/* Key takeaways */}
-        <section className="container-app max-w-3xl mt-10">
-          <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-6 sm:p-7">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-white/40">Key takeaways</p>
-            <ul className="mt-4 space-y-3">
-              {guide.keyTakeaways.map((t) => (
-                <li key={t} className="flex gap-3 text-[15px] leading-relaxed text-white/80">
-                  <span className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-white/60" />
-                  {t}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </section>
-
-        {/* Body with contents list */}
-        <div className="container-app mt-6 lg:grid lg:max-w-6xl lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-16">
+      <main className="px-5 pb-24 pt-8 sm:px-8 sm:pt-12">
+        {/* Contents rail on the left from lg up; everything else sits on one ~68ch reading column */}
+        <div className="mx-auto max-w-[1060px] lg:grid lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-16">
           <aside className="hidden lg:block">
-            <nav className="sticky top-28 mt-14">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-white/35">Contents</p>
-              <ol className="mt-4 space-y-2.5 border-l border-white/10">
-                {headings.map((h) => (
-                  <li key={h.id}>
-                    <a href={`#${h.id}`} className="-ml-px block border-l border-transparent pl-4 text-sm leading-snug text-white/50 hover:border-white hover:text-white">
-                      {h.text}
-                    </a>
-                  </li>
-                ))}
-              </ol>
+            <nav className="sticky top-28">
+              <Link
+                href="/guides"
+                className="inline-flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.14em] text-white/55 transition-colors hover:text-white"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                All guides
+              </Link>
+              {headings.length > 0 && (
+                <>
+                  <p className="ssc-label mt-10">Contents</p>
+                  <ol className="mt-4 space-y-1 border-l border-white/[0.1]">
+                    {headings.map((h) => (
+                      <li key={h.id}>
+                        <a
+                          href={`#${h.id}`}
+                          className="-ml-px block border-l border-transparent py-1 pl-4 text-[13px] leading-snug text-white/55 transition-colors hover:border-white hover:text-white"
+                        >
+                          {h.text}
+                        </a>
+                      </li>
+                    ))}
+                  </ol>
+                </>
+              )}
             </nav>
           </aside>
 
-          <article className="max-w-3xl">
-            <GuideMarkdown body={body} packs={packs} liveGuideSlugs={liveGuides.map((g) => g.slug)} />
+          <div className="min-w-0 max-w-[720px]">
+            {/* Header */}
+            <header>
+              <nav className="flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.14em] text-white/55 lg:hidden">
+                <Link href="/guides" className="inline-flex items-center gap-2 transition-colors hover:text-white">
+                  <ArrowLeft className="h-4 w-4" />
+                  Guides
+                </Link>
+              </nav>
+              <div className="mt-6 lg:mt-0">
+                <Pill>{guide.cluster}</Pill>
+              </div>
+              <h1 className="ssc-display mt-5 break-words text-[clamp(2.1rem,5.2vw,3.7rem)] !leading-[1]">{guide.title}</h1>
+              <p className="ssc-body mt-6 text-[clamp(1.1rem,1.6vw,1.3rem)] leading-relaxed">{guide.lead}</p>
+              <div className="mt-8 flex items-center gap-3 border-t border-white/[0.08] pt-6">
+                <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-white text-sm font-bold text-black">
+                  {GUIDE_AUTHOR.name[0]}
+                </span>
+                <div className="min-w-0 text-[14px]">
+                  <p className="font-semibold text-white">
+                    {GUIDE_AUTHOR.name}, {GUIDE_AUTHOR.role}
+                  </p>
+                  <p className="text-[13px] text-white/55">{meta}</p>
+                </div>
+              </div>
+            </header>
+
+            {/* Key takeaways */}
+            {guide.keyTakeaways.length > 0 && (
+              <GlassBox plain className="mt-10 rounded-[24px] p-6 sm:p-8">
+                <p className="ssc-label">Key takeaways</p>
+                <ul className="mt-5 space-y-3.5">
+                  {guide.keyTakeaways.map((t) => (
+                    <li key={t} className="flex gap-3.5 text-[16px] font-light leading-relaxed text-white/75 sm:text-[17px]">
+                      <span className="mt-[0.6em] h-1.5 w-1.5 flex-shrink-0 rounded-full bg-white" />
+                      {t}
+                    </li>
+                  ))}
+                </ul>
+              </GlassBox>
+            )}
+
+            <article className="mt-4">
+              <GuideMarkdown body={body} packs={packs} liveGuideSlugs={liveGuides.map((g) => g.slug)} />
+            </article>
 
             {/* FAQ */}
             {guide.faqs.length > 0 && (
-              <section className="mt-16">
-                <h2 id="faq" className="mb-6 scroll-mt-28 text-2xl sm:text-[1.75rem] font-bold tracking-tight text-white">
+              <section className="mt-20">
+                <h2 id="faq" className="mb-6 scroll-mt-28 text-[1.6rem] font-semibold leading-[1.2] tracking-[-0.02em] text-white sm:text-[1.9rem]">
                   Questions producers ask
                 </h2>
-                <div className="divide-y divide-white/10 rounded-2xl border border-white/10">
-                  {guide.faqs.map((f) => (
-                    <details key={f.q} className="group px-5 py-4 [&_summary::-webkit-details-marker]:hidden">
-                      <summary className="flex cursor-pointer items-center justify-between gap-4 font-medium text-white">
-                        {f.q}
-                        <ChevronRight className="h-4 w-4 flex-shrink-0 text-white/40 transition-transform group-open:rotate-90" />
-                      </summary>
-                      <p className="mt-3 text-[15px] leading-relaxed text-white/65">{f.a}</p>
-                    </details>
-                  ))}
-                </div>
+                <FaqList faqs={guide.faqs.map((f) => ({ question: f.q, answer: f.a }))} />
               </section>
             )}
 
             {/* Next step */}
-            <section className="mt-16 rounded-3xl border border-white/15 bg-[#111111] p-7 sm:p-9">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-white/40">Skip the paperwork</p>
-              <h2 className="mt-3 text-2xl sm:text-3xl font-bold tracking-tight text-white">
-                Original soul, cleared before you press play.
-              </h2>
-              <p className="mt-3 max-w-xl text-white/60">
-                Every sound in Soul Sample Club is an original composition, pre-cleared for commercial releases.
-                Download it, flip it, release it. Nothing to negotiate.
+            <GlassBox glow={ctaGlow} plain={!ctaGlow} className={`mt-20 rounded-[28px] p-7 sm:p-10 ${ctaGlow ? "ssc-breathe" : ""}`}>
+              <Pill dot={!!ctaGlow} glow={ctaGlow}>
+                Skip the paperwork
+              </Pill>
+              <h2 className="ssc-display mt-5 text-[clamp(1.8rem,4vw,2.8rem)]">Original soul, cleared before you press play</h2>
+              <p className="ssc-body mt-4 max-w-xl text-[16px] leading-relaxed sm:text-[17px]">
+                Every sound in Soul Sample Club is an original composition, pre-cleared for commercial releases. Flip it and put it out
+                with nothing to negotiate.
               </p>
-              <div className="mt-6 flex flex-wrap items-center gap-4">
-                <Link href="/subscribe" className="rounded-xl bg-white px-6 py-3 text-sm font-semibold text-charcoal hover:bg-white/90">
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                <Link href="/subscribe" className="ssc-btn ssc-btn--primary">
                   See membership
                 </Link>
-                <Link href="/feed" className="inline-flex items-center gap-1.5 text-sm font-medium text-white/70 hover:text-white">
-                  Preview the catalog free <ArrowRight className="h-3.5 w-3.5" />
-                </Link>
-                <Link href="/free" className="inline-flex items-center gap-1.5 text-sm font-medium text-white/70 hover:text-white">
-                  Get a free soul sample pack <ArrowRight className="h-3.5 w-3.5" />
+                <Link href="/feed" className="ssc-btn ssc-btn--ghost">
+                  Preview the catalog free
                 </Link>
               </div>
-            </section>
+              <Link
+                href="/free"
+                className="mt-5 inline-flex items-center gap-1.5 text-[14px] font-medium text-white/75 underline decoration-white/30 underline-offset-4 transition-colors hover:text-white"
+              >
+                Get a free soul sample pack <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </GlassBox>
 
             {/* Author */}
-            <section className="mt-12 flex gap-4 border-t border-white/10 pt-8">
-              <span className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-white font-bold text-charcoal">
+            <section className="mt-14 flex gap-4 border-t border-white/[0.08] pt-8">
+              <span className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-white font-bold text-black">
                 {GUIDE_AUTHOR.name[0]}
               </span>
               <div>
                 <p className="font-semibold text-white">
                   {GUIDE_AUTHOR.name}, {GUIDE_AUTHOR.role}
                 </p>
-                <p className="mt-1 text-sm leading-relaxed text-white/55">
+                <p className="ssc-body mt-1.5 text-[15px] leading-relaxed">
                   Producer and the person behind Looplair and Soul Sample Club. I started SSC so producers could sample
                   soul without the clearance headache.
                 </p>
@@ -255,18 +275,18 @@ export default async function GuidePage({ params }: { params: { slug: string } }
 
             {/* Sources */}
             {guide.sources.length > 0 && (
-              <section className="mt-10">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-white/35">Sources</p>
-                <ul className="mt-3 space-y-1.5 text-sm">
+              <section className="mt-12">
+                <p className="ssc-label">Sources</p>
+                <ul className="mt-4 space-y-2 text-[14px]">
                   {guide.sources.map((s) => (
                     <li key={s.url}>
-                      <a href={s.url} target="_blank" rel="noopener noreferrer" className="text-white/50 underline decoration-white/20 underline-offset-4 hover:text-white">
+                      <a href={s.url} target="_blank" rel="noopener noreferrer" className="text-white/75 underline decoration-white/30 underline-offset-4 transition-colors hover:text-white">
                         {s.label}
                       </a>
                     </li>
                   ))}
                 </ul>
-                <p className="mt-6 text-xs leading-relaxed text-white/35">
+                <p className="mt-6 text-[13px] leading-relaxed text-white/55">
                   This guide is general information, not legal advice. For a specific release, talk to a music lawyer.
                 </p>
               </section>
@@ -274,23 +294,30 @@ export default async function GuidePage({ params }: { params: { slug: string } }
 
             {/* Related */}
             {related.length > 0 && (
-              <section className="mt-12">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-white/35">Keep reading</p>
-                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <section className="mt-14">
+                <p className="ssc-label">Keep reading</p>
+                <div className="mt-5 grid gap-4 sm:grid-cols-2">
                   {related.map((r) => (
-                    <Link key={r.slug} href={`/guides/${r.slug}`} className="rounded-2xl border border-white/10 p-5 hover:border-white/25">
-                      <p className="font-semibold text-white">{r.title}</p>
-                      <p className="mt-1 line-clamp-2 text-sm text-white/50">{r.description}</p>
+                    <Link
+                      key={r.slug}
+                      href={`/guides/${r.slug}`}
+                      className="ssc-glass ssc-glass--plain group flex flex-col rounded-[22px] p-6 transition-[transform,border-color] duration-300 hover:-translate-y-1 hover:border-white/20"
+                    >
+                      <p className="ssc-display break-words text-[1.05rem] !leading-[1.15]">{r.title}</p>
+                      <p className="ssc-body mt-3 line-clamp-2 text-[14px] leading-relaxed">{r.description}</p>
+                      <span className="mt-auto inline-flex items-center gap-2 pt-5 text-[12px] font-semibold uppercase tracking-[0.14em] text-white/75 transition-colors group-hover:text-white">
+                        Read <ArrowRight className="h-3.5 w-3.5" />
+                      </span>
                     </Link>
                   ))}
                 </div>
               </section>
             )}
-          </article>
+          </div>
         </div>
       </main>
 
-      <Footer />
+      <SiteFooter cta={false} glow={ctaGlow} />
     </div>
   );
 }

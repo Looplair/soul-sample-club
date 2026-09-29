@@ -1,13 +1,9 @@
 import { redirect, notFound } from "next/navigation";
-import Link from "next/link";
-import Image from "next/image";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { ArrowLeft, Megaphone } from "lucide-react";
-import { formatDate } from "@/lib/utils";
 import { Navbar } from "@/components/layout";
+import { SiteFooter } from "@/components/ssc/SiteFooter";
+import { AnnouncementArticle } from "@/components/announcements/AnnouncementViews";
 import { getNotificationsForUser } from "@/lib/notifications";
 import type { Announcement, Profile } from "@/types/database";
 
@@ -85,61 +81,10 @@ export default async function AnnouncementDetailPage({ params }: { params: { slu
   const { notifications, unreadCount } = await getNotificationsForUser(user.id);
 
   return (
-    <div className="min-h-screen bg-charcoal">
+    <div className="ssc min-h-screen overflow-x-clip">
       <Navbar user={profile} notifications={notifications} unreadCount={unreadCount} />
-
-      <main className="pb-24 sm:pb-0">
-        {announcement.cover_image_url && (
-          <div className="relative w-full aspect-[21/9] max-h-[420px] overflow-hidden">
-            <Image
-              src={announcement.cover_image_url}
-              alt={announcement.title}
-              fill
-              className="object-cover"
-              priority
-            />
-            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-charcoal" />
-          </div>
-        )}
-
-        <div className="container-app section">
-          <Link href="/announcements" className="inline-flex items-center gap-2 text-body text-text-muted hover:text-white transition-colors mb-8">
-            <ArrowLeft className="w-4 h-4" />
-            All Announcements
-          </Link>
-
-          <div className="max-w-3xl">
-            <div className="flex items-center gap-3 mb-4">
-              <Megaphone className="w-4 h-4 text-velvet" />
-              <span className="text-label text-text-muted">
-                {formatDate(announcement.published_at ?? announcement.created_at)}
-              </span>
-            </div>
-            <h1 className="text-h1 text-white mb-8">{announcement.title}</h1>
-            <div className="announcement-body">
-              <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
-                components={{
-                  p: ({ children }) => <p className="text-body-lg text-text-secondary leading-relaxed mb-5">{children}</p>,
-                  a: ({ href, children }) => <a href={href} target="_blank" rel="noopener noreferrer" className="text-velvet hover:text-velvet/80 underline underline-offset-2 transition-colors">{children}</a>,
-                  strong: ({ children }) => <strong className="text-white font-semibold">{children}</strong>,
-                  em: ({ children }) => <em className="text-text-secondary italic">{children}</em>,
-                  ul: ({ children }) => <ul className="list-disc list-outside pl-6 space-y-2 mb-5 text-body-lg text-text-secondary">{children}</ul>,
-                  ol: ({ children }) => <ol className="list-decimal list-outside pl-6 space-y-2 mb-5 text-body-lg text-text-secondary">{children}</ol>,
-                  li: ({ children }) => <li className="leading-relaxed">{children}</li>,
-                  h2: ({ children }) => <h2 className="text-h3 text-white mt-8 mb-4">{children}</h2>,
-                  h3: ({ children }) => <h3 className="text-h4 text-white mt-6 mb-3">{children}</h3>,
-                  blockquote: ({ children }) => <blockquote className="border-l-4 border-velvet pl-5 my-5 text-text-muted italic">{children}</blockquote>,
-                  hr: () => <hr className="border-grey-700 my-8" />,
-                  code: ({ children }) => <code className="bg-grey-800 text-snow px-2 py-0.5 rounded text-sm font-mono">{children}</code>,
-                }}
-              >
-                {announcement.body}
-              </ReactMarkdown>
-            </div>
-          </div>
-        </div>
-      </main>
+      <AnnouncementArticle announcement={announcement} />
+      <SiteFooter cta={false} />
     </div>
   );
 }

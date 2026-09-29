@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Play, Pause, Loader2, ArrowRight } from "lucide-react";
 import { useAudio } from "@/contexts/AudioContext";
 import { packPath } from "@/lib/pack-url";
+import { cn } from "@/lib/utils";
 
 export interface GuidePack {
   id: string;
@@ -14,9 +15,12 @@ export interface GuidePack {
   description: string | null;
   cover_image_url: string | null;
   samples: { id: string; name: string; bpm: number | null; key: string | null; duration: number | null }[];
+  /** Cover colour ("r, g, b") so the embed glows like a pack card; plain glass without it */
+  glow?: string;
 }
 
-// A pack inside an article: cover, blurb and a few playable previews.
+// A pack inside an article: a cover-lit glass box with its cover, blurb and a
+// few playable previews.
 // Uses the site-wide audio context so only one thing plays at a time.
 export function GuidePackEmbed({ pack }: { pack: GuidePack }) {
   const {
@@ -96,24 +100,31 @@ export function GuidePackEmbed({ pack }: { pack: GuidePack }) {
     }
   };
 
+  const lit = !!pack.glow;
   return (
-    <div className="not-prose my-10 rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-5">
-      <div className="flex items-center gap-4">
-        <Link href={packPath(pack)} className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-xl bg-grey-800">
+    <div
+      className={cn("not-prose ssc-glass my-12 rounded-[24px] p-3 sm:p-4", !lit && "ssc-glass--plain")}
+      style={pack.glow ? ({ "--glow": pack.glow } as CSSProperties) : undefined}
+    >
+      <div className="flex items-center gap-4 p-1 sm:p-2">
+        <Link href={packPath(pack)} className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-[14px] bg-white/[0.04] sm:h-24 sm:w-24">
           {pack.cover_image_url && (
-            <Image src={pack.cover_image_url} alt={pack.name} fill sizes="80px" className="object-cover" />
+            <Image src={pack.cover_image_url} alt={pack.name} fill sizes="96px" className="object-cover" />
           )}
         </Link>
         <div className="min-w-0">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-white/35">From the catalog</p>
-          <Link href={packPath(pack)} className="block truncate text-lg font-semibold text-white hover:underline">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/55">From the catalog</p>
+          <Link
+            href={packPath(pack)}
+            className="mt-1.5 block truncate font-[family-name:var(--font-display)] text-[1.15rem] font-extrabold uppercase leading-tight tracking-[-0.02em] text-white hover:underline sm:text-[1.35rem]"
+          >
             {pack.name}
           </Link>
-          {pack.description && <p className="truncate text-sm text-white/50">{pack.description}</p>}
+          {pack.description && <p className="mt-1 truncate text-[14px] font-light text-white/75">{pack.description}</p>}
         </div>
       </div>
 
-      <ul className="mt-4 divide-y divide-white/[0.06]">
+      <ul className="mt-3 space-y-0.5">
         {tracks.map((track) => {
           const active = currentTrack?.id === track.id && isPlaying;
           return (
@@ -121,9 +132,12 @@ export function GuidePackEmbed({ pack }: { pack: GuidePack }) {
               <button
                 type="button"
                 onClick={() => toggle(track)}
-                className="flex w-full items-center gap-3 py-2.5 text-left hover:bg-white/[0.02]"
+                className={cn(
+                  "flex w-full items-center gap-3 rounded-[14px] px-2 py-2 text-left transition-colors hover:bg-white/[0.05] sm:px-3",
+                  active && "bg-white/[0.07]"
+                )}
               >
-                <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-white text-charcoal">
+                <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-white text-black">
                   {loadingId === track.id ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
                   ) : active ? (
@@ -132,8 +146,8 @@ export function GuidePackEmbed({ pack }: { pack: GuidePack }) {
                     <Play className="ml-0.5 h-3.5 w-3.5" />
                   )}
                 </span>
-                <span className="flex-1 truncate text-sm font-medium text-white">{track.name}</span>
-                <span className="text-xs text-white/40">
+                <span className="min-w-0 flex-1 truncate text-[15px] font-medium text-white">{track.name}</span>
+                <span className="flex-shrink-0 text-[12px] tabular-nums text-white/55">
                   {[track.bpm && `${track.bpm} BPM`, track.key].filter(Boolean).join(" · ")}
                 </span>
               </button>
@@ -142,12 +156,14 @@ export function GuidePackEmbed({ pack }: { pack: GuidePack }) {
         })}
       </ul>
 
-      <Link
-        href={packPath(pack)}
-        className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-white/70 hover:text-white"
-      >
-        Hear the full pack <ArrowRight className="h-3.5 w-3.5" />
-      </Link>
+      <div className="px-1 pb-1 pt-3 sm:px-2">
+        <Link
+          href={packPath(pack)}
+          className="inline-flex h-11 items-center gap-2 rounded-[12px] border border-white/[0.14] bg-white/[0.04] px-4 text-[12px] font-extrabold uppercase tracking-[0.06em] text-white transition-colors hover:border-white/30"
+        >
+          Hear the full pack <ArrowRight className="h-3.5 w-3.5" />
+        </Link>
+      </div>
     </div>
   );
 }
