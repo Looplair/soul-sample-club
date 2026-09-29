@@ -676,3 +676,9 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* Redesigned pages are pure black all the way down, including the space the
+   layout leaves under every page for the player bar */
+body:has(.ssc) {
+  background: #000;
+}

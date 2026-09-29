@@ -43,8 +43,9 @@ const COLUMNS = [
 
 export function SiteFooter({ showGuides = true, cta = true, glow }: { showGuides?: boolean; cta?: boolean; glow?: string }) {
   return (
+    // -mb-20/pb-20 runs the footer's light over the 80px the layout leaves under every page
     <footer
-      className="relative overflow-hidden border-t border-white/[0.08]"
+      className="relative -mb-20 overflow-hidden border-t border-white/[0.08] pb-20"
       style={glowStyle(glow ?? "196, 150, 110", {
         background: "radial-gradient(90% 70% at 50% 100%, rgba(var(--glow), 0.16) 0%, rgba(var(--glow), 0.05) 45%, rgba(0,0,0,0) 75%), #000",
       })}
@@ -104,11 +105,11 @@ export function SiteFooter({ showGuides = true, cta = true, glow }: { showGuides
         </div>
       </div>
 
-      {/* The name, huge, fading into the bottom edge */}
+      {/* The name, huge, softly fading toward the bottom */}
       <div
         aria-hidden
-        className="pointer-events-none -mb-[2.2%] mt-6 select-none px-3 pb-20 sm:px-5 sm:pb-0"
-        style={{ WebkitMaskImage: "linear-gradient(180deg, #000 40%, rgba(0,0,0,0.25) 100%)", maskImage: "linear-gradient(180deg, #000 40%, rgba(0,0,0,0.25) 100%)" }}
+        className="pointer-events-none mt-6 select-none px-3 pb-6 sm:px-5 sm:pb-8"
+        style={{ WebkitMaskImage: "linear-gradient(180deg, #000 55%, rgba(0,0,0,0.45) 100%)", maskImage: "linear-gradient(180deg, #000 55%, rgba(0,0,0,0.45) 100%)" }}
       >
         <GenreWordmark text="Soul Sample Club" fontClassName="ssc-display" className="text-white/[0.2]" />
       </div>

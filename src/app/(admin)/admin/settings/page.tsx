@@ -20,8 +20,6 @@ import Link from "next/link";
 import { KlaviyoSync } from "@/components/admin/KlaviyoSync";
 import { HomepageHeroUpload } from "@/components/admin/HomepageHeroUpload";
 import { FreePackSetting } from "@/components/admin/FreePackSetting";
-import { MemberCounterSetting } from "@/components/admin/MemberCounterSetting";
-import { MEMBER_CAP } from "@/lib/member-count";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isPackExpiredWithEndDate } from "@/lib/utils";
 
@@ -85,7 +83,7 @@ export default async function SettingsPage() {
   // Free pack: real packs with a ZIP, and the current choice
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const adminDb = createAdminClient() as any;
-  const [{ data: zipPacks }, { data: freePackRow }, { count: linkedPatrons }, { data: counterRow }] = await Promise.all([
+  const [{ data: zipPacks }, { data: freePackRow }] = await Promise.all([
     adminDb
       .from("packs")
       .select("id, name, release_date, end_date, is_returned")
@@ -94,8 +92,6 @@ export default async function SettingsPage() {
       .not("pack_zip_path", "is", null)
       .order("release_date", { ascending: false }),
     adminDb.from("homepage_settings").select("free_pack_id").eq("id", "singleton").maybeSingle(),
-    adminDb.from("patreon_links").select("id", { count: "exact", head: true }).eq("is_active", true),
-    adminDb.from("homepage_settings").select("patreon_member_count").eq("id", "singleton").maybeSingle(),
   ]);
   const freePackOptions = ((zipPacks || []) as { id: string; name: string; release_date: string; end_date: string | null; is_returned: boolean | null }[]).map((p) => ({
     id: p.id,
@@ -145,24 +141,6 @@ export default async function SettingsPage() {
         </CardHeader>
         <CardContent>
           <FreePackSetting options={freePackOptions} current={freePackRow?.free_pack_id ?? null} />
-        </CardContent>
-      </Card>
-
-      {/* Member counter */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="w-5 h-5" />
-            Member Counter
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <MemberCounterSetting
-            stripe={stats.activeSubscriptions}
-            linked={linkedPatrons ?? 0}
-            manual={counterRow?.patreon_member_count ?? null}
-            cap={MEMBER_CAP}
-          />
         </CardContent>
       </Card>
 
