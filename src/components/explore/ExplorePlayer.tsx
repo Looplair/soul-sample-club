@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import type { Sample, Pack } from "@/types/database";
 import { packPath } from "@/lib/pack-url";
+import { glowStyle } from "@/components/ssc/Glass";
 
 interface SampleWithPack extends Sample {
   pack: Pack;
@@ -30,6 +31,8 @@ interface ExplorePlayerProps {
   isLoggedIn: boolean;
   userId: string | null;
   hasSubscription?: boolean;
+  /** Pack id to cover colour ("r, g, b") */
+  packGlows?: Record<string, string>;
 }
 
 // Helper to check if pack is archived using end_date if available
@@ -54,6 +57,7 @@ function formatDuration(seconds: number): string {
 // Single Slide Component - renders one full sample view
 function SampleSlide({
   sample,
+  glow,
   isActive,
   isPlaying,
   isLoading,
@@ -69,6 +73,7 @@ function SampleSlide({
   onSeek,
 }: {
   sample: SampleWithPack;
+  glow?: string;
   isActive: boolean;
   isPlaying: boolean;
   isLoading: boolean;
@@ -84,28 +89,15 @@ function SampleSlide({
   onSeek: (percent: number) => void;
 }) {
   return (
-    <div className="absolute inset-0 flex flex-col overflow-hidden bg-charcoal" style={{ height: '100dvh' }}>
-      {/* Background - blurred album art with solid fallback */}
-      <div className="absolute inset-0 pointer-events-none bg-charcoal">
-        {sample.pack.cover_image_url && (
-          <Image
-            src={sample.pack.cover_image_url}
-            alt=""
-            fill
-            className="object-cover opacity-40 blur-3xl scale-125"
-            priority={isActive}
-            loading={isActive ? "eager" : "lazy"}
-          />
-        )}
-        <div className="absolute inset-0 bg-gradient-to-b from-charcoal/50 via-charcoal/70 to-charcoal/90" />
-      </div>
-
+    <div className="absolute inset-0 flex flex-col overflow-hidden bg-black" style={glowStyle(glow, { height: '100dvh' })}>
       {/* Main Content */}
       <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 sm:px-6 pt-16 pb-safe overflow-hidden">
         {/* Album Art with Loading/Playing indicator */}
-        <div className="relative w-full max-w-[280px] sm:max-w-[320px] aspect-square mb-5">
+        {/* Cover in a glass box that glows in the cover's own colour */}
+        <div className="ssc-glass relative mb-6 w-full max-w-[300px] rounded-[26px] p-2.5 sm:max-w-[340px]">
+        <div className="relative w-full aspect-square">
           {/* Album art container */}
-          <div className="absolute inset-0 rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/10">
+          <div className="absolute inset-0 rounded-[18px] overflow-hidden bg-white/[0.04]">
             {sample.pack.cover_image_url ? (
               <Image
                 src={sample.pack.cover_image_url}
@@ -116,16 +108,16 @@ function SampleSlide({
                 priority
               />
             ) : (
-              <div className="absolute inset-0 bg-gradient-to-br from-grey-700 to-grey-800 flex items-center justify-center">
-                <Music className="w-20 h-20 text-grey-600" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Music className="w-20 h-20 text-white/55" />
               </div>
             )}
 
             {/* Archive Badge */}
             {packIsArchived && (
-              <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-sm z-20">
-                <Archive className="w-3 h-3 text-amber-400" />
-                <span className="text-xs font-medium text-amber-400">Archived</span>
+              <div className="absolute top-3 left-3 z-20 flex items-center gap-1.5 rounded-full border border-white/15 bg-black/55 px-2.5 py-1 backdrop-blur-md">
+                <Archive className="h-3 w-3 text-white" />
+                <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white">Archived</span>
               </div>
             )}
 
@@ -134,9 +126,9 @@ function SampleSlide({
               href={packPath(sample.pack)}
               className="absolute top-3 right-3 z-20"
             >
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/90 text-charcoal text-sm font-medium shadow-lg hover:bg-white active:scale-95 active:bg-white/80 transition-all">
-                <ExternalLink className="w-4 h-4" />
-                View Pack
+              <div className="flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-black shadow-lg transition-all hover:bg-white/90 active:scale-95">
+                <ExternalLink className="h-3.5 w-3.5" />
+                View pack
               </div>
             </Link>
           </div>
@@ -153,34 +145,35 @@ function SampleSlide({
                   onClick={onTogglePlay}
                   className="w-16 h-16 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center shadow-inner hover:bg-black/40 active:scale-90 active:bg-black/50 transition-all"
                 >
-                  <Play className="w-7 h-7 text-white/70 ml-1" fill="currentColor" />
+                  <Play className="w-7 h-7 text-white ml-1" fill="currentColor" />
                 </button>
               ) : (
                 <button
                   onClick={onTogglePlay}
                   className="w-16 h-16 rounded-full bg-black/20 backdrop-blur-md flex items-center justify-center opacity-0 hover:opacity-100 active:scale-90 active:opacity-100 transition-all"
                 >
-                  <Pause className="w-7 h-7 text-white/70" fill="currentColor" />
+                  <Pause className="w-7 h-7 text-white" fill="currentColor" />
                 </button>
               )}
             </div>
           )}
         </div>
+        </div>
 
         {/* Track Info */}
         <div className="w-full max-w-sm text-center mb-3">
-          <h1 className="text-xl font-bold text-white truncate mb-1">
+          <h1 className="ssc-display truncate pb-1 text-[clamp(1.5rem,6vw,2rem)] leading-tight">
             {sample.name}
           </h1>
           <Link
             href={packPath(sample.pack)}
-            className="text-base text-white/70 hover:text-white transition-colors"
+            className="mt-1 inline-block text-[15px] font-light text-white/75 transition-colors hover:text-white"
           >
             {sample.pack.name}
           </Link>
 
           {/* Sample metadata */}
-          <div className="flex items-center justify-center gap-3 mt-2 text-sm text-white/50">
+          <div className="mt-3 flex items-center justify-center gap-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/55 tabular-nums">
             {sample.bpm && <span>{sample.bpm} BPM</span>}
             {sample.key && <span>•</span>}
             {sample.key && <span>{sample.key}</span>}
@@ -216,7 +209,7 @@ function SampleSlide({
                 />
               </div>
             </div>
-            <div className="flex justify-between text-xs text-white/40">
+            <div className="flex justify-between text-xs tabular-nums text-white/55">
               <span>{formatDuration(currentTime)}</span>
               <span>{formatDuration(sample.duration)}</span>
             </div>
@@ -228,21 +221,17 @@ function SampleSlide({
           {packIsArchived && isActive && (
             <button
               onClick={onVote}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all active:scale-95 ${
-                hasVoted
-                  ? "bg-white text-charcoal"
-                  : "bg-white/10 text-white border border-white/20"
-              }`}
+              className={`ssc-btn h-11 px-5 text-[12px] ${hasVoted ? "ssc-btn--primary" : "ssc-btn--ghost"}`}
             >
               {hasVoted ? (
                 <>
                   <Heart className="w-4 h-4" fill="currentColor" />
-                  <span className="text-sm font-medium">Voted</span>
+                  <span>Voted</span>
                 </>
               ) : (
                 <>
                   <Vote className="w-4 h-4" />
-                  <span className="text-sm font-medium">Bring back</span>
+                  <span>Bring back</span>
                 </>
               )}
             </button>
@@ -253,7 +242,7 @@ function SampleSlide({
         {(!isLoggedIn || !hasSubscription) && isActive && (
           <button
             onClick={onCTA}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium bg-white text-charcoal hover:bg-white/90 active:scale-95 active:bg-white/80 transition-all"
+            className="ssc-btn ssc-btn--primary h-12"
           >
             {isLoggedIn ? "Subscribe to download" : "Start for $0.99"}
           </button>
@@ -269,6 +258,7 @@ export function ExplorePlayer({
   isLoggedIn,
   userId,
   hasSubscription = false,
+  packGlows = {},
 }: ExplorePlayerProps) {
   const router = useRouter();
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -645,10 +635,10 @@ export function ExplorePlayer({
 
   if (!currentSample) {
     return (
-      <div className="min-h-screen bg-charcoal flex items-center justify-center">
+      <div className="ssc min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <Music className="w-16 h-16 text-grey-600 mx-auto mb-4" />
-          <p className="text-text-muted">No samples to explore</p>
+          <Music className="w-16 h-16 text-white/55 mx-auto mb-4" />
+          <p className="ssc-body">No samples to explore</p>
         </div>
       </div>
     );
@@ -660,7 +650,7 @@ export function ExplorePlayer({
   return (
     <div
       ref={containerRef}
-      className="fixed inset-0 bg-charcoal overflow-hidden touch-none select-none"
+      className="ssc fixed inset-0 overflow-hidden touch-none select-none"
       style={{ height: '100dvh' }}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
@@ -673,7 +663,7 @@ export function ExplorePlayer({
         return (
           <div
             key={sample.id}
-            className="absolute inset-0 bg-charcoal"
+            className="absolute inset-0 bg-black"
             style={{
               transform: `translateY(calc(${offset * 100}% + ${dragOffset}px))`,
               transition: isDragging ? 'none' : 'transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
@@ -684,6 +674,7 @@ export function ExplorePlayer({
           >
             <SampleSlide
               sample={sample}
+              glow={packGlows[sample.pack.id]}
               isActive={index === currentIndex}
               isPlaying={index === currentIndex && isPlaying}
               isLoading={index === currentIndex && isLoading}
@@ -710,26 +701,27 @@ export function ExplorePlayer({
       <header className="fixed top-0 left-0 right-0 z-50 px-4 pt-4 pb-2 flex items-center justify-between">
         <Link
           href="/"
-          className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center transition-all active:scale-90 active:bg-black/60"
+          aria-label="Close"
+          className="flex h-10 w-10 items-center justify-center rounded-full border border-white/12 bg-white/[0.04] backdrop-blur-md transition-all hover:border-white/30 active:scale-90"
         >
           <X className="w-5 h-5 text-white" />
         </Link>
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/40 backdrop-blur-sm">
-          <Shuffle className="w-4 h-4 text-white/80" />
-          <span className="text-sm text-white/80 font-medium">Explore</span>
+        <div className="ssc-pill backdrop-blur-md">
+          <Shuffle className="h-3.5 w-3.5 text-white" />
+          Explore
         </div>
         <div className="w-10 h-10" />
       </header>
 
       {/* Counter */}
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 text-sm text-white/40">
+      <div className="ssc-label fixed bottom-6 left-1/2 z-50 -translate-x-1/2 tabular-nums">
         {currentIndex + 1} / {samples.length}
       </div>
 
       {/* Swipe Hint */}
       {showSwipeHint && currentIndex < samples.length - 1 && (
         <div className="fixed top-20 left-1/2 -translate-x-1/2 z-40 sm:hidden">
-          <div className="flex flex-col items-center gap-1 text-white/60">
+          <div className="flex flex-col items-center gap-1 text-white/75">
             <div className="flex flex-col items-center animate-bounce">
               <ChevronUp className="w-5 h-5 -mb-2" />
               <ChevronUp className="w-5 h-5 opacity-40" />
@@ -744,7 +736,8 @@ export function ExplorePlayer({
         {currentIndex > 0 && (
           <button
             onClick={goToPrev}
-            className="w-10 h-10 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center text-white/60 hover:text-white hover:bg-black/50 active:scale-90 active:bg-black/60 transition-all"
+            aria-label="Previous sample"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-white/12 bg-white/[0.04] text-white backdrop-blur-md transition-all hover:border-white/35 active:scale-90"
           >
             <ChevronUp className="w-5 h-5" />
           </button>
@@ -752,7 +745,8 @@ export function ExplorePlayer({
         {currentIndex < samples.length - 1 && (
           <button
             onClick={goToNext}
-            className="w-10 h-10 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center text-white/60 hover:text-white hover:bg-black/50 active:scale-90 active:bg-black/60 transition-all"
+            aria-label="Next sample"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-white/12 bg-white/[0.04] text-white backdrop-blur-md transition-all hover:border-white/35 active:scale-90"
           >
             <ChevronDown className="w-5 h-5" />
           </button>
@@ -762,7 +756,7 @@ export function ExplorePlayer({
       {/* Vote Toast */}
       {showVoteToast && (
         <div className="fixed bottom-16 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-4 duration-200">
-          <div className="px-4 py-2 rounded-full bg-white text-charcoal text-sm font-medium shadow-lg">
+          <div className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-black shadow-lg">
             {voteMessage}
           </div>
         </div>

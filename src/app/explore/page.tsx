@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { ExplorePlayer } from "@/components/explore/ExplorePlayer";
 import type { Sample, Pack } from "@/types/database";
 import { hidePaths } from "@/lib/hide-paths";
+import { getCoverColor } from "@/lib/cover-color";
 
 export const metadata = {
   title: "Explore | Soul Sample Club",
@@ -122,6 +123,12 @@ export default async function ExplorePage() {
     getUserState(),
   ]);
 
+  // Cover-lit: each pack's glass glows in its own cover colour (cached per cover)
+  const covers = new Map(samples.map((s) => [s.pack.id, s.pack.cover_image_url]));
+  const packGlows = Object.fromEntries(
+    await Promise.all(Array.from(covers).map(async ([id, url]) => [id, await getCoverColor(url)] as const))
+  );
+
   return (
     <ExplorePlayer
       samples={samples}
@@ -129,6 +136,7 @@ export default async function ExplorePage() {
       isLoggedIn={userState.isLoggedIn}
       userId={userState.userId}
       hasSubscription={userState.hasSubscription}
+      packGlows={packGlows}
     />
   );
 }

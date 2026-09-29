@@ -45,36 +45,39 @@ export function FreePackSignUpSheet({ packName, open, onClose }: { packName: str
 
   return (
     <div className="fixed inset-0 z-[70]">
-      <button type="button" aria-label="Close" onClick={onClose} className="absolute inset-0 bg-black/60 backdrop-blur-[2px]" />
-      <div className="absolute inset-x-0 bottom-0 mx-auto max-w-lg rounded-t-[28px] bg-[#222] px-6 pb-8 pt-3 shadow-2xl sm:bottom-8 sm:rounded-[28px]">
+      <button type="button" aria-label="Close" onClick={onClose} className="absolute inset-0 bg-black/70 backdrop-blur-[3px]" />
+      <div
+        className="ssc-glass absolute inset-x-0 bottom-0 mx-auto max-w-lg rounded-b-none rounded-t-[28px] px-6 pb-8 pt-3 sm:bottom-8 sm:rounded-[28px]"
+        style={{ background: "linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.02)), #0a0a0a" }}
+      >
         <div className="mx-auto mb-4 h-1.5 w-10 rounded-full bg-white/20 sm:hidden" />
-        <button type="button" onClick={onClose} aria-label="Close" className="absolute right-4 top-4 hidden p-1 text-white/40 hover:text-white sm:block">
+        <button type="button" onClick={onClose} aria-label="Close" className="absolute right-4 top-4 hidden p-1 text-white/55 hover:text-white sm:block">
           <X className="h-5 w-5" />
         </button>
 
         {sent ? (
           <div className="py-4 text-center">
-            <p className="text-xl font-bold text-white">Check your email</p>
-            <p className="mt-2 text-[15px] leading-relaxed text-white/60">
+            <p className="ssc-display text-[1.4rem]">Check your email</p>
+            <p className="ssc-body mt-3 text-[15px] leading-relaxed">
               We&apos;ve sent a link to <span className="text-white">{email}</span>. Tap it and you&apos;ll come straight back here to
               download {packName}.
             </p>
           </div>
         ) : exists ? (
           <div className="py-4 text-center">
-            <p className="text-xl font-bold text-white">You already have an account</p>
-            <p className="mt-2 text-[15px] leading-relaxed text-white/60">Log in and you&apos;ll come straight back here to download.</p>
+            <p className="ssc-display text-[1.4rem]">You already have an account</p>
+            <p className="ssc-body mt-3 text-[15px] leading-relaxed">Log in and you&apos;ll come straight back here to download.</p>
             <Link
               href={`/login?redirect=${encodeURIComponent("/free")}`}
-              className="mt-5 flex h-[52px] items-center justify-center rounded-2xl bg-white font-semibold text-charcoal"
+              className="ssc-btn ssc-btn--primary mt-5 w-full"
             >
               Log in
             </Link>
           </div>
         ) : (
           <>
-            <p className="text-[22px] font-bold text-white">Get {packName} free</p>
-            <p className="mt-1.5 text-[15px] leading-relaxed text-white/60">
+            <p className="ssc-display pr-6 text-[1.5rem] leading-[1.05]">Get {packName} free</p>
+            <p className="ssc-body mt-3 text-[15px] leading-relaxed">
               Create your free account and your download is ready straight away.
             </p>
 
@@ -82,7 +85,7 @@ export function FreePackSignUpSheet({ packName, open, onClose }: { packName: str
               type="button"
               onClick={google}
               disabled={!!busy}
-              className="mt-5 flex h-[52px] w-full items-center justify-center gap-2.5 rounded-2xl bg-white font-semibold text-charcoal disabled:opacity-70"
+              className="ssc-btn ssc-btn--primary mt-6 w-full gap-2.5 disabled:opacity-70"
             >
               {busy === "google" ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -97,7 +100,7 @@ export function FreePackSignUpSheet({ packName, open, onClose }: { packName: str
               Continue with Google
             </button>
 
-            <div className="my-4 flex items-center gap-3 text-xs text-white/35">
+            <div className="my-4 flex items-center gap-3 text-xs text-white/55">
               <span className="h-px flex-1 bg-white/10" />
               or
               <span className="h-px flex-1 bg-white/10" />
@@ -111,7 +114,7 @@ export function FreePackSignUpSheet({ packName, open, onClose }: { packName: str
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="your@email.com"
                 autoComplete="email"
-                className="h-[50px] w-full rounded-2xl border border-white/15 bg-transparent px-4 text-[15px] text-white outline-none placeholder:text-white/35 focus:border-white/40"
+                className="h-[52px] w-full rounded-[14px] border border-white/15 bg-white/[0.04] px-4 text-[15px] text-white outline-none placeholder:text-white/55 focus:border-white/40"
               />
               <input
                 type="password"
@@ -121,12 +124,12 @@ export function FreePackSignUpSheet({ packName, open, onClose }: { packName: str
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Create a password"
                 autoComplete="new-password"
-                className="h-[50px] w-full rounded-2xl border border-white/15 bg-transparent px-4 text-[15px] text-white outline-none placeholder:text-white/35 focus:border-white/40"
+                className="h-[52px] w-full rounded-[14px] border border-white/15 bg-white/[0.04] px-4 text-[15px] text-white outline-none placeholder:text-white/55 focus:border-white/40"
               />
               <button
                 type="submit"
                 disabled={!!busy}
-                className="flex h-[50px] w-full items-center justify-center gap-2 rounded-2xl border border-white/20 font-semibold text-white disabled:opacity-70"
+                className="ssc-btn ssc-btn--ghost w-full disabled:opacity-70"
               >
                 {busy === "email" && <Loader2 className="h-4 w-4 animate-spin" />}
                 Continue with email
@@ -135,7 +138,7 @@ export function FreePackSignUpSheet({ packName, open, onClose }: { packName: str
 
             {error && <p className="mt-3 text-center text-sm text-red-400">{error}</p>}
 
-            <p className="mt-4 text-center text-[11px] leading-relaxed text-white/40">
+            <p className="mt-4 text-center text-[11px] leading-relaxed text-white/55">
               No card needed. We&apos;ll never share your email.
               <br />
               By continuing you agree to the{" "}

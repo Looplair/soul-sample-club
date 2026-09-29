@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
-import { Unbounded } from "next/font/google";
 import { FreePackOffer } from "@/components/free-pack/FreePackOffer";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getCoverColor } from "@/lib/cover-color";
 import { FREE_PACK_OFFER_COUPON, OFFER_MINUTES, claimFreePack, getFreePack, getZipSize, startOffer, userHasAccess } from "@/lib/free-pack";
 
 // Where the free pack's Download button lands: the download starts from here,
@@ -11,8 +11,6 @@ import { FREE_PACK_OFFER_COUPON, OFFER_MINUTES, claimFreePack, getFreePack, getZ
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Your download | Soul Sample Club", robots: { index: false, follow: false } };
-
-const display = Unbounded({ subsets: ["latin"], weight: ["700"], display: "swap" });
 
 export default async function FreePackOfferPage() {
   const pack = await getFreePack();
@@ -46,6 +44,9 @@ export default async function FreePackOfferPage() {
     .order("release_date", { ascending: false })
     .limit(6);
 
+  // Cover-lit: the offer glows in the free pack cover's colour
+  const glow = await getCoverColor(pack.cover_image_url);
+
   return (
     <FreePackOffer
       packName={pack.name}
@@ -56,7 +57,7 @@ export default async function FreePackOfferPage() {
       serverNow={Date.now()}
       windowMinutes={OFFER_MINUTES}
       covers={((covers ?? []) as { id: string; name: string; cover_image_url: string }[])}
-      displayFont={display.className}
+      glow={glow}
     />
   );
 }

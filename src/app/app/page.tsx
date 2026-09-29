@@ -1,11 +1,12 @@
 import Image from "next/image";
-import Link from "next/link";
 import { Apple, Monitor } from "lucide-react";
-import { Button } from "@/components/ui";
 import { Navbar } from "@/components/layout";
-import { FAQAccordion } from "./FAQAccordion";
+import { GlassBox, Pill, Section, SectionHead } from "@/components/ssc/Glass";
+import { FaqList } from "@/components/ssc/FaqList";
+import { SiteFooter } from "@/components/ssc/SiteFooter";
 import { createClient } from "@/lib/supabase/server";
 import { getNotificationsForUser } from "@/lib/notifications";
+import { hasPublishedGuides } from "@/lib/guides";
 import type { Profile, NotificationWithReadStatus } from "@/types/database";
 
 export const metadata = {
@@ -18,9 +19,9 @@ export const metadata = {
 // CONFIGURATION
 // ============================================
 
-const HEADLINE = "Download the Desktop App";
+const HEADLINE = "The catalog on your desktop";
 const SUBHEADLINE =
-  "Browse every pack, preview any sample, and download it straight to your computer, then drag it right into your DAW. No browser tabs, no downloads folder, no extra steps.";
+  "Browse every pack and preview any sample, then download it and drag it straight into your DAW. No browser tab or downloads folder in between.";
 
 const DOWNLOAD_LINKS = {
   macOS: "/api/download-app/mac",
@@ -31,7 +32,7 @@ const FAQ_ITEMS = [
   {
     question: "What are the benefits of using the app?",
     answer:
-      "It cuts out every step between finding a sound and actually using it. No browser, no digging through a downloads folder, no renaming files, just browse, preview, and drag straight into your session.",
+      "It cuts out every step between finding a sound and actually using it. No digging through a downloads folder or renaming files. Find a sound, then drag it straight into your session.",
   },
   {
     question: "What can I do in the app?",
@@ -63,149 +64,90 @@ export default async function AppPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  const [profile, { notifications, unreadCount }] = user
-    ? await Promise.all([
-        supabase.from("profiles").select("*").eq("id", user.id).single().then((r) => r.data as Profile | null),
-        getNotificationsForUser(user.id),
-      ])
-    : [null, { notifications: [] as NotificationWithReadStatus[], unreadCount: 0 }];
+  const [[profile, { notifications, unreadCount }], hasGuides] = await Promise.all([
+    user
+      ? Promise.all([
+          supabase.from("profiles").select("*").eq("id", user.id).single().then((r) => r.data as Profile | null),
+          getNotificationsForUser(user.id),
+        ])
+      : Promise.resolve([null, { notifications: [] as NotificationWithReadStatus[], unreadCount: 0 }] as const),
+    hasPublishedGuides(),
+  ]);
 
   return (
-    <div className="min-h-screen bg-charcoal">
+    <div className="ssc min-h-screen overflow-x-clip">
       <Navbar user={profile} notifications={notifications} unreadCount={unreadCount} />
 
       <main>
-        {/* Hero Section */}
-        <section className="py-16 sm:py-24 lg:py-32">
-          <div className="container-app">
-            <div className="text-center max-w-3xl mx-auto">
-              {/* App Icon */}
-              <div className="w-20 h-20 sm:w-24 sm:h-24 mx-auto mb-8 rounded-2xl bg-grey-800 border border-grey-700 flex items-center justify-center shadow-lg">
-                <svg
-                  viewBox="0 0 24 24"
-                  className="w-12 h-12 sm:w-14 sm:h-14 text-white"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
-                  <line x1="8" y1="21" x2="16" y2="21" />
-                  <line x1="12" y1="17" x2="12" y2="21" />
-                </svg>
-              </div>
+        {/* HERO */}
+        <Section className="pt-[clamp(56px,8vw,112px)]">
+          <header className="mx-auto flex max-w-3xl flex-col items-center text-center">
+            <Pill>Desktop app · Mac and Windows</Pill>
+            <h1 className="ssc-display mt-6 text-[clamp(2.4rem,6.4vw,5rem)] [text-wrap:balance]">{HEADLINE}</h1>
+            <p className="ssc-body mt-6 max-w-2xl text-[clamp(1rem,1.4vw,1.2rem)] leading-relaxed">{SUBHEADLINE}</p>
 
-              {/* Headline */}
-              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 tracking-tight">
-                {HEADLINE}
-              </h1>
-
-              {/* Subheadline */}
-              <p className="text-lg sm:text-xl text-white/60 leading-relaxed mb-10 max-w-2xl mx-auto">
-                {SUBHEADLINE}
-              </p>
-
-              {/* Download Buttons */}
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
-                <a href={DOWNLOAD_LINKS.macOS}>
-                  <Button size="lg" className="w-full sm:w-auto min-w-[220px]">
-                    Download for macOS
-                    <Apple className="w-5 h-5 ml-2" />
-                  </Button>
-                </a>
-                <a href={DOWNLOAD_LINKS.windows}>
-                  <Button
-                    variant="secondary"
-                    size="lg"
-                    className="w-full sm:w-auto min-w-[220px]"
-                  >
-                    Download for Windows
-                    <Monitor className="w-5 h-5 ml-2" />
-                  </Button>
-                </a>
-              </div>
-
-              <p className="text-sm font-medium text-white/70 mb-4">Free to download for macOS and Windows</p>
-
-              {/* Windows SmartScreen note */}
-              <p className="text-sm text-white/40">
-                Windows may show a &quot;Windows protected your PC&quot; warning on first launch, click{" "}
-                <span className="text-white/60">More info</span> →{" "}
-                <span className="text-white/60">Run anyway</span>. It&apos;s a safety check for newly
-                released apps, and it&apos;s signed and safe to run.
-              </p>
+            <div className="mt-9 flex w-full flex-col items-stretch justify-center gap-3 sm:w-auto sm:flex-row">
+              <a href={DOWNLOAD_LINKS.macOS} className="ssc-btn ssc-btn--primary sm:min-w-[240px]">
+                <Apple className="h-5 w-5" />
+                Download for macOS
+              </a>
+              <a href={DOWNLOAD_LINKS.windows} className="ssc-btn ssc-btn--ghost sm:min-w-[240px]">
+                <Monitor className="h-5 w-5" />
+                Download for Windows
+              </a>
             </div>
-          </div>
-        </section>
+            <p className="ssc-label mt-5">Free to download for macOS and Windows</p>
+          </header>
 
-        {/* App Screenshot Section */}
-        <section className="pb-16 sm:pb-24">
-          <div className="container-app">
-            <div className="relative max-w-5xl mx-auto">
-              {/* Screenshot Container */}
-              <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden border border-grey-700 shadow-2xl">
-                <img
-                  src="/app screenshot.png"
-                  alt="Soul Sample Club app"
-                  className="w-full h-auto block"
-                />
-              </div>
-
-              {/* Decorative elements */}
-              <div className="absolute -bottom-4 -left-4 w-24 h-24 bg-rose-500/10 rounded-full blur-3xl" />
-              <div className="absolute -top-4 -right-4 w-32 h-32 bg-amber-500/10 rounded-full blur-3xl" />
+          {/* Screenshot */}
+          <GlassBox plain className="mx-auto mt-16 max-w-5xl rounded-[28px] p-2 sm:p-3">
+            <div className="overflow-hidden rounded-[20px] border border-white/10">
+              <Image
+                src="/app-library.png"
+                alt="Soul Sample Club app"
+                width={1404}
+                height={902}
+                sizes="(max-width: 1100px) 94vw, 1024px"
+                className="block h-auto w-full"
+                priority
+              />
             </div>
-          </div>
-        </section>
+          </GlassBox>
 
-        {/* FAQ Section */}
-        <section className="py-16 sm:py-24 bg-grey-900/50">
-          <div className="container-app">
-            <div className="max-w-3xl mx-auto">
-              <h2 className="text-2xl sm:text-3xl font-bold text-white text-center mb-12">
-                Questions & Answers
-              </h2>
+          {/* Windows SmartScreen note */}
+          <GlassBox plain className="mx-auto mt-5 max-w-5xl rounded-[22px] p-5 sm:p-6">
+            <p className="ssc-label">On Windows</p>
+            <p className="ssc-body mt-3 text-[15px] leading-relaxed">
+              Windows may show a &quot;Windows protected your PC&quot; warning on first launch. Click{" "}
+              <span className="font-medium text-white">More info</span>, then{" "}
+              <span className="font-medium text-white">Run anyway</span>. It&apos;s a safety check for newly released apps, and it&apos;s
+              signed and safe to run.
+            </p>
+          </GlassBox>
+        </Section>
 
-              <FAQAccordion items={FAQ_ITEMS} />
-            </div>
+        {/* FAQ */}
+        <Section id="faq">
+          <div className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr]">
+            <SectionHead
+              pill="Questions"
+              title="About the app"
+              body={
+                <>
+                  Anything else, email{" "}
+                  <a href="mailto:hello@soulsampleclub.com" className="font-medium text-white underline underline-offset-4">
+                    hello@soulsampleclub.com
+                  </a>
+                  .
+                </>
+              }
+            />
+            <FaqList faqs={FAQ_ITEMS} />
           </div>
-        </section>
+        </Section>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-grey-700 py-8 sm:py-12">
-        <div className="container-app">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <Image
-              src="/logo.svg"
-              alt="Soul Sample Club"
-              width={140}
-              height={32}
-              className="h-7 w-auto"
-            />
-
-            <div className="flex items-center gap-6 text-sm text-text-muted">
-              <Link href="/#catalog" className="hover:text-white transition-colors">
-                Catalog
-              </Link>
-              <Link href="/#pricing" className="hover:text-white transition-colors">
-                Pricing
-              </Link>
-              <Link href="/terms" className="hover:text-white transition-colors">
-                Terms
-              </Link>
-              <Link href="/privacy" className="hover:text-white transition-colors">
-                Privacy
-              </Link>
-            </div>
-
-            <p className="text-sm text-text-subtle">
-              © {new Date().getFullYear()} Soul Sample Club by Looplair
-            </p>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter showGuides={hasGuides} />
     </div>
   );
 }

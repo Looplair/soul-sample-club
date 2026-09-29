@@ -1,17 +1,15 @@
 import { redirect } from "next/navigation";
-import { Unbounded } from "next/font/google";
 import { FreePackExperience } from "@/components/free-pack/FreePackExperience";
 import { createClient } from "@/lib/supabase/server";
 import { FREE_PACK_OFFER_COUPON, getFreePack, getOfferDeadline, userHasAccess } from "@/lib/free-pack";
 import { SITE_URL } from "@/lib/site";
 import { hidePaths } from "@/lib/hide-paths";
+import { getCoverColor } from "@/lib/cover-color";
 
 // Free pack funnel for cold traffic (Meta ads) and "free soul samples" searches.
 // Linked from the footer, genre pages and guides (never the main menus). The pack is chosen in Admin → Settings.
 
 export const dynamic = "force-dynamic";
-
-const display = Unbounded({ subsets: ["latin"], weight: ["700"], display: "swap" });
 
 export async function generateMetadata() {
   const pack = await getFreePack();
@@ -47,13 +45,16 @@ export default async function FreePackPage() {
   const deadline = user && !hasAccess && FREE_PACK_OFFER_COUPON ? await getOfferDeadline(user.id) : null;
   const viaOffer = !!user && !hasAccess && !!FREE_PACK_OFFER_COUPON && (!deadline || deadline.getTime() > Date.now());
 
+  // Cover-lit: the page's glass glows in the pack cover's own colour
+  const glow = await getCoverColor(pack.cover_image_url);
+
   return (
     <FreePackExperience
       pack={hidePaths(pack)}
       isLoggedIn={!!user}
       hasAccess={hasAccess}
       downloadHref={viaOffer ? "/free/offer?dl=1" : "/api/free-pack/download"}
-      displayFont={display.className}
+      glow={glow}
     />
   );
 }

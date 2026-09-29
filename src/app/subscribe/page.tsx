@@ -6,6 +6,9 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { SubscribeCTA } from "@/components/ui/SubscribeCTA";
 import { PriceJustificationSection } from "@/components/sections/PriceJustificationSection";
+import { GlassBox, Pill, Section, SectionHead } from "@/components/ssc/Glass";
+import { MemberCap } from "@/components/ssc/MemberCap";
+import { withCoverColors } from "@/lib/cover-color";
 
 export const metadata = {
   title: "Join Soul Sample Club | Pre-Cleared Soul Samples",
@@ -42,20 +45,21 @@ async function getUserState() {
   }
 }
 
-type PackCover = { id: string; name: string; cover_image_url: string };
+type PackCover = { id: string; name: string; cover_image_url: string; glow?: string };
 
 async function getPackCovers(): Promise<PackCover[]> {
   try {
     const admin = createAdminClient();
     const { data } = await admin
       .from("packs")
-      .select("id, name, cover_image_url")
+      .select("id, name, cover_image_url, is_bonus")
       .eq("is_published", true)
       .order("release_date", { ascending: false })
       .limit(20);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return ((data as any[]) || [])
-      .filter((p) => p.cover_image_url)
+      // Bonus packs are member extras and never featured in marketing
+      .filter((p) => p.cover_image_url && !p.is_bonus)
       .map((p) => ({ id: String(p.id), name: String(p.name), cover_image_url: String(p.cover_image_url) }));
   } catch {
     return [];
@@ -72,7 +76,7 @@ const coreFacts = [
 ];
 
 export default async function SubscribePage() {
-  const [{ isLoggedIn, hasSubscription, hasUsedTrial }, packs] = await Promise.all([
+  const [{ isLoggedIn, hasSubscription, hasUsedTrial }, rawPacks] = await Promise.all([
     getUserState(),
     getPackCovers(),
   ]);
@@ -81,237 +85,175 @@ export default async function SubscribePage() {
 
   const showTrial = !hasUsedTrial;
 
+  // Cover-lit: the page takes its colour from the latest covers
+  const packs = await withCoverColors(rawPacks);
+  const glow = packs[0]?.glow;
+
   return (
-    <div className="min-h-screen bg-charcoal overflow-x-hidden">
-
-      {/* Logo */}
-      <div className="flex justify-center pt-7 pb-1">
+    <div className="ssc min-h-screen overflow-x-clip">
+      {/* Logo only: a checkout page, so no menu to wander off through */}
+      <header className="flex justify-center pb-1 pt-7">
         <Link href="/">
-          <Image
-            src="/logo.svg"
-            alt="Soul Sample Club"
-            width={160}
-            height={36}
-            className="h-9 w-auto"
-            priority
-          />
+          <Image src="/logo.svg" alt="Soul Sample Club" width={160} height={36} className="h-8 w-auto" priority />
         </Link>
-      </div>
+      </header>
 
-      {/* Hero */}
-      <div className="container-app text-center pt-10 pb-8 sm:pt-12 sm:pb-10">
-        <h1 className="text-[2.75rem] sm:text-6xl lg:text-[5.5rem] font-bold text-white tracking-tight leading-[1.02] mb-5">
-          The only soul catalog<br />built for producers.
-        </h1>
-        <p className="text-white/45 text-base sm:text-lg leading-relaxed">
-          One sample clearance can cost $5,000 to six figures.
-        </p>
-        <p className="text-white/45 text-base sm:text-lg leading-relaxed">
-          A year of Soul Sample Club is $35.
-        </p>
-      </div>
-
-      {/* Capacity badge */}
-      <div className="container-app flex flex-col items-center gap-3 pb-7 sm:pb-8">
-        <div className="w-full max-w-[280px]">
-          <div className="h-[3px] bg-white/[0.06] rounded-full overflow-hidden">
-            <div
-              className="h-full rounded-full bg-gradient-to-r from-amber-500/70 to-amber-300/90"
-              style={{ width: "52%" }}
-            />
-          </div>
-        </div>
-        <div className="flex items-center gap-2 bg-amber-400/[0.08] border border-amber-400/[0.18] rounded-full px-4 py-[7px]">
-          <span className="relative flex h-2 w-2 flex-shrink-0">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-60" />
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-400" />
-          </span>
-          <span className="text-[11px] font-medium text-amber-300/75 tracking-wide">
-            Worldwide cap of 5,000 members
-          </span>
-        </div>
-      </div>
-
-      {/* Plan cards */}
-      <div className="container-app pb-6 sm:pb-8">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-6">
-
-          {/* Monthly */}
-          <div className="bg-white/[0.04] border border-white/[0.09] rounded-3xl p-7 lg:p-9 flex flex-col">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-white/25 mb-4">
-              Monthly
+      <main>
+        {/* HERO + PLANS */}
+        <Section className="pt-[clamp(40px,6vw,72px)]">
+          <header className="flex flex-col items-center text-center">
+            <Pill dot glow={glow}>
+              Membership
+            </Pill>
+            <h1 className="ssc-display mt-6 text-[clamp(2.4rem,7vw,5.6rem)] [text-wrap:balance]">
+              The only soul catalog
+              <br className="hidden sm:block" /> built for producers.
+            </h1>
+            <p className="ssc-body mt-6 max-w-xl text-[clamp(1rem,1.4vw,1.2rem)] leading-relaxed">
+              One sample clearance can cost $5,000 to six figures.
+              <br />A year of Soul Sample Club is $35.
             </p>
+            <MemberCap className="mt-6 justify-center" />
+          </header>
 
-            {showTrial && (
-              <div className="self-start flex items-center gap-1.5 bg-amber-400/[0.12] border border-amber-400/25 rounded-full px-3 py-[5px] mb-4">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
-                <span className="text-amber-300 text-[11px] font-semibold tracking-wider">
-                  START FOR $0.99
-                </span>
+          <div className="mx-auto mt-14 grid max-w-4xl grid-cols-1 gap-5 md:grid-cols-2">
+            {/* Monthly */}
+            <GlassBox plain className="flex flex-col rounded-[28px] p-7 sm:p-9">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="ssc-label">Monthly</p>
+                {showTrial && (
+                  <Pill dot glow={glow}>
+                    Start for $0.99
+                  </Pill>
+                )}
               </div>
-            )}
+              <p className="mt-6 flex items-baseline gap-2">
+                <span className="ssc-display text-[clamp(3rem,6vw,4.2rem)]">{showTrial ? "$0.99" : "$6.99"}</span>
+                <span className="text-white/55">{showTrial ? "first month" : "a month"}</span>
+              </p>
+              <p className="mt-2 min-h-[1.5em] text-[14px] text-white/55">{showTrial ? "Then $6.99 a month." : ""}</p>
 
-            <div className="flex items-end gap-2.5 mb-1">
-              <span className="text-[3.5rem] lg:text-[4.5rem] font-bold text-white leading-none tracking-tight">
-                {showTrial ? "$0.99" : "$6.99"}
-              </span>
-              <span className="text-white/30 text-sm mb-2">
-                {showTrial ? "first month" : "/month"}
-              </span>
-            </div>
-            <p className="text-sm text-white/30 mb-2">
-              {showTrial ? "then $6.99/month" : " "}
-            </p>
+              <div className="mt-auto pt-8">
+                {isLoggedIn ? (
+                  <SubscribeCTA isLoggedIn={true} hasSubscription={false} plan="monthly" bare className="ssc-btn ssc-btn--ghost w-full">
+                    Get started
+                  </SubscribeCTA>
+                ) : (
+                  <Link href="/signup?redirect=/checkout" className="ssc-btn ssc-btn--ghost w-full">
+                    Get started
+                  </Link>
+                )}
+                <p className="mt-3 text-center text-[12px] text-white/55">Cancel anytime</p>
+              </div>
+            </GlassBox>
 
-            <div className="mt-auto pt-5 border-t border-white/[0.07]">
-              {isLoggedIn ? (
-                <SubscribeCTA
-                  isLoggedIn={true}
-                  hasSubscription={false}
-                  className="w-full !rounded-xl bg-white/10 text-white hover:bg-white/[0.16] shadow-none"
-                  size="lg"
-                  plan="monthly"
-                  hideArrow
-                >
-                  Get started
-                </SubscribeCTA>
-              ) : (
-                <Link
-                  href="/signup?redirect=/checkout"
-                  className="flex items-center justify-center w-full bg-white/10 hover:bg-white/[0.16] text-white font-semibold rounded-xl py-3.5 text-[15px] transition-colors duration-200"
-                >
-                  Get started
-                </Link>
-              )}
-              <p className="text-xs text-white/20 mt-3 text-center">Cancel anytime</p>
-            </div>
+            {/* Yearly: the one to pick, so it's the lit box */}
+            <GlassBox glow={glow} className="ssc-breathe flex flex-col rounded-[28px] p-7 sm:p-9">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="ssc-label">Yearly · offer price</p>
+                <span className="rounded-full bg-white px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-black">Best value</span>
+              </div>
+              <p className="mt-6 flex items-baseline gap-2">
+                <span className="text-2xl text-white/55 line-through">$49</span>
+                <span className="ssc-display text-[clamp(3rem,6vw,4.2rem)]">$35</span>
+                <span className="text-white/55">a year</span>
+              </p>
+              <p className="mt-2 min-h-[1.5em] text-[14px] text-white/55">Save over 50% vs monthly</p>
+
+              <div className="mt-auto pt-8">
+                {isLoggedIn ? (
+                  <SubscribeCTA isLoggedIn={true} hasSubscription={false} plan="yearly" bare className="ssc-btn ssc-btn--primary w-full">
+                    Lock in yearly
+                  </SubscribeCTA>
+                ) : (
+                  <Link href={`/signup?redirect=${encodeURIComponent("/checkout?plan=yearly")}`} className="ssc-btn ssc-btn--primary w-full">
+                    Lock in yearly
+                  </Link>
+                )}
+                <p className="mt-3 text-center text-[12px] text-white/55">Offer price, locked in for life. Won&apos;t last forever.</p>
+              </div>
+            </GlassBox>
           </div>
 
-          {/* Yearly */}
-          <div
-            className="relative bg-[#111111] border border-white/[0.18] rounded-3xl p-7 lg:p-9 flex flex-col"
-            style={{ boxShadow: "0 0 60px rgba(255,255,255,0.05), inset 0 1px 0 rgba(255,255,255,0.08)" }}
-          >
-            <div className="absolute -top-[13px] left-1/2 -translate-x-1/2">
-              <span className="bg-white text-charcoal text-[10px] font-bold uppercase tracking-widest px-4 py-[5px] rounded-full whitespace-nowrap">
-                Best value
-              </span>
-            </div>
+          {/* Core facts */}
+          <GlassBox plain className="mx-auto mt-5 max-w-4xl rounded-[24px] px-7 py-6 sm:px-9">
+            <p className="ssc-label">Every membership</p>
+            <ul className="mt-4 grid grid-cols-1 gap-x-10 gap-y-3 sm:grid-cols-2">
+              {coreFacts.map((fact) => (
+                <li key={fact} className="flex items-center gap-3 text-[15px] text-white/75">
+                  <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-white" />
+                  {fact}
+                </li>
+              ))}
+            </ul>
+          </GlassBox>
+        </Section>
 
-            <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-white/25 mb-4">
-              Yearly
-            </p>
+        {/* Price justification */}
+        <PriceJustificationSection glow={glow} />
 
-            {/* Align with monthly's amber badge row */}
-            {showTrial && <div className="h-[29px] mb-4" />}
-
-            <div className="flex items-end gap-2.5 mb-1">
-              <span className="text-xl lg:text-2xl font-semibold text-white/30 line-through mb-2">$49</span>
-              <span className="text-[3.5rem] lg:text-[4.5rem] font-bold text-white leading-none tracking-tight">
-                $35
-              </span>
-              <span className="text-white/30 text-sm mb-2">/year</span>
-            </div>
-            <p className="text-sm text-white/30 mb-2">Save over 50% vs monthly</p>
-
-            <div className="mt-auto pt-5 border-t border-white/[0.1]">
-              {isLoggedIn ? (
-                <SubscribeCTA
-                  isLoggedIn={true}
-                  hasSubscription={false}
-                  className="w-full !rounded-xl shadow-none"
-                  size="lg"
-                  plan="yearly"
-                  hideArrow
-                >
-                  Lock in yearly
-                </SubscribeCTA>
-              ) : (
-                <Link
-                  href={`/signup?redirect=${encodeURIComponent("/checkout?plan=yearly")}`}
-                  className="flex items-center justify-center w-full bg-white hover:bg-white/90 text-charcoal font-semibold rounded-xl py-3.5 text-[15px] transition-colors duration-200"
-                >
-                  Lock in yearly
-                </Link>
-              )}
-              <p className="text-xs text-white/20 mt-3 text-center">Offer price, locked in for life. Won&apos;t last forever.</p>
-            </div>
+        {/* Member exclusives */}
+        <Section>
+          <SectionHead
+            pill="Member exclusives"
+            title="More than the catalog"
+            body="Two extras that come with every membership."
+            align="center"
+            className="mb-12 [text-wrap:balance]"
+          />
+          <div className="mx-auto grid max-w-4xl grid-cols-1 gap-5 md:grid-cols-2">
+            {[
+              {
+                icon: Drum,
+                title: "The Drum Vault",
+                body: "Raw, original drum breaks recorded by real musicians. Exclusive to SSC members. Free to collect and download, updated regularly.",
+              },
+              {
+                icon: Gift,
+                title: "Looplair Member Perks",
+                body: "Early access to drops, bonus packs from one of the best soul libraries in the world, and member-only discounts. Just for being here.",
+              },
+            ].map(({ icon: Icon, title, body: text }) => (
+              <GlassBox key={title} plain className="flex flex-col gap-8 rounded-[24px] p-7">
+                <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/12 bg-white/[0.04]">
+                  <Icon className="h-5 w-5 text-white" />
+                </span>
+                <div>
+                  <h3 className="ssc-display text-[1.35rem]">{title}</h3>
+                  <p className="ssc-body mt-3 text-[15px] leading-relaxed">{text}</p>
+                </div>
+              </GlassBox>
+            ))}
           </div>
+        </Section>
 
-        </div>
-      </div>
-
-      {/* Core facts */}
-      <div className="container-app pb-10 sm:pb-12">
-        <div className="max-w-2xl mx-auto grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-3">
-          {coreFacts.map((fact) => (
-            <div key={fact} className="flex items-center gap-3">
-              <span className="w-1 h-1 rounded-full bg-white/20 flex-shrink-0" />
-              <span className="text-[13px] text-white/40 leading-snug">{fact}</span>
+        {/* The catalog, moving past: each cover lit in its own colour */}
+        {packs.length > 0 && (
+          <section className="pb-[clamp(64px,8vw,112px)] pt-[clamp(44px,5.5vw,80px)]">
+            <div className="px-5 sm:px-8">
+              <SectionHead
+                pill="The catalog"
+                title="A world of pre-cleared samples"
+                body="A new pack joins the catalog every week."
+                align="center"
+                className="mx-auto mb-6 max-w-[1240px] [text-wrap:balance]"
+              />
             </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Price justification */}
-      <PriceJustificationSection />
-
-      {/* Member exclusives */}
-      <div className="container-app pb-14 sm:pb-16">
-        <p className="text-[9px] uppercase tracking-[0.35em] text-white/15 text-center mb-6 font-medium">
-          Member exclusives
-        </p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-3xl mx-auto">
-          <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-6 sm:p-7">
-            <div className="w-9 h-9 rounded-xl bg-white/[0.07] flex items-center justify-center mb-5">
-              <Drum className="w-4 h-4 text-white/50" />
-            </div>
-            <h3 className="text-white font-semibold text-[15px] mb-2">The Drum Vault</h3>
-            <p className="text-[13px] text-white/40 leading-relaxed">Raw, original drum breaks recorded by real musicians. Exclusive to SSC members. Free to collect and download, updated regularly.</p>
-          </div>
-          <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-6 sm:p-7">
-            <div className="w-9 h-9 rounded-xl bg-white/[0.07] flex items-center justify-center mb-5">
-              <Gift className="w-4 h-4 text-white/50" />
-            </div>
-            <h3 className="text-white font-semibold text-[15px] mb-2">Looplair Member Perks</h3>
-            <p className="text-[13px] text-white/40 leading-relaxed">Early access to drops, bonus packs from one of the best soul libraries in the world, and member-only discounts. Just for being here.</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Pack scroll — the world */}
-      {packs.length > 0 && (
-        <div className="pb-20 sm:pb-28">
-          <p className="text-center text-[9px] uppercase tracking-[0.35em] text-white/15 mb-5 font-medium">
-            A world of pre-cleared samples
-          </p>
-          <div className="relative">
-            <div className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-charcoal to-transparent z-10 pointer-events-none" />
-            <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-charcoal to-transparent z-10 pointer-events-none" />
-            <div className="overflow-hidden">
-              <div
-                className="flex gap-3 sm:gap-4"
-                style={{ animation: "subscribe-marquee 40s linear infinite", width: "max-content" }}
-              >
+            <div className="overflow-hidden py-10">
+              <div className="flex gap-4 sm:gap-5" style={{ animation: "subscribe-marquee 60s linear infinite", width: "max-content" }}>
                 {[...packs, ...packs].map((pack, i) => (
-                  <div
-                    key={i}
-                    className="flex-shrink-0 w-36 h-36 sm:w-48 sm:h-48 rounded-2xl overflow-hidden bg-white/[0.04]"
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={pack.cover_image_url}
-                      alt={pack.name}
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                    />
-                  </div>
+                  <GlassBox key={i} glow={pack.glow} className="flex-shrink-0 rounded-[20px] p-2">
+                    <div className="relative h-36 w-36 overflow-hidden rounded-[14px] bg-white/[0.04] sm:h-48 sm:w-48">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={pack.cover_image_url} alt={i < packs.length ? pack.name : ""} className="h-full w-full object-cover" loading="lazy" />
+                    </div>
+                  </GlassBox>
                 ))}
               </div>
             </div>
-          </div>
-        </div>
-      )}
+          </section>
+        )}
+      </main>
 
       <style>{`
         @keyframes subscribe-marquee {
@@ -319,7 +261,6 @@ export default async function SubscribePage() {
           to   { transform: translateX(-50%); }
         }
       `}</style>
-
     </div>
   );
 }
