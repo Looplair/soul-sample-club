@@ -597,7 +597,7 @@ export default async function PackDetailPage({
                             hideArrow
                             className="text-xs text-text-muted hover:text-white underline !bg-transparent !border-0 !p-0 !h-auto"
                           >
-                            or $29/year
+                            or $35/year, offer price
                           </SubscribeCTA>
                         </div>
                   </div>
