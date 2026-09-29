@@ -3,8 +3,8 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Home, RefreshCw, AlertTriangle } from "lucide-react";
-import { Button } from "@/components/ui";
+import { RefreshCw } from "lucide-react";
+import { Pill } from "@/components/ssc/Glass";
 
 export default function Error({
   error,
@@ -19,68 +19,42 @@ export default function Error({
   }, [error]);
 
   return (
-    <div className="min-h-screen bg-charcoal flex flex-col">
+    <div className="ssc flex min-h-screen flex-col overflow-x-clip">
       {/* Header */}
-      <header className="border-b border-grey-700/50">
-        <div className="container-app h-14 sm:h-16 flex items-center">
-          <Link href="/" className="flex items-center">
-            <Image
-              src="/logo.svg"
-              alt="Soul Sample Club"
-              width={160}
-              height={36}
-              className="h-7 sm:h-9 w-auto"
-            />
+      <header className="px-5 pt-6 sm:px-8">
+        <div className="mx-auto max-w-[1240px]">
+          <Link href="/" className="inline-flex">
+            <Image src="/logo.svg" alt="Soul Sample Club" width={160} height={36} className="h-7 w-auto sm:h-9" />
           </Link>
         </div>
       </header>
 
       {/* Content */}
-      <main className="flex-1 flex items-center justify-center px-4">
-        <div className="text-center max-w-md">
-          {/* Error Icon */}
-          <div className="mb-8 flex justify-center">
-            <div className="w-20 h-20 rounded-full bg-error/10 border border-error/20 flex items-center justify-center">
-              <AlertTriangle className="w-10 h-10 text-error" />
-            </div>
-          </div>
-
-          {/* Message */}
-          <h1 className="text-2xl sm:text-3xl font-bold text-white mb-3">
-            Something went wrong
-          </h1>
-          <p className="text-text-muted mb-2">
+      <main className="flex flex-1 items-center justify-center px-5 py-16 sm:px-8">
+        <div className="flex max-w-3xl flex-col items-center text-center">
+          <Pill>Error</Pill>
+          <h1 className="ssc-display mt-6 text-[clamp(2.4rem,8vw,5.8rem)]">Something went wrong</h1>
+          <p className="ssc-body mt-6 max-w-md text-[clamp(1rem,1.3vw,1.125rem)] leading-relaxed">
             We encountered an unexpected error. Please try again.
           </p>
-          {error.digest && (
-            <p className="text-xs text-text-subtle mb-8">
-              Error ID: {error.digest}
-            </p>
-          )}
+          {error.digest && <p className="mt-3 text-[12px] text-white/55">Error ID: {error.digest}</p>}
 
           {/* Actions */}
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Button size="lg" onClick={reset} className="w-full sm:w-auto">
-              <RefreshCw className="w-4 h-4 mr-2" />
+          <div className="mt-9 flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+            <button type="button" onClick={reset} className="ssc-btn ssc-btn--primary">
+              <RefreshCw className="h-4 w-4" />
               Try again
-            </Button>
-            <Link href="/">
-              <Button variant="secondary" size="lg" className="w-full sm:w-auto">
-                <Home className="w-4 h-4 mr-2" />
-                Go to homepage
-              </Button>
+            </button>
+            <Link href="/" className="ssc-btn ssc-btn--ghost">
+              Go to homepage
             </Link>
           </div>
         </div>
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-grey-700/50 py-6">
-        <div className="container-app text-center">
-          <p className="text-sm text-text-subtle">
-            © {new Date().getFullYear()} Soul Sample Club
-          </p>
-        </div>
+      <footer className="border-t border-white/[0.08] px-5 py-6 text-center text-[12px] text-white/55">
+        © {new Date().getFullYear()} Soul Sample Club
       </footer>
     </div>
   );

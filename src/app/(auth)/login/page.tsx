@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { LoginForm } from "./LoginForm";
+import { AuthCard } from "../AuthUI";
 
 export const metadata = {
   title: "Sign In | Soul Sample Club",
@@ -7,16 +8,10 @@ export const metadata = {
 
 export default function LoginPage() {
   return (
-    <div className="card">
-      <div className="text-center mb-8">
-        <h1 className="text-h2 text-white">Welcome back</h1>
-        <p className="text-body text-text-muted mt-2">
-          Sign in to access your sample packs
-        </p>
-      </div>
-      <Suspense fallback={<div className="animate-pulse h-64 bg-grey-800/50 rounded-xl" />}>
+    <AuthCard pill="Members" title="Welcome back" body="Sign in to access your sample packs">
+      <Suspense fallback={<div className="h-64 animate-pulse rounded-xl bg-white/[0.04]" />}>
         <LoginForm />
       </Suspense>
-    </div>
+    </AuthCard>
   );
 }

@@ -1,4 +1,5 @@
 import { ResetPasswordForm } from "./ResetPasswordForm";
+import { AuthCard } from "../AuthUI";
 
 export const metadata = {
   title: "Reset Password | Soul Sample Club",
@@ -6,14 +7,8 @@ export const metadata = {
 
 export default function ResetPasswordPage() {
   return (
-    <div className="card">
-      <div className="text-center mb-32">
-        <h1 className="text-h2 text-snow">Reset your password</h1>
-        <p className="text-body text-snow/60 mt-8">
-          Enter your email and we&apos;ll send you a reset link
-        </p>
-      </div>
+    <AuthCard pill="Account" title="Reset your password" body={<>Enter your email and we&apos;ll send you a reset link</>}>
       <ResetPasswordForm />
-    </div>
+    </AuthCard>
   );
 }

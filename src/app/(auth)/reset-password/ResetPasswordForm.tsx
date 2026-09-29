@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { ArrowRight, ArrowLeft, Check } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { Button, Input } from "@/components/ui";
+import { Field, Notice, PrimaryButton, StateIcon } from "../AuthUI";
 
 export function ResetPasswordForm() {
   const [email, setEmail] = useState("");
@@ -39,17 +39,17 @@ export function ResetPasswordForm() {
 
   if (success) {
     return (
-      <div className="text-center py-24">
-        <div className="w-16 h-16 rounded-full bg-success/20 flex items-center justify-center mx-auto mb-24">
-          <Check className="w-8 h-8 text-success" />
-        </div>
-        <h2 className="text-h3 text-snow mb-8">Check your email</h2>
-        <p className="text-body text-snow/60 mb-24">
+      <div className="py-4 text-center">
+        <StateIcon>
+          <Check className="h-7 w-7" />
+        </StateIcon>
+        <h2 className="ssc-display text-[1.35rem]">Check your email</h2>
+        <p className="ssc-body mb-7 mt-3 text-[15px] leading-relaxed">
           We&apos;ve sent a password reset link to{" "}
-          <span className="text-snow">{email}</span>
+          <span className="font-medium text-white">{email}</span>
         </p>
-        <Link href="/login" className="btn-ghost">
-          <ArrowLeft className="w-4 h-4" />
+        <Link href="/login" className="ssc-btn ssc-btn--ghost">
+          <ArrowLeft className="h-4 w-4" />
           Back to sign in
         </Link>
       </div>
@@ -57,14 +57,11 @@ export function ResetPasswordForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-24">
-      {error && (
-        <div className="bg-error/10 border border-error/50 rounded-button p-16 text-error text-body">
-          {error}
-        </div>
-      )}
+    <form onSubmit={handleSubmit} className="space-y-5">
+      {error && <Notice tone="error">{error}</Notice>}
 
-      <Input
+      <Field
+        id="reset-email"
         label="Email"
         type="email"
         placeholder="you@example.com"
@@ -74,21 +71,13 @@ export function ResetPasswordForm() {
         autoComplete="email"
       />
 
-      <Button
-        type="submit"
-        className="w-full"
-        isLoading={isLoading}
-        rightIcon={<ArrowRight className="w-4 h-4" />}
-      >
+      <PrimaryButton type="submit" loading={isLoading} trailing={<ArrowRight className="h-4 w-4" />}>
         Send Reset Link
-      </Button>
+      </PrimaryButton>
 
-      <div className="text-center">
-        <Link
-          href="/login"
-          className="text-body text-velvet-light hover:text-velvet transition-colors inline-flex items-center gap-8"
-        >
-          <ArrowLeft className="w-4 h-4" />
+      <div className="pt-1 text-center">
+        <Link href="/login" className="inline-flex items-center gap-2 text-[14px] text-white/75 transition-colors hover:text-white">
+          <ArrowLeft className="h-4 w-4" />
           Back to sign in
         </Link>
       </div>

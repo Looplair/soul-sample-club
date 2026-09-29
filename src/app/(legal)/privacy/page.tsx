@@ -1,21 +1,31 @@
-import Link from "next/link";
+import { LegalDoc, type TocItem } from "../LegalDoc";
 
 export const metadata = {
   title: "Privacy Policy | Soul Sample Club",
   description: "Privacy Policy for Soul Sample Club",
 };
 
+const toc: TocItem[] = [
+  { id: "section-1", label: "1. Who We Are" },
+  { id: "section-2", label: "2. What Data We Collect" },
+  { id: "section-3", label: "3. Authentication and Login Providers" },
+  { id: "section-4", label: "4. Payments and Billing" },
+  { id: "section-5", label: "5. How We Use Your Data" },
+  { id: "section-6", label: "6. Audio Content and Creative Use" },
+  { id: "section-7", label: "7. Cookies and Tracking" },
+  { id: "section-8", label: "8. Under-18 Users" },
+  { id: "section-9", label: "9. Data Storage and Security" },
+  { id: "section-10", label: "10. Data Retention" },
+  { id: "section-11", label: "11. Your Rights (UK/EU Users)" },
+  { id: "section-12", label: "12. Third-Party Services" },
+  { id: "section-13", label: "13. International Data Transfers" },
+  { id: "section-14", label: "14. Changes to This Policy" },
+  { id: "section-15", label: "15. Contact Us" },
+];
+
 export default function PrivacyPage() {
   return (
-    <div className="min-h-screen bg-charcoal">
-      <main className="section">
-        <div className="container-app max-w-3xl">
-          <h1 className="text-h1 text-white mb-4">Privacy Policy</h1>
-          <p className="text-body-lg text-text-muted mb-8">
-            Last updated: December 2024
-          </p>
-
-          <div className="prose prose-invert prose-grey max-w-none space-y-8 text-text-secondary">
+    <LegalDoc title="Privacy Policy" updated="Last updated: December 2024" toc={toc}>
             <p>
               This Privacy Policy explains how Soul Sample Club (&quot;we&quot;, &quot;our&quot;, &quot;us&quot;) collects, uses, and protects your personal information when you use our website, web application, desktop application, and related services (together, the &quot;Platform&quot;).
             </p>
@@ -24,8 +34,8 @@ export default function PrivacyPage() {
             </p>
 
             {/* Section 1 */}
-            <section className="space-y-4">
-              <h2 className="text-h3 text-white">1. Who We Are</h2>
+            <section id="section-1" className="scroll-mt-24 space-y-4">
+              <h2 className="[font-family:var(--font-display)] text-[clamp(1.05rem,1.5vw,1.25rem)] font-extrabold uppercase leading-[1.3] tracking-[-0.01em] text-white">1. Who We Are</h2>
               <p>
                 Soul Sample Club is a music sample library and creative platform. We provide original compositions, audio tools, and digital resources designed for music producers and creators.
               </p>
@@ -35,13 +45,13 @@ export default function PrivacyPage() {
             </section>
 
             {/* Section 2 */}
-            <section className="space-y-4">
-              <h2 className="text-h3 text-white">2. What Data We Collect</h2>
+            <section id="section-2" className="scroll-mt-24 space-y-4">
+              <h2 className="[font-family:var(--font-display)] text-[clamp(1.05rem,1.5vw,1.25rem)] font-extrabold uppercase leading-[1.3] tracking-[-0.01em] text-white">2. What Data We Collect</h2>
               <p>We may collect the following types of information:</p>
 
               <div className="space-y-3">
-                <h3 className="text-lg font-semibold text-white">Account Information</h3>
-                <ul className="list-disc pl-6 space-y-2">
+                <h3 className="text-[17px] font-semibold text-white">Account Information</h3>
+                <ul className="list-disc space-y-2 pl-6 marker:text-white/55">
                   <li>Email address</li>
                   <li>Full name</li>
                   <li>Hashed password (if using email login)</li>
@@ -50,8 +60,8 @@ export default function PrivacyPage() {
               </div>
 
               <div className="space-y-3">
-                <h3 className="text-lg font-semibold text-white">Activity Data</h3>
-                <ul className="list-disc pl-6 space-y-2">
+                <h3 className="text-[17px] font-semibold text-white">Activity Data</h3>
+                <ul className="list-disc space-y-2 pl-6 marker:text-white/55">
                   <li>Samples you listen to or download</li>
                   <li>Items you favourite, save, or add to playlists</li>
                   <li>Playback activity (play, pause, loop)</li>
@@ -60,8 +70,8 @@ export default function PrivacyPage() {
               </div>
 
               <div className="space-y-3">
-                <h3 className="text-lg font-semibold text-white">Technical Data</h3>
-                <ul className="list-disc pl-6 space-y-2">
+                <h3 className="text-[17px] font-semibold text-white">Technical Data</h3>
+                <ul className="list-disc space-y-2 pl-6 marker:text-white/55">
                   <li>IP address</li>
                   <li>Browser type and version</li>
                   <li>Device type and operating system</li>
@@ -70,23 +80,23 @@ export default function PrivacyPage() {
               </div>
 
               <div className="space-y-3">
-                <h3 className="text-lg font-semibold text-white">Billing Data</h3>
-                <ul className="list-disc pl-6 space-y-2">
+                <h3 className="text-[17px] font-semibold text-white">Billing Data</h3>
+                <ul className="list-disc space-y-2 pl-6 marker:text-white/55">
                   <li>Subscription plan and status</li>
                   <li>Billing history</li>
                   <li>Payment method type (card, PayPal, etc.)</li>
                 </ul>
-                <p className="text-white/80">
+                <p className="text-white/75">
                   We do not store full card numbers. Payments are processed by Stripe or Patreon, who maintain their own privacy policies.
                 </p>
               </div>
             </section>
 
             {/* Section 3 */}
-            <section className="space-y-4">
-              <h2 className="text-h3 text-white">3. Authentication and Login Providers</h2>
+            <section id="section-3" className="scroll-mt-24 space-y-4">
+              <h2 className="[font-family:var(--font-display)] text-[clamp(1.05rem,1.5vw,1.25rem)] font-extrabold uppercase leading-[1.3] tracking-[-0.01em] text-white">3. Authentication and Login Providers</h2>
               <p>You may log in using third-party providers such as:</p>
-              <ul className="list-disc pl-6 space-y-2">
+              <ul className="list-disc space-y-2 pl-6 marker:text-white/55">
                 <li>Google</li>
                 <li>Facebook</li>
                 <li>Patreon</li>
@@ -100,12 +110,12 @@ export default function PrivacyPage() {
             </section>
 
             {/* Section 4 */}
-            <section className="space-y-4">
-              <h2 className="text-h3 text-white">4. Payments and Billing</h2>
+            <section id="section-4" className="scroll-mt-24 space-y-4">
+              <h2 className="[font-family:var(--font-display)] text-[clamp(1.05rem,1.5vw,1.25rem)] font-extrabold uppercase leading-[1.3] tracking-[-0.01em] text-white">4. Payments and Billing</h2>
               <p>
                 All payment processing is handled by Stripe or Patreon. We do not have access to your full payment details. We receive only:
               </p>
-              <ul className="list-disc pl-6 space-y-2">
+              <ul className="list-disc space-y-2 pl-6 marker:text-white/55">
                 <li>Confirmation of payment status</li>
                 <li>Subscription tier</li>
                 <li>Payment method type</li>
@@ -117,10 +127,10 @@ export default function PrivacyPage() {
             </section>
 
             {/* Section 5 */}
-            <section className="space-y-4">
-              <h2 className="text-h3 text-white">5. How We Use Your Data</h2>
+            <section id="section-5" className="scroll-mt-24 space-y-4">
+              <h2 className="[font-family:var(--font-display)] text-[clamp(1.05rem,1.5vw,1.25rem)] font-extrabold uppercase leading-[1.3] tracking-[-0.01em] text-white">5. How We Use Your Data</h2>
               <p>We use your data to:</p>
-              <ul className="list-disc pl-6 space-y-2">
+              <ul className="list-disc space-y-2 pl-6 marker:text-white/55">
                 <li>Provide and maintain access to the Platform</li>
                 <li>Authenticate your account and secure your session</li>
                 <li>Process subscriptions and verify access rights</li>
@@ -136,8 +146,8 @@ export default function PrivacyPage() {
             </section>
 
             {/* Section 6 */}
-            <section className="space-y-4">
-              <h2 className="text-h3 text-white">6. Audio Content and Creative Use</h2>
+            <section id="section-6" className="scroll-mt-24 space-y-4">
+              <h2 className="[font-family:var(--font-display)] text-[clamp(1.05rem,1.5vw,1.25rem)] font-extrabold uppercase leading-[1.3] tracking-[-0.01em] text-white">6. Audio Content and Creative Use</h2>
               <p>
                 We do not analyse, track, or claim ownership of any music you create using our samples. We have no visibility into how you use downloaded samples after export.
               </p>
@@ -147,16 +157,16 @@ export default function PrivacyPage() {
             </section>
 
             {/* Section 7 */}
-            <section className="space-y-4">
-              <h2 className="text-h3 text-white">7. Cookies and Tracking</h2>
+            <section id="section-7" className="scroll-mt-24 space-y-4">
+              <h2 className="[font-family:var(--font-display)] text-[clamp(1.05rem,1.5vw,1.25rem)] font-extrabold uppercase leading-[1.3] tracking-[-0.01em] text-white">7. Cookies and Tracking</h2>
               <p>We use a small number of essential cookies to:</p>
-              <ul className="list-disc pl-6 space-y-2">
+              <ul className="list-disc space-y-2 pl-6 marker:text-white/55">
                 <li>Keep you logged in</li>
                 <li>Remember preferences (e.g. volume level)</li>
                 <li>Track session state</li>
               </ul>
               <p>We do not use:</p>
-              <ul className="list-disc pl-6 space-y-2">
+              <ul className="list-disc space-y-2 pl-6 marker:text-white/55">
                 <li>Third-party advertising cookies</li>
                 <li>Behavioural tracking across other websites</li>
                 <li>Any form of cross-platform retargeting</li>
@@ -167,8 +177,8 @@ export default function PrivacyPage() {
             </section>
 
             {/* Section 8 */}
-            <section className="space-y-4">
-              <h2 className="text-h3 text-white">8. Under-18 Users</h2>
+            <section id="section-8" className="scroll-mt-24 space-y-4">
+              <h2 className="[font-family:var(--font-display)] text-[clamp(1.05rem,1.5vw,1.25rem)] font-extrabold uppercase leading-[1.3] tracking-[-0.01em] text-white">8. Under-18 Users</h2>
               <p>
                 Users under the age of 18 may only use the Platform with parental or guardian consent. We do not knowingly collect personal data from users under 13.
               </p>
@@ -178,12 +188,12 @@ export default function PrivacyPage() {
             </section>
 
             {/* Section 9 */}
-            <section className="space-y-4">
-              <h2 className="text-h3 text-white">9. Data Storage and Security</h2>
+            <section id="section-9" className="scroll-mt-24 space-y-4">
+              <h2 className="[font-family:var(--font-display)] text-[clamp(1.05rem,1.5vw,1.25rem)] font-extrabold uppercase leading-[1.3] tracking-[-0.01em] text-white">9. Data Storage and Security</h2>
               <p>
                 Your data is stored securely using modern infrastructure (Supabase and Vercel). We implement standard protections including:
               </p>
-              <ul className="list-disc pl-6 space-y-2">
+              <ul className="list-disc space-y-2 pl-6 marker:text-white/55">
                 <li>HTTPS encryption for all connections</li>
                 <li>Secure password hashing</li>
                 <li>Access controls and role-based permissions</li>
@@ -195,8 +205,8 @@ export default function PrivacyPage() {
             </section>
 
             {/* Section 10 */}
-            <section className="space-y-4">
-              <h2 className="text-h3 text-white">10. Data Retention</h2>
+            <section id="section-10" className="scroll-mt-24 space-y-4">
+              <h2 className="[font-family:var(--font-display)] text-[clamp(1.05rem,1.5vw,1.25rem)] font-extrabold uppercase leading-[1.3] tracking-[-0.01em] text-white">10. Data Retention</h2>
               <p>
                 We retain your account data for as long as your account is active. If you cancel your subscription, your account remains accessible with limited functionality.
               </p>
@@ -205,10 +215,10 @@ export default function PrivacyPage() {
             </section>
 
             {/* Section 11 */}
-            <section className="space-y-4">
-              <h2 className="text-h3 text-white">11. Your Rights (UK/EU Users)</h2>
+            <section id="section-11" className="scroll-mt-24 space-y-4">
+              <h2 className="[font-family:var(--font-display)] text-[clamp(1.05rem,1.5vw,1.25rem)] font-extrabold uppercase leading-[1.3] tracking-[-0.01em] text-white">11. Your Rights (UK/EU Users)</h2>
               <p>If you are based in the UK or EU, you have the right to:</p>
-              <ul className="list-disc pl-6 space-y-2">
+              <ul className="list-disc space-y-2 pl-6 marker:text-white/55">
                 <li>Access the personal data we hold about you</li>
                 <li>Request correction of inaccurate or incomplete data</li>
                 <li>Request deletion of your data</li>
@@ -218,17 +228,17 @@ export default function PrivacyPage() {
               </ul>
               <p>
                 To exercise these rights, please contact us at{" "}
-                <a href="mailto:hello@soulsampleclub.com" className="text-white hover:underline">
+                <a href="mailto:hello@soulsampleclub.com" className="text-white underline underline-offset-4 hover:text-white/75">
                   hello@soulsampleclub.com
                 </a>.
               </p>
             </section>
 
             {/* Section 12 */}
-            <section className="space-y-4">
-              <h2 className="text-h3 text-white">12. Third-Party Services</h2>
+            <section id="section-12" className="scroll-mt-24 space-y-4">
+              <h2 className="[font-family:var(--font-display)] text-[clamp(1.05rem,1.5vw,1.25rem)] font-extrabold uppercase leading-[1.3] tracking-[-0.01em] text-white">12. Third-Party Services</h2>
               <p>We rely on trusted third-party services to operate the Platform:</p>
-              <ul className="list-disc pl-6 space-y-2">
+              <ul className="list-disc space-y-2 pl-6 marker:text-white/55">
                 <li><strong className="text-white">Supabase</strong> – Database and authentication</li>
                 <li><strong className="text-white">Vercel</strong> – Hosting and infrastructure</li>
                 <li><strong className="text-white">Stripe</strong> – Payment processing</li>
@@ -241,43 +251,31 @@ export default function PrivacyPage() {
             </section>
 
             {/* Section 13 */}
-            <section className="space-y-4">
-              <h2 className="text-h3 text-white">13. International Data Transfers</h2>
+            <section id="section-13" className="scroll-mt-24 space-y-4">
+              <h2 className="[font-family:var(--font-display)] text-[clamp(1.05rem,1.5vw,1.25rem)] font-extrabold uppercase leading-[1.3] tracking-[-0.01em] text-white">13. International Data Transfers</h2>
               <p>
                 Your data may be stored or processed outside the UK or EU, in countries where our service providers operate. Where this occurs, we ensure appropriate safeguards are in place (e.g. Standard Contractual Clauses).
               </p>
             </section>
 
             {/* Section 14 */}
-            <section className="space-y-4">
-              <h2 className="text-h3 text-white">14. Changes to This Policy</h2>
+            <section id="section-14" className="scroll-mt-24 space-y-4">
+              <h2 className="[font-family:var(--font-display)] text-[clamp(1.05rem,1.5vw,1.25rem)] font-extrabold uppercase leading-[1.3] tracking-[-0.01em] text-white">14. Changes to This Policy</h2>
               <p>
                 We may update this Privacy Policy from time to time. Significant changes will be communicated through the Platform. Continued use after changes constitutes acceptance of the revised Policy.
               </p>
             </section>
 
             {/* Section 15 */}
-            <section className="space-y-4">
-              <h2 className="text-h3 text-white">15. Contact Us</h2>
+            <section id="section-15" className="scroll-mt-24 space-y-4">
+              <h2 className="[font-family:var(--font-display)] text-[clamp(1.05rem,1.5vw,1.25rem)] font-extrabold uppercase leading-[1.3] tracking-[-0.01em] text-white">15. Contact Us</h2>
               <p>For privacy-related inquiries, please contact:</p>
               <p>
-                <a href="mailto:hello@soulsampleclub.com" className="text-white hover:underline">
+                <a href="mailto:hello@soulsampleclub.com" className="text-white underline underline-offset-4 hover:text-white/75">
                   hello@soulsampleclub.com
                 </a>
               </p>
             </section>
-          </div>
-
-          <div className="mt-12 pt-8 border-t border-grey-700">
-            <Link
-              href="/"
-              className="text-white hover:underline"
-            >
-              ← Back to Catalog
-            </Link>
-          </div>
-        </div>
-      </main>
-    </div>
+    </LegalDoc>
   );
 }

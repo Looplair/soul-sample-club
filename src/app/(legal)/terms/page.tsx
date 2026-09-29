@@ -1,21 +1,34 @@
-import Link from "next/link";
+import { LegalDoc, type TocItem } from "../LegalDoc";
 
 export const metadata = {
   title: "Terms of Use | Soul Sample Club",
   description: "Terms of Use for Soul Sample Club",
 };
 
+const toc: TocItem[] = [
+  { id: "section-1", label: "1. About Soul Sample Club" },
+  { id: "section-2", label: "2. Eligibility and Age Requirements" },
+  { id: "section-3", label: "3. Account Registration and Security" },
+  { id: "section-4", label: "4. Subscriptions, Trials, and Billing" },
+  { id: "license", label: "5. License to Use Samples" },
+  { id: "section-6", label: "6. Restrictions on Use" },
+  { id: "section-6a", label: "6A. Prohibition on AI Training" },
+  { id: "section-7", label: "7. Content Rotation and Availability" },
+  { id: "section-8", label: "8. Playback, Preview, and Creative Tools" },
+  { id: "section-9", label: "9. Intellectual Property" },
+  { id: "section-10", label: "10. Acceptable Use" },
+  { id: "section-11", label: "11. Suspension and Termination" },
+  { id: "section-12", label: "12. Platform Changes" },
+  { id: "section-13", label: "13. Disclaimer of Warranties" },
+  { id: "section-14", label: "14. Limitation of Liability" },
+  { id: "section-15", label: "15. Indemnification" },
+  { id: "section-16", label: "16. Governing Law" },
+  { id: "section-17", label: "17. Contact" },
+];
+
 export default function TermsPage() {
   return (
-    <div className="min-h-screen bg-charcoal">
-      <main className="section">
-        <div className="container-app max-w-3xl">
-          <h1 className="text-h1 text-white mb-4">Terms of Use</h1>
-          <p className="text-body-lg text-text-muted mb-8">
-            Last updated: September 2026
-          </p>
-
-          <div className="prose prose-invert prose-grey max-w-none space-y-8 text-text-secondary">
+    <LegalDoc title="Terms of Use" updated="Last updated: September 2026" toc={toc}>
             <p>
               These Terms of Use (&quot;Terms&quot;) govern your access to and use of the Soul Sample Club platform, including the website, web application, desktop application, and all related services (collectively, the &quot;Platform&quot;).
             </p>
@@ -24,13 +37,13 @@ export default function TermsPage() {
             </p>
 
             {/* Section 1 */}
-            <section className="space-y-4">
-              <h2 className="text-h3 text-white">1. About Soul Sample Club</h2>
+            <section id="section-1" className="scroll-mt-24 space-y-4">
+              <h2 className="[font-family:var(--font-display)] text-[clamp(1.05rem,1.5vw,1.25rem)] font-extrabold uppercase leading-[1.3] tracking-[-0.01em] text-white">1. About Soul Sample Club</h2>
               <p>
                 Soul Sample Club is a subscription-based platform providing access to original musical compositions, audio samples, and related playback and preview tools designed for music production and sampling.
               </p>
               <p>The Platform may be accessed through:</p>
-              <ul className="list-disc pl-6 space-y-2">
+              <ul className="list-disc space-y-2 pl-6 marker:text-white/55">
                 <li>A web-based application</li>
                 <li>A desktop application that mirrors the web experience</li>
               </ul>
@@ -38,8 +51,8 @@ export default function TermsPage() {
             </section>
 
             {/* Section 2 */}
-            <section className="space-y-4">
-              <h2 className="text-h3 text-white">2. Eligibility and Age Requirements</h2>
+            <section id="section-2" className="scroll-mt-24 space-y-4">
+              <h2 className="[font-family:var(--font-display)] text-[clamp(1.05rem,1.5vw,1.25rem)] font-extrabold uppercase leading-[1.3] tracking-[-0.01em] text-white">2. Eligibility and Age Requirements</h2>
               <p>
                 To create an account, enter into a subscription, or make purchases on the Platform, you must be at least 18 years old or the age of legal majority in your jurisdiction.
               </p>
@@ -47,7 +60,7 @@ export default function TermsPage() {
                 If you are under 18, you may only access or use the Platform with the knowledge, consent, and supervision of a parent or legal guardian, who agrees to these Terms on your behalf and assumes full responsibility for your use of the Platform.
               </p>
               <p>By using the Platform, you represent and warrant that:</p>
-              <ul className="list-disc pl-6 space-y-2">
+              <ul className="list-disc space-y-2 pl-6 marker:text-white/55">
                 <li>You are legally permitted to enter into these Terms, or</li>
                 <li>A parent or legal guardian has authorised your use of the Platform and accepts these Terms on your behalf</li>
               </ul>
@@ -55,11 +68,11 @@ export default function TermsPage() {
             </section>
 
             {/* Section 3 */}
-            <section className="space-y-4">
-              <h2 className="text-h3 text-white">3. Account Registration and Security</h2>
+            <section id="section-3" className="scroll-mt-24 space-y-4">
+              <h2 className="[font-family:var(--font-display)] text-[clamp(1.05rem,1.5vw,1.25rem)] font-extrabold uppercase leading-[1.3] tracking-[-0.01em] text-white">3. Account Registration and Security</h2>
               <p>Certain features of the Platform require account registration.</p>
               <p>You agree to:</p>
-              <ul className="list-disc pl-6 space-y-2">
+              <ul className="list-disc space-y-2 pl-6 marker:text-white/55">
                 <li>Provide accurate, current, and complete information</li>
                 <li>Maintain the confidentiality of your login credentials</li>
                 <li>Notify us immediately of any unauthorised access or security breach</li>
@@ -70,13 +83,13 @@ export default function TermsPage() {
             </section>
 
             {/* Section 4 */}
-            <section className="space-y-4">
-              <h2 className="text-h3 text-white">4. Subscriptions, Trials, and Billing</h2>
+            <section id="section-4" className="scroll-mt-24 space-y-4">
+              <h2 className="[font-family:var(--font-display)] text-[clamp(1.05rem,1.5vw,1.25rem)] font-extrabold uppercase leading-[1.3] tracking-[-0.01em] text-white">4. Subscriptions, Trials, and Billing</h2>
 
               <div className="space-y-3">
-                <h3 className="text-lg font-semibold text-white">Free Trials</h3>
+                <h3 className="text-[17px] font-semibold text-white">Free Trials</h3>
                 <p>If a free trial is offered:</p>
-                <ul className="list-disc pl-6 space-y-2">
+                <ul className="list-disc space-y-2 pl-6 marker:text-white/55">
                   <li>Trial access may be limited in duration or functionality</li>
                   <li>You may cancel before the trial ends to avoid charges</li>
                   <li>Trial terms may change or be withdrawn at any time</li>
@@ -84,8 +97,8 @@ export default function TermsPage() {
               </div>
 
               <div className="space-y-3">
-                <h3 className="text-lg font-semibold text-white">Paid Subscriptions</h3>
-                <ul className="list-disc pl-6 space-y-2">
+                <h3 className="text-[17px] font-semibold text-white">Paid Subscriptions</h3>
+                <ul className="list-disc space-y-2 pl-6 marker:text-white/55">
                   <li>Subscriptions are billed on a recurring basis unless cancelled</li>
                   <li>Prices and billing terms are shown at checkout</li>
                   <li>You are responsible for all applicable taxes</li>
@@ -93,8 +106,8 @@ export default function TermsPage() {
               </div>
 
               <div className="space-y-3">
-                <h3 className="text-lg font-semibold text-white">Cancellation</h3>
-                <ul className="list-disc pl-6 space-y-2">
+                <h3 className="text-[17px] font-semibold text-white">Cancellation</h3>
+                <ul className="list-disc space-y-2 pl-6 marker:text-white/55">
                   <li>You may cancel your subscription at any time</li>
                   <li>Cancellation prevents future billing</li>
                   <li>Fees already paid are non-refundable unless required by law</li>
@@ -104,19 +117,19 @@ export default function TermsPage() {
 
             {/* Section 5 - License */}
             <section id="license" className="space-y-4 scroll-mt-24">
-              <h2 className="text-h3 text-white">5. License to Use Samples</h2>
+              <h2 className="[font-family:var(--font-display)] text-[clamp(1.05rem,1.5vw,1.25rem)] font-extrabold uppercase leading-[1.3] tracking-[-0.01em] text-white">5. License to Use Samples</h2>
 
-              <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-6 space-y-4">
-                <h3 className="text-lg font-semibold text-emerald-400">Grant of License</h3>
+              <div className="ssc-glass ssc-glass--plain rounded-[22px] p-5 sm:p-7 space-y-4">
+                <h3 className="text-[17px] font-semibold text-white">Grant of License</h3>
                 <p>
                   Subject to your compliance with these Terms, Soul Sample Club grants you a <strong className="text-white">non-exclusive, perpetual, royalty-free license</strong> to use the audio recordings of any samples you downloaded while your subscription was active. Soul Sample Club retains ownership of the underlying compositions.
                 </p>
               </div>
 
               <div className="space-y-3">
-                <h3 className="text-lg font-semibold text-white">Scope of Use</h3>
+                <h3 className="text-[17px] font-semibold text-white">Scope of Use</h3>
                 <p>You may use downloaded samples in:</p>
-                <ul className="list-disc pl-6 space-y-2">
+                <ul className="list-disc space-y-2 pl-6 marker:text-white/55">
                   <li>Commercial and non-commercial music releases</li>
                   <li>Independent and major label releases</li>
                   <li>Streaming platforms</li>
@@ -126,10 +139,10 @@ export default function TermsPage() {
                 </ul>
               </div>
 
-              <div className="bg-white/5 border border-white/10 rounded-xl p-6 space-y-3">
-                <h3 className="text-lg font-semibold text-white">No Clearance Required</h3>
+              <div className="ssc-glass ssc-glass--plain rounded-[22px] p-5 sm:p-7 space-y-3">
+                <h3 className="text-[17px] font-semibold text-white">No Clearance Required</h3>
                 <p>All samples provided through the Platform are:</p>
-                <ul className="list-disc pl-6 space-y-2">
+                <ul className="list-disc space-y-2 pl-6 marker:text-white/55">
                   <li><strong className="text-white">Original compositions</strong></li>
                   <li><strong className="text-white">Pre-cleared for use</strong></li>
                   <li><strong className="text-white">Free from future clearance or royalty obligations</strong></li>
@@ -141,10 +154,10 @@ export default function TermsPage() {
             </section>
 
             {/* Section 6 */}
-            <section className="space-y-4">
-              <h2 className="text-h3 text-white">6. Restrictions on Use</h2>
+            <section id="section-6" className="scroll-mt-24 space-y-4">
+              <h2 className="[font-family:var(--font-display)] text-[clamp(1.05rem,1.5vw,1.25rem)] font-extrabold uppercase leading-[1.3] tracking-[-0.01em] text-white">6. Restrictions on Use</h2>
               <p>You may not:</p>
-              <ul className="list-disc pl-6 space-y-2">
+              <ul className="list-disc space-y-2 pl-6 marker:text-white/55">
                 <li>Resell, sublicense, or redistribute samples as standalone files</li>
                 <li>Upload samples to competing libraries or platforms</li>
                 <li>Share, leak, or publicly distribute raw sample files</li>
@@ -158,14 +171,14 @@ export default function TermsPage() {
             </section>
 
             {/* Section 6A - AI Prohibition */}
-            <section className="space-y-4">
-              <h2 className="text-h3 text-white">6A. Prohibition on AI Training</h2>
-              <div className="bg-rose-500/10 border border-rose-500/20 rounded-xl p-6 space-y-4">
+            <section id="section-6a" className="scroll-mt-24 space-y-4">
+              <h2 className="[font-family:var(--font-display)] text-[clamp(1.05rem,1.5vw,1.25rem)] font-extrabold uppercase leading-[1.3] tracking-[-0.01em] text-white">6A. Prohibition on AI Training</h2>
+              <div className="ssc-glass ssc-glass--plain rounded-[22px] p-5 sm:p-7 space-y-4">
                 <p>
                   <strong className="text-white">Soul Sample Club samples may not be used for artificial intelligence or machine learning purposes.</strong>
                 </p>
                 <p>This includes, but is not limited to:</p>
-                <ul className="list-disc pl-6 space-y-2">
+                <ul className="list-disc space-y-2 pl-6 marker:text-white/55">
                   <li>Training generative AI models (audio, music, or otherwise)</li>
                   <li>Fine-tuning existing AI models</li>
                   <li>Creating datasets for machine learning research or development</li>
@@ -174,17 +187,17 @@ export default function TermsPage() {
                 <p>
                   This prohibition exists to protect the integrity of human-made music and ensure our compositions are not used to train systems that may replace human creativity.
                 </p>
-                <p className="text-rose-400 font-medium">
+                <p className="text-white font-medium">
                   Violation of this policy constitutes a material breach of these Terms and may result in immediate account termination and legal action.
                 </p>
               </div>
             </section>
 
             {/* Section 7 */}
-            <section className="space-y-4">
-              <h2 className="text-h3 text-white">7. Content Rotation and Availability</h2>
+            <section id="section-7" className="scroll-mt-24 space-y-4">
+              <h2 className="[font-family:var(--font-display)] text-[clamp(1.05rem,1.5vw,1.25rem)] font-extrabold uppercase leading-[1.3] tracking-[-0.01em] text-white">7. Content Rotation and Availability</h2>
               <p>The Platform may:</p>
-              <ul className="list-disc pl-6 space-y-2">
+              <ul className="list-disc space-y-2 pl-6 marker:text-white/55">
                 <li>Add, rotate, or remove content over time</li>
                 <li>Limit the availability of certain samples</li>
               </ul>
@@ -195,17 +208,17 @@ export default function TermsPage() {
             </section>
 
             {/* Section 8 */}
-            <section className="space-y-4">
-              <h2 className="text-h3 text-white">8. Playback, Preview, and Creative Tools</h2>
+            <section id="section-8" className="scroll-mt-24 space-y-4">
+              <h2 className="[font-family:var(--font-display)] text-[clamp(1.05rem,1.5vw,1.25rem)] font-extrabold uppercase leading-[1.3] tracking-[-0.01em] text-white">8. Playback, Preview, and Creative Tools</h2>
               <p>The Platform may include features such as:</p>
-              <ul className="list-disc pl-6 space-y-2">
+              <ul className="list-disc space-y-2 pl-6 marker:text-white/55">
                 <li>Audio previews</li>
                 <li>Looping</li>
                 <li>Pitch adjustment</li>
                 <li>Playback controls</li>
               </ul>
               <p>These features:</p>
-              <ul className="list-disc pl-6 space-y-2">
+              <ul className="list-disc space-y-2 pl-6 marker:text-white/55">
                 <li>Are provided for preview and inspiration only</li>
                 <li>Do not modify downloadable files</li>
                 <li>Do not create derivative licenses</li>
@@ -214,20 +227,20 @@ export default function TermsPage() {
             </section>
 
             {/* Section 9 */}
-            <section className="space-y-4">
-              <h2 className="text-h3 text-white">9. Intellectual Property</h2>
+            <section id="section-9" className="scroll-mt-24 space-y-4">
+              <h2 className="[font-family:var(--font-display)] text-[clamp(1.05rem,1.5vw,1.25rem)] font-extrabold uppercase leading-[1.3] tracking-[-0.01em] text-white">9. Intellectual Property</h2>
 
               <div className="space-y-3">
-                <h3 className="text-lg font-semibold text-white">Platform Ownership</h3>
+                <h3 className="text-[17px] font-semibold text-white">Platform Ownership</h3>
                 <p>
                   All Platform software, design, interface elements, branding, text, and non-sample content are owned by or licensed to Soul Sample Club and protected by intellectual property laws.
                 </p>
               </div>
 
               <div className="space-y-3">
-                <h3 className="text-lg font-semibold text-white">User Creations</h3>
+                <h3 className="text-[17px] font-semibold text-white">User Creations</h3>
                 <p>You retain full ownership of:</p>
-                <ul className="list-disc pl-6 space-y-2">
+                <ul className="list-disc space-y-2 pl-6 marker:text-white/55">
                   <li>Any original music you create</li>
                   <li>Any recordings or compositions you produce using the samples</li>
                 </ul>
@@ -238,10 +251,10 @@ export default function TermsPage() {
             </section>
 
             {/* Section 10 */}
-            <section className="space-y-4">
-              <h2 className="text-h3 text-white">10. Acceptable Use</h2>
+            <section id="section-10" className="scroll-mt-24 space-y-4">
+              <h2 className="[font-family:var(--font-display)] text-[clamp(1.05rem,1.5vw,1.25rem)] font-extrabold uppercase leading-[1.3] tracking-[-0.01em] text-white">10. Acceptable Use</h2>
               <p>You agree not to:</p>
-              <ul className="list-disc pl-6 space-y-2">
+              <ul className="list-disc space-y-2 pl-6 marker:text-white/55">
                 <li>Abuse or interfere with the Platform</li>
                 <li>Attempt to reverse engineer or compromise the Platform</li>
                 <li>Use the Platform for unlawful purposes</li>
@@ -251,10 +264,10 @@ export default function TermsPage() {
             </section>
 
             {/* Section 11 */}
-            <section className="space-y-4">
-              <h2 className="text-h3 text-white">11. Suspension and Termination</h2>
+            <section id="section-11" className="scroll-mt-24 space-y-4">
+              <h2 className="[font-family:var(--font-display)] text-[clamp(1.05rem,1.5vw,1.25rem)] font-extrabold uppercase leading-[1.3] tracking-[-0.01em] text-white">11. Suspension and Termination</h2>
               <p>We may suspend or terminate your account if:</p>
-              <ul className="list-disc pl-6 space-y-2">
+              <ul className="list-disc space-y-2 pl-6 marker:text-white/55">
                 <li>You violate these Terms</li>
                 <li>You misuse or abuse the Platform</li>
                 <li>Required by law or regulation</li>
@@ -265,10 +278,10 @@ export default function TermsPage() {
             </section>
 
             {/* Section 12 */}
-            <section className="space-y-4">
-              <h2 className="text-h3 text-white">12. Platform Changes</h2>
+            <section id="section-12" className="scroll-mt-24 space-y-4">
+              <h2 className="[font-family:var(--font-display)] text-[clamp(1.05rem,1.5vw,1.25rem)] font-extrabold uppercase leading-[1.3] tracking-[-0.01em] text-white">12. Platform Changes</h2>
               <p>We may:</p>
-              <ul className="list-disc pl-6 space-y-2">
+              <ul className="list-disc space-y-2 pl-6 marker:text-white/55">
                 <li>Modify or discontinue features</li>
                 <li>Update these Terms from time to time</li>
               </ul>
@@ -278,11 +291,11 @@ export default function TermsPage() {
             </section>
 
             {/* Section 13 */}
-            <section className="space-y-4">
-              <h2 className="text-h3 text-white">13. Disclaimer of Warranties</h2>
+            <section id="section-13" className="scroll-mt-24 space-y-4">
+              <h2 className="[font-family:var(--font-display)] text-[clamp(1.05rem,1.5vw,1.25rem)] font-extrabold uppercase leading-[1.3] tracking-[-0.01em] text-white">13. Disclaimer of Warranties</h2>
               <p>The Platform is provided &quot;as is&quot; and &quot;as available.&quot;</p>
               <p>We do not guarantee:</p>
-              <ul className="list-disc pl-6 space-y-2">
+              <ul className="list-disc space-y-2 pl-6 marker:text-white/55">
                 <li>Uninterrupted access</li>
                 <li>Error-free operation</li>
                 <li>That the Platform will meet all specific needs</li>
@@ -290,20 +303,20 @@ export default function TermsPage() {
             </section>
 
             {/* Section 14 */}
-            <section className="space-y-4">
-              <h2 className="text-h3 text-white">14. Limitation of Liability</h2>
+            <section id="section-14" className="scroll-mt-24 space-y-4">
+              <h2 className="[font-family:var(--font-display)] text-[clamp(1.05rem,1.5vw,1.25rem)] font-extrabold uppercase leading-[1.3] tracking-[-0.01em] text-white">14. Limitation of Liability</h2>
               <p>To the maximum extent permitted by law:</p>
-              <ul className="list-disc pl-6 space-y-2">
+              <ul className="list-disc space-y-2 pl-6 marker:text-white/55">
                 <li>Soul Sample Club is not liable for indirect or consequential damages</li>
                 <li>Total liability shall not exceed the amount paid by you in the preceding 12 months</li>
               </ul>
             </section>
 
             {/* Section 15 */}
-            <section className="space-y-4">
-              <h2 className="text-h3 text-white">15. Indemnification</h2>
+            <section id="section-15" className="scroll-mt-24 space-y-4">
+              <h2 className="[font-family:var(--font-display)] text-[clamp(1.05rem,1.5vw,1.25rem)] font-extrabold uppercase leading-[1.3] tracking-[-0.01em] text-white">15. Indemnification</h2>
               <p>You agree to indemnify and hold harmless Soul Sample Club from claims arising from:</p>
-              <ul className="list-disc pl-6 space-y-2">
+              <ul className="list-disc space-y-2 pl-6 marker:text-white/55">
                 <li>Your use of the Platform</li>
                 <li>Your breach of these Terms</li>
                 <li>Your misuse of samples or content</li>
@@ -311,8 +324,8 @@ export default function TermsPage() {
             </section>
 
             {/* Section 16 */}
-            <section className="space-y-4">
-              <h2 className="text-h3 text-white">16. Governing Law</h2>
+            <section id="section-16" className="scroll-mt-24 space-y-4">
+              <h2 className="[font-family:var(--font-display)] text-[clamp(1.05rem,1.5vw,1.25rem)] font-extrabold uppercase leading-[1.3] tracking-[-0.01em] text-white">16. Governing Law</h2>
               <p>These Terms are governed by the laws of England and Wales.</p>
               <p>
                 Any disputes shall be subject to the exclusive jurisdiction of the courts of England and Wales.
@@ -320,27 +333,15 @@ export default function TermsPage() {
             </section>
 
             {/* Section 17 */}
-            <section className="space-y-4">
-              <h2 className="text-h3 text-white">17. Contact</h2>
+            <section id="section-17" className="scroll-mt-24 space-y-4">
+              <h2 className="[font-family:var(--font-display)] text-[clamp(1.05rem,1.5vw,1.25rem)] font-extrabold uppercase leading-[1.3] tracking-[-0.01em] text-white">17. Contact</h2>
               <p>For questions regarding these Terms or the Platform, contact:</p>
               <p>
-                <a href="mailto:hello@soulsampleclub.com" className="text-white hover:underline">
+                <a href="mailto:hello@soulsampleclub.com" className="text-white underline underline-offset-4 hover:text-white/75">
                   hello@soulsampleclub.com
                 </a>
               </p>
             </section>
-          </div>
-
-          <div className="mt-12 pt-8 border-t border-grey-700">
-            <Link
-              href="/"
-              className="text-white hover:underline"
-            >
-              ← Back to Catalog
-            </Link>
-          </div>
-        </div>
-      </main>
-    </div>
+    </LegalDoc>
   );
 }

@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Loader2 } from "lucide-react";
 import { getStoredFbclid } from "@/components/analytics/FbclidCapture";
+import { GlassBox } from "@/components/ssc/Glass";
 
 function SubscribeContent() {
   const router = useRouter();
@@ -66,42 +67,37 @@ function SubscribeContent() {
   }, [router, plan]);
 
   return (
-    <div className="min-h-screen bg-charcoal flex items-center justify-center">
-      <div className="text-center">
-        {status === "loading" && (
-          <>
-            <Loader2 className="w-8 h-8 text-velvet animate-spin mx-auto mb-4" />
-            <p className="text-snow">Checking your account...</p>
-          </>
-        )}
-        {status === "redirecting" && (
-          <>
-            <Loader2 className="w-8 h-8 text-velvet animate-spin mx-auto mb-4" />
-            <p className="text-snow">Taking you to checkout...</p>
-          </>
-        )}
-        {status === "error" && (
-          <>
-            <p className="text-red-400 mb-4">{errorMessage}</p>
-            <button
-              onClick={() => window.location.reload()}
-              className="text-velvet hover:text-velvet-light underline"
-            >
-              Try again
-            </button>
-          </>
-        )}
-      </div>
-    </div>
+    <GlassBox plain className="rounded-[28px] px-6 py-12 text-center sm:px-9">
+      {status === "loading" && (
+        <>
+          <Loader2 className="mx-auto mb-5 h-8 w-8 animate-spin text-white" />
+          <p className="ssc-body text-[16px]">Checking your account...</p>
+        </>
+      )}
+      {status === "redirecting" && (
+        <>
+          <Loader2 className="mx-auto mb-5 h-8 w-8 animate-spin text-white" />
+          <p className="ssc-body text-[16px]">Taking you to checkout...</p>
+        </>
+      )}
+      {status === "error" && (
+        <>
+          <p className="mb-6 text-[15px] leading-relaxed text-red-300">{errorMessage}</p>
+          <button onClick={() => window.location.reload()} className="ssc-btn ssc-btn--primary">
+            Try again
+          </button>
+        </>
+      )}
+    </GlassBox>
   );
 }
 
 export default function SubscribePage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-charcoal flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-velvet animate-spin" />
-      </div>
+      <GlassBox plain className="flex justify-center rounded-[28px] px-6 py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-white" />
+      </GlassBox>
     }>
       <SubscribeContent />
     </Suspense>
