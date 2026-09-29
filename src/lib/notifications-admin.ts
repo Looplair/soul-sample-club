@@ -91,7 +91,7 @@ export async function notifyNewAnnualSubscriber(params: {
         </p>
         ${name ? `<p style="color: #333; font-size: 16px; margin-bottom: 10px;"><strong>Name:</strong> ${name}</p>` : ""}
         <p style="color: #666; font-size: 14px; margin-top: 20px;">
-          They just locked in the $29/year introductory rate! 💎
+          They just locked in the $35/year offer price! 💎
         </p>
       </div>
     `,
