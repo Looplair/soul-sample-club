@@ -19,6 +19,8 @@ import {
   Trophy,
   LogIn,
   UserPlus,
+  HelpCircle,
+  Tag,
 } from "lucide-react";
 import { VaultButton } from "@/components/vault/VaultButton";
 import { cn } from "@/lib/utils";
@@ -35,10 +37,18 @@ interface NavbarProps {
   latest?: { name: string; href: string; cover_image_url: string | null };
 }
 
-const NAV_LINKS = [
+// Members get their tools; logged-out visitors (often cold traffic from ads)
+// get the two questions they arrive with: how it works and what it costs.
+const MEMBER_LINKS = [
   { href: "/feed", label: "Catalog", icon: LayoutGrid },
   { href: "/library", label: "Library", icon: Library },
   { href: "/vault", label: "Drum Vault", icon: Trophy },
+  { href: "/app", label: "App", icon: Monitor },
+];
+const VISITOR_LINKS = [
+  { href: "/feed", label: "Catalog", icon: LayoutGrid },
+  { href: "/#how-it-works", label: "How it works", icon: HelpCircle },
+  { href: "/#pricing", label: "Pricing", icon: Tag },
   { href: "/app", label: "App", icon: Monitor },
 ];
 
@@ -47,8 +57,7 @@ export function Navbar({ user, notifications = [], unreadCount = 0, latest }: Na
   const [menuOpen, setMenuOpen] = useState(false);
   const supabase = createClient();
   const isLoggedIn = !!user;
-  // Library is a member's own collection, so hide it from logged-out visitors
-  const navLinks = NAV_LINKS.filter((link) => isLoggedIn || link.href !== "/library");
+  const navLinks = isLoggedIn ? MEMBER_LINKS : VISITOR_LINKS;
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();

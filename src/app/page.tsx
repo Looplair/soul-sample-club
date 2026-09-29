@@ -12,6 +12,8 @@ import { TrackList } from "@/components/ssc/TrackList";
 import { SiteFooter } from "@/components/ssc/SiteFooter";
 import { HomeHero } from "@/components/ssc/home/HomeHero";
 import { WhyBoxes } from "@/components/ssc/home/WhyBoxes";
+import { ControlFilm } from "@/components/ssc/home/ControlFilm";
+import { ArtistRoll } from "@/components/ssc/home/ArtistRoll";
 import { MemberCap } from "@/components/ssc/MemberCap";
 import { getNotificationsForUser } from "@/lib/notifications";
 import { SITE_URL } from "@/lib/site";
@@ -153,6 +155,12 @@ const HOME_FAQS = [
   "Do I keep access to samples if I cancel",
   "Are these compositions made with AI",
   "Can I cancel anytime",
+];
+
+const STEPS = [
+  { n: "01", title: "Preview anything", body: "Every composition in the catalog plays free. No account needed to listen." },
+  { n: "02", title: "Join for $0.99", body: "Your first month is $0.99, then $6.99 a month. Cancel whenever you like." },
+  { n: "03", title: "Download and flip", body: "Grab full compositions and their stems, pre-cleared for your releases." },
 ];
 
 const PERKS = ["A new pack every week", "Full stems on every release", "Pre-cleared. No clearance needed, ever.", "Cancel anytime"];
@@ -322,6 +330,32 @@ export default async function HomePage() {
           </Section>
         )}
 
+        {/* COMPLETE CONTROL FILM */}
+        <Section id="control">
+          <div className="grid items-center gap-12 lg:grid-cols-[1fr_1fr] lg:gap-16">
+            <div>
+              <SectionHead
+                pill="Pre-cleared by design"
+                title={
+                  <>
+                    Complete control.
+                    <br />
+                    From day one.
+                  </>
+                }
+                body="Every sound in Soul Sample Club is pre-cleared at every stage, with no limits and nothing to clear later. Release it on your own or through a label, now or years from now. Nothing changes."
+              />
+              <Link
+                href={hasClearanceGuide ? "/guides/sample-clearance" : "/terms#license"}
+                className="ssc-btn ssc-btn--ghost mt-8"
+              >
+                {hasClearanceGuide ? "How sample clearance works" : "Read the license"}
+              </Link>
+            </div>
+            <ControlFilm />
+          </div>
+        </Section>
+
         {/* RELEASES RAIL */}
         <Section id="catalog">
           <SectionHead
@@ -350,18 +384,12 @@ export default async function HomePage() {
             title="Used by artists you know"
             body="Our sounds have been used by everyone from independent artists to industry heavyweights."
           />
-          <div className="mt-10 grid grid-cols-3 gap-3 sm:grid-cols-6">
-            {ARTISTS.map((a) => (
-              <GlassBox key={a.name} plain className="rounded-[20px] p-2">
-                <div className="relative aspect-square overflow-hidden rounded-[14px]">
-                  <Image src={a.image} alt={a.name} fill sizes="200px" className="object-cover grayscale transition-[filter] duration-500 hover:grayscale-0" />
-                </div>
-                <p className="px-1 pb-1 pt-2.5 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-white">{a.name}</p>
-              </GlassBox>
-            ))}
+          <div className="mt-12">
+            <ArtistRoll artists={ARTISTS} />
           </div>
-          <div className="mt-14">
+          <div className="mt-20">
             <Rail
+              title={<p className="ssc-label">From members</p>}
               tabs={[
                 {
                   label: "From members",
@@ -394,6 +422,22 @@ export default async function HomePage() {
               <Image src="/app-library.png" alt="The Soul Sample Club desktop app library" fill sizes="(max-width: 1024px) 90vw, 700px" className="object-cover" />
             </div>
           </GlassBox>
+        </Section>
+
+        {/* HOW IT WORKS */}
+        <Section id="how-it-works">
+          <SectionHead pill="How it works" title="From preview to release" align="center" className="mb-12" />
+          <div className="grid gap-4 md:grid-cols-3">
+            {STEPS.map((step, i) => (
+              <GlassBox key={step.n} glow={recent[i]?.glow} className="flex flex-col gap-10 rounded-[24px] p-7">
+                <span className="ssc-display text-[3.2rem] text-white/[0.22]">{step.n}</span>
+                <div>
+                  <h3 className="ssc-display text-[1.4rem]">{step.title}</h3>
+                  <p className="ssc-body mt-3 text-[15px] leading-relaxed">{step.body}</p>
+                </div>
+              </GlassBox>
+            ))}
+          </div>
         </Section>
 
         {/* PRICING */}
