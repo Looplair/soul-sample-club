@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { SampleRowWithLoop as SampleRow } from "@/components/audio/SampleRowWithLoop";
 import { cn, formatDate } from "@/lib/utils";
+import { glowStyle } from "@/components/ssc/Glass";
 import type { Sample, Pack } from "@/types/database";
 import { packPath } from "@/lib/pack-url";
 
@@ -34,6 +35,8 @@ interface LibraryTabsProps {
   canDownload: boolean;
   totalLiked: number;
   totalDownloaded: number;
+  /** Cover colour per pack id ("r, g, b"), so each pack box glows in its own light */
+  packGlows?: Record<string, string>;
 }
 
 type TabType = "liked" | "downloaded";
@@ -45,6 +48,7 @@ export function LibraryTabs({
   canDownload,
   totalLiked,
   totalDownloaded,
+  packGlows = {},
 }: LibraryTabsProps) {
   const [activeTab, setActiveTab] = useState<TabType>("liked");
   const [searchQuery, setSearchQuery] = useState("");
@@ -111,91 +115,70 @@ export function LibraryTabs({
     0
   );
 
-  return (
-    <div className="space-y-6">
-      {/* Tabs */}
-      <div className="flex items-center gap-1 p-1 bg-grey-800/50 rounded-lg w-fit">
-        <button
-          onClick={() => setActiveTab("liked")}
-          className={cn(
-            "flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors",
-            activeTab === "liked"
-              ? "bg-white text-charcoal"
-              : "text-text-muted hover:text-white hover:bg-grey-700"
-          )}
-        >
-          <Heart className="w-4 h-4" />
-          Liked
-          <span
-            className={cn(
-              "px-1.5 py-0.5 rounded text-xs",
-              activeTab === "liked"
-                ? "bg-charcoal/10 text-charcoal"
-                : "bg-grey-700 text-text-muted"
-            )}
-          >
-            {totalLiked}
-          </span>
-        </button>
-        <button
-          onClick={() => setActiveTab("downloaded")}
-          className={cn(
-            "flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors",
-            activeTab === "downloaded"
-              ? "bg-white text-charcoal"
-              : "text-text-muted hover:text-white hover:bg-grey-700"
-          )}
-        >
-          <Download className="w-4 h-4" />
-          Downloaded
-          <span
-            className={cn(
-              "px-1.5 py-0.5 rounded text-xs",
-              activeTab === "downloaded"
-                ? "bg-charcoal/10 text-charcoal"
-                : "bg-grey-700 text-text-muted"
-            )}
-          >
-            {totalDownloaded}
-          </span>
-        </button>
-      </div>
+  const tabs: { id: TabType; label: string; count: number; icon: typeof Heart }[] = [
+    { id: "liked", label: "Liked", count: totalLiked, icon: Heart },
+    { id: "downloaded", label: "Downloaded", count: totalDownloaded, icon: Download },
+  ];
 
-      {/* Search and Controls */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-        {/* Search */}
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+  return (
+    <div className="space-y-5">
+      {/* One glass bar: tabs, search and expand controls */}
+      <div className="ssc-glass ssc-glass--plain flex flex-wrap items-center gap-2 rounded-2xl p-2">
+        <div className="flex rounded-xl border border-white/10 bg-black/40 p-1" role="tablist">
+          {tabs.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              role="tab"
+              aria-selected={activeTab === t.id}
+              onClick={() => setActiveTab(t.id)}
+              className={cn(
+                "flex h-8 items-center gap-2 rounded-lg px-3 text-[12px] font-semibold uppercase tracking-[0.14em] transition-colors sm:px-4",
+                activeTab === t.id ? "bg-white text-black" : "text-white/75 hover:text-white"
+              )}
+            >
+              <t.icon className="h-3.5 w-3.5" />
+              {t.label}
+              <span className={cn("tabular-nums", activeTab === t.id ? "text-black/70" : "text-white/55")}>{t.count}</span>
+            </button>
+          ))}
+        </div>
+
+        <label className="relative flex h-10 min-w-[200px] flex-1 items-center">
+          <span className="sr-only">Search your library</span>
+          <Search className="pointer-events-none absolute left-3.5 h-4 w-4 text-white/55" />
           <input
             type="text"
-            placeholder="Search samples, packs, BPM, key..."
+            placeholder="Search samples, packs, BPM, key"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-10 py-2.5 bg-grey-800/50 border border-grey-700 rounded-lg text-sm text-white placeholder:text-text-muted focus:outline-none focus:border-grey-600 transition-colors"
+            className="h-full w-full rounded-xl border border-white/12 bg-white/[0.04] pl-10 pr-9 text-[14px] text-white outline-none transition-colors placeholder:text-white/55 focus:border-white/35"
           />
           {searchQuery && (
             <button
+              type="button"
+              aria-label="Clear search"
               onClick={() => setSearchQuery("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-white transition-colors"
+              className="absolute right-2.5 text-white/55 transition-colors hover:text-white"
             >
-              <X className="w-4 h-4" />
+              <X className="h-4 w-4" />
             </button>
           )}
-        </div>
+        </label>
 
-        {/* Expand/Collapse Controls */}
         {filteredGroups.length > 0 && (
-          <div className="flex items-center gap-2 text-sm">
+          <div className="flex items-center gap-1">
             <button
+              type="button"
               onClick={expandAll}
-              className="px-3 py-2 text-text-muted hover:text-white hover:bg-grey-800 rounded-lg transition-colors"
+              className="h-10 rounded-xl px-3 text-[12px] font-semibold uppercase tracking-[0.12em] text-white/75 transition-colors hover:bg-white/[0.06] hover:text-white"
             >
               Expand all
             </button>
-            <span className="text-grey-600">|</span>
             <button
+              type="button"
               onClick={collapseAll}
-              className="px-3 py-2 text-text-muted hover:text-white hover:bg-grey-800 rounded-lg transition-colors"
+              className="h-10 rounded-xl px-3 text-[12px] font-semibold uppercase tracking-[0.12em] text-white/75 transition-colors hover:bg-white/[0.06] hover:text-white"
             >
               Collapse all
             </button>
@@ -205,7 +188,7 @@ export function LibraryTabs({
 
       {/* Results summary */}
       {searchQuery && (
-        <p className="text-sm text-text-muted">
+        <p className="text-[13px] text-white/55">
           Found {totalFilteredSamples}{" "}
           {totalFilteredSamples === 1 ? "sample" : "samples"} in{" "}
           {filteredGroups.length}{" "}
@@ -226,6 +209,7 @@ export function LibraryTabs({
             <PackGroupCard
               key={group.pack.id}
               group={group}
+              glow={packGlows[group.pack.id]}
               isExpanded={expandedPacks.has(group.pack.id)}
               onToggle={() => togglePackExpanded(group.pack.id)}
               canDownload={canDownload}
@@ -242,6 +226,7 @@ export function LibraryTabs({
 // Pack Group Card Component
 interface PackGroupCardProps {
   group: PackGroup;
+  glow?: string;
   isExpanded: boolean;
   onToggle: () => void;
   canDownload: boolean;
@@ -251,6 +236,7 @@ interface PackGroupCardProps {
 
 function PackGroupCard({
   group,
+  glow,
   isExpanded,
   onToggle,
   canDownload,
@@ -260,14 +246,16 @@ function PackGroupCard({
   const { pack, samples } = group;
 
   return (
-    <div className="bg-grey-800/30 border border-grey-700 rounded-xl overflow-hidden">
+    <div className={cn("ssc-glass overflow-hidden rounded-[22px]", !glow && "ssc-glass--plain")} style={glowStyle(glow)}>
       {/* Pack Header - Clickable */}
       <button
+        type="button"
         onClick={onToggle}
-        className="w-full flex items-center gap-4 p-4 hover:bg-grey-800/50 transition-colors text-left"
+        aria-expanded={isExpanded}
+        className="flex w-full items-center gap-4 p-3 text-left transition-colors hover:bg-white/[0.03] sm:p-4"
       >
         {/* Pack Cover */}
-        <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-lg overflow-hidden flex-shrink-0 bg-grey-700">
+        <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-[14px] bg-white/[0.06] sm:h-16 sm:w-16">
           {pack.cover_image_url ? (
             <Image
               src={pack.cover_image_url}
@@ -277,21 +265,19 @@ function PackGroupCard({
               sizes="64px"
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <Music className="w-6 h-6 text-text-muted" />
+            <div className="flex h-full w-full items-center justify-center">
+              <Music className="h-6 w-6 text-white/55" />
             </div>
           )}
         </div>
 
         {/* Pack Info */}
-        <div className="flex-1 min-w-0">
-          <h3 className="text-body font-medium text-white truncate">
-            {pack.name}
-          </h3>
-          <div className="flex items-center gap-3 text-caption text-text-muted mt-1">
-            <span className="flex items-center gap-1">
-              <Package className="w-3 h-3" />
-              {samples.length} {samples.length === 1 ? "sample" : "samples"}
+        <div className="min-w-0 flex-1">
+          <h3 className="ssc-display truncate text-[15px] leading-tight sm:text-[17px]">{pack.name}</h3>
+          <div className="mt-1.5 flex items-center gap-3 text-[12px] text-white/55">
+            <span className="flex items-center gap-1.5">
+              <Package className="h-3 w-3" />
+              {samples.length} {samples.length === 1 ? "composition" : "compositions"}
             </span>
             <span>{formatDate(pack.release_date)}</span>
           </div>
@@ -301,24 +287,20 @@ function PackGroupCard({
         <Link
           href={packPath(pack)}
           onClick={(e) => e.stopPropagation()}
-          className="hidden sm:block px-3 py-1.5 text-sm text-text-muted hover:text-white hover:bg-grey-700 rounded-lg transition-colors"
+          className="hidden rounded-full border border-white/14 bg-white/[0.04] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/75 transition-colors hover:border-white/35 hover:text-white sm:block"
         >
           View pack
         </Link>
 
         {/* Expand/Collapse Icon */}
-        <div className="text-text-muted">
-          {isExpanded ? (
-            <ChevronUp className="w-5 h-5" />
-          ) : (
-            <ChevronDown className="w-5 h-5" />
-          )}
-        </div>
+        <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-white/[0.06] text-white/75">
+          {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+        </span>
       </button>
 
       {/* Samples List - Collapsible */}
       {isExpanded && (
-        <div className="border-t border-grey-700 p-4 space-y-2 sm:space-y-3">
+        <div className="space-y-1 border-t border-white/[0.08] p-2 sm:p-3">
           {samples.map((sample, index) => (
             <SampleRow
               key={sample.id}
@@ -344,48 +326,25 @@ interface EmptyStateProps {
 }
 
 function EmptyState({ type, hasSearch, searchQuery }: EmptyStateProps) {
-  if (hasSearch) {
-    return (
-      <div className="bg-grey-800/50 border border-grey-700 rounded-card text-center py-12">
-        <Search className="w-10 h-10 text-text-muted mx-auto mb-3" />
-        <p className="text-body text-text-muted mb-1">No results found</p>
-        <p className="text-caption text-text-subtle">
-          No samples match &quot;{searchQuery}&quot;
-        </p>
-      </div>
-    );
-  }
+  const Icon = hasSearch ? Search : type === "liked" ? Heart : Download;
+  const title = hasSearch ? "No results" : type === "liked" ? "Nothing liked yet" : "No downloads yet";
+  const body = hasSearch
+    ? <>Nothing in this tab matches &quot;{searchQuery}&quot;.</>
+    : type === "liked"
+      ? "Tap the heart on any sample and it will be saved here."
+      : "Samples you download from the catalog will show up here.";
 
   return (
-    <div className="bg-grey-800/50 border border-grey-700 rounded-card text-center py-12">
-      {type === "liked" ? (
-        <>
-          <Heart className="w-10 h-10 text-text-muted mx-auto mb-3" />
-          <p className="text-body text-text-muted mb-1">No liked samples yet</p>
-          <p className="text-caption text-text-subtle">
-            Browse packs and click the heart icon to save samples you love
-          </p>
-          <Link
-            href="/feed"
-            className="inline-block mt-4 px-4 py-2 bg-white text-charcoal rounded-lg text-sm font-medium hover:bg-snow transition-colors"
-          >
-            Browse packs
-          </Link>
-        </>
-      ) : (
-        <>
-          <Download className="w-10 h-10 text-text-muted mx-auto mb-3" />
-          <p className="text-body text-text-muted mb-1">No downloads yet</p>
-          <p className="text-caption text-text-subtle">
-            Download samples to build your collection
-          </p>
-          <Link
-            href="/feed"
-            className="inline-block mt-4 px-4 py-2 bg-white text-charcoal rounded-lg text-sm font-medium hover:bg-snow transition-colors"
-          >
-            Browse packs
-          </Link>
-        </>
+    <div className="ssc-glass ssc-glass--plain flex flex-col items-center rounded-[24px] px-6 py-14 text-center">
+      <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white/[0.06]">
+        <Icon className="h-5 w-5 text-white/75" />
+      </span>
+      <p className="ssc-display mt-5 text-[1.3rem]">{title}</p>
+      <p className="ssc-body mt-2 max-w-sm text-[15px]">{body}</p>
+      {!hasSearch && (
+        <Link href="/feed" className="ssc-btn ssc-btn--primary mt-6">
+          Browse the catalog
+        </Link>
       )}
     </div>
   );

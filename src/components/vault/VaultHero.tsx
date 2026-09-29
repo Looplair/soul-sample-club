@@ -2,92 +2,93 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { GlassBox, Pill } from "@/components/ssc/Glass";
 
 interface VaultHeroProps {
   stats: { collected: number; total: number };
   backLink?: ReactNode;
 }
 
+// Fixed bar heights (percent) for the progress strip, shaped like a drum
+// break: tall hits with smaller ghost notes between. Hardcoded so server and
+// client render the same markup.
+const STRIP = [
+  92, 30, 46, 24, 78, 28, 58, 22, 96, 34, 40, 26, 74, 30, 62, 20,
+  88, 26, 50, 32, 70, 24, 56, 28, 100, 30, 44, 22, 80, 34, 60, 24,
+  90, 28, 48, 26, 76, 22, 54, 30, 94, 32, 42, 24, 72, 28, 64, 36,
+];
+
 export function VaultHero({ stats, backLink }: VaultHeroProps) {
   const pct = stats.total > 0 ? Math.round((stats.collected / stats.total) * 100) : 0;
+  const lit = Math.round((pct / 100) * STRIP.length);
 
   return (
-    <div className="relative overflow-hidden flex-shrink-0" style={{ padding: "44px 40px 32px" }}>
-      {/* Ambient top glow */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background: "radial-gradient(ellipse 70% 40% at 50% 0%, rgba(255,255,255,0.05) 0%, transparent 100%)",
-        }}
-      />
-      <div className="relative z-10 max-w-[860px] mx-auto">
-        {backLink && (
-          <div className="flex justify-end mb-4">{backLink}</div>
-        )}
-        <h1
-          className="font-extrabold leading-none mb-3"
-          style={{
-            fontSize: "clamp(48px, 8vw, 80px)",
-            letterSpacing: "-0.04em",
-            background: "linear-gradient(90deg,#fff 0%,#fff 35%,#666 50%,#fff 65%,#fff 100%)",
-            backgroundSize: "250% 100%",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            backgroundClip: "text",
-            animation: "shimmer 6s linear infinite",
-          }}
-        >
-          Drum<br /><span className="font-light">Vault.</span>
-        </h1>
-        <style>{`@keyframes shimmer { from{background-position:100% 0} to{background-position:-100% 0} }`}</style>
+    <section>
+      {backLink && <div className="mb-6">{backLink}</div>}
 
-        <p className="text-sm text-[#3A3A3A] mb-1.5 max-w-[420px] leading-relaxed">
-          Members-only drum breaks. Original, raw, dope.
-        </p>
-        <p className="text-[11px] text-[#2A2A2A] mb-5 max-w-[420px] leading-relaxed tracking-[0.02em]">
-          We&apos;ll notify you when new breaks drop.
-        </p>
+      {/* The members' perk gets a breathing box and the name at full size */}
+      <GlassBox className="ssc-breathe overflow-hidden rounded-[28px] p-6 sm:p-10 lg:p-12">
+        <div className="grid gap-10 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:items-end lg:gap-14">
+          <div>
+            <Pill dot>Members only</Pill>
+            <h1 className="ssc-display mt-6 text-[clamp(3.4rem,11vw,8.5rem)] leading-[0.86]">
+              Drum
+              <br />
+              Vault
+            </h1>
+            <p className="ssc-body mt-6 max-w-md text-[clamp(1rem,1.3vw,1.15rem)] leading-relaxed">
+              Original drum breaks, made for members. Collect the ones you want and they stay yours to keep.
+            </p>
+            <p className="mt-3 text-[13px] text-white/55">We&apos;ll let you know when new breaks drop.</p>
+          </div>
 
-        {/* Stats */}
-        <div
-          className="flex items-stretch overflow-hidden w-fit mb-5 rounded-[13px]"
-          style={{ gap: "1px", background: "#181818", border: "1px solid #181818" }}
-        >
-          {[
-            { n: stats.collected, unit: "collected", label: "Your haul" },
-            { n: stats.total, unit: "total", label: "In the vault" },
-            { n: `${pct}`, unit: "%", label: "Complete" },
-          ].map((s, i) => (
-            <div
-              key={i}
-              className="flex flex-col gap-0.5"
-              style={{ padding: "10px 20px", background: "#111", borderLeft: i > 0 ? "1px solid #181818" : undefined }}
-            >
-              <div className="text-[18px] font-bold tracking-tight text-white">
-                {s.n} <span className="text-[12px] font-normal text-[#333]">{s.unit}</span>
-              </div>
-              <div className="text-[10px] uppercase tracking-[0.1em] text-[#333] font-medium">{s.label}</div>
+          <div className="flex flex-col gap-6">
+            <div className="grid grid-cols-3 gap-2 sm:gap-3">
+              {[
+                { n: stats.collected, label: "Your haul" },
+                { n: stats.total, label: "In the vault" },
+                { n: `${pct}%`, label: "Complete" },
+              ].map((s) => (
+                <div key={s.label} className="rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-4 sm:px-5">
+                  <p className="ssc-display text-[clamp(1.6rem,3.4vw,2.6rem)] tabular-nums">{s.n}</p>
+                  <p className="ssc-label mt-2">{s.label}</p>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
 
-        {/* Progress */}
-        <div className="flex justify-between mb-1.5 max-w-[480px]">
-          <span className="text-[11px] text-[#2E2E2E] font-medium tracking-[0.04em]">Collection progress</span>
-          <span className="text-[12px] font-bold text-[#444]">{pct}%</span>
-        </div>
-        <div className="max-w-[480px] h-[3px] rounded-full relative" style={{ background: "#181818" }}>
-          <div
-            className="h-full rounded-full relative transition-all duration-700"
-            style={{ background: "#fff", width: `${pct}%` }}
-          >
-            <div
-              className="absolute -right-px top-1/2 -translate-y-1/2 w-[7px] h-[7px] rounded-full bg-white"
-              style={{ boxShadow: "0 0 10px rgba(255,255,255,.7)" }}
-            />
+            {/* Progress drawn as a break: every lit hit is part of your collection */}
+            <div>
+              <div
+                className="grid h-14 items-end gap-[3px]"
+                style={{ gridTemplateColumns: `repeat(${STRIP.length}, minmax(0, 1fr))` }}
+                role="progressbar"
+                aria-label="Collection progress"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={pct}
+              >
+                {STRIP.map((h, i) => (
+                  <span
+                    key={i}
+                    className={
+                      i < lit
+                        ? "rounded-[2px] bg-white shadow-[0_0_10px_rgba(255,255,255,0.35)] transition-colors duration-500"
+                        : "rounded-[2px] bg-white/[0.12] transition-colors duration-500"
+                    }
+                    style={{ height: `${h}%` }}
+                  />
+                ))}
+              </div>
+              <div className="mt-3 flex items-baseline justify-between">
+                <span className="ssc-label">Collection progress</span>
+                <span className="text-[13px] font-semibold tabular-nums text-white">
+                  {stats.collected} of {stats.total}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-    </div>
+      </GlassBox>
+    </section>
   );
 }

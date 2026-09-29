@@ -4,10 +4,12 @@ export const revalidate = 0;
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { Heart, Download, Clock, Music, Package } from "lucide-react";
+import { Heart, Download, Music, Package } from "lucide-react";
 import type { Sample, Pack } from "@/types/database";
 import { LibraryTabs } from "@/components/library/LibraryTabs";
 import { hidePaths } from "@/lib/hide-paths";
+import { withCoverColors } from "@/lib/cover-color";
+import { PageHead, StatTile } from "@/components/member/MemberUI";
 
 export const metadata = {
   title: "My Library | Soul Sample Club",
@@ -201,50 +203,29 @@ export default async function LibraryPage() {
   const likedGroupsArray = Array.from(likedByPack.values());
   const downloadsGroupsArray = Array.from(downloadsByPack.values());
 
+  // Cover-lit pack boxes: one glow per pack that appears in either tab
+  const packsInLibrary = new Map<string, Pack>();
+  for (const g of [...likedGroupsArray, ...downloadsGroupsArray]) packsInLibrary.set(g.pack.id, g.pack);
+  const lit = await withCoverColors(Array.from(packsInLibrary.values()).map((p) => ({ id: p.id, cover_image_url: p.cover_image_url })));
+  const packGlows = Object.fromEntries(lit.map((p) => [p.id, p.glow]));
+
+  const packCount = new Set([...Array.from(likedByPack.keys()), ...Array.from(downloadsByPack.keys())]).size;
+  const uniqueCount = new Set([...likedSamples.map((s) => s.id), ...downloadHistory.map((s) => s.id)]).size;
+
   return (
-    <div className="section">
-      <div className="container-app">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-h1 text-white mb-2">My Library</h1>
-          <p className="text-body-lg text-text-muted">
-            Your saved samples and download history
-          </p>
-        </div>
+    <div>
+      <PageHead pill="Your library" title="Library" body="Everything you've liked and downloaded, grouped by pack." />
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-          <div className="bg-grey-800/50 border border-grey-700 rounded-lg p-4">
-            <div className="flex items-center gap-2 text-error mb-1">
-              <Heart className="w-4 h-4" />
-              <span className="text-caption text-snow/60">Liked</span>
-            </div>
-            <p className="text-h3 text-snow">{likedSamples.length}</p>
-          </div>
-          <div className="bg-grey-800/50 border border-grey-700 rounded-lg p-4">
-            <div className="flex items-center gap-2 text-success mb-1">
-              <Download className="w-4 h-4" />
-              <span className="text-caption text-snow/60">Downloaded</span>
-            </div>
-            <p className="text-h3 text-snow">{downloadHistory.length}</p>
-          </div>
-          <div className="bg-grey-800/50 border border-grey-700 rounded-lg p-4">
-            <div className="flex items-center gap-2 text-primary mb-1">
-              <Package className="w-4 h-4" />
-              <span className="text-caption text-snow/60">Packs</span>
-            </div>
-            <p className="text-h3 text-snow">{new Set([...Array.from(likedByPack.keys()), ...Array.from(downloadsByPack.keys())]).size}</p>
-          </div>
-          <div className="bg-grey-800/50 border border-grey-700 rounded-lg p-4">
-            <div className="flex items-center gap-2 text-warning mb-1">
-              <Music className="w-4 h-4" />
-              <span className="text-caption text-snow/60">Unique</span>
-            </div>
-            <p className="text-h3 text-snow">{new Set([...likedSamples.map(s => s.id), ...downloadHistory.map(s => s.id)]).size}</p>
-          </div>
-        </div>
+      {/* Stats */}
+      <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+        <StatTile label="Liked" value={likedSamples.length} icon={<Heart className="h-3.5 w-3.5" />} />
+        <StatTile label="Downloaded" value={downloadHistory.length} icon={<Download className="h-3.5 w-3.5" />} />
+        <StatTile label="Packs" value={packCount} icon={<Package className="h-3.5 w-3.5" />} />
+        <StatTile label="Unique" value={uniqueCount} icon={<Music className="h-3.5 w-3.5" />} />
+      </div>
 
-        {/* Tabs with search and grouped content */}
+      {/* Tabs with search and grouped content */}
+      <div className="mt-10">
         <LibraryTabs
           likedGroups={likedGroupsArray}
           downloadGroups={downloadsGroupsArray}
@@ -252,6 +233,7 @@ export default async function LibraryPage() {
           canDownload={canDownload}
           totalLiked={likedSamples.length}
           totalDownloaded={downloadHistory.length}
+          packGlows={packGlows}
         />
       </div>
     </div>

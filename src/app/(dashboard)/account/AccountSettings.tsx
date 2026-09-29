@@ -6,16 +6,15 @@ import {
   User,
   CreditCard,
   Key,
-  CheckCircle,
-  AlertCircle,
   ExternalLink,
   Link2,
   Unlink,
   LogOut,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { Button, Input, Card, CardHeader, CardTitle, CardContent, Badge } from "@/components/ui";
-import { formatDate } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
+import { GlassBox } from "@/components/ssc/Glass";
+import { ActionButton, Field, Notice, StatusChip } from "@/components/member/MemberUI";
 import type { Profile, Subscription, PatreonLink } from "@/types/database";
 
 interface AccountSettingsProps {
@@ -42,7 +41,7 @@ export function AccountSettings({ profile, subscription, patreonLink }: AccountS
   return (
     <div className="space-y-6">
       {/* Tab Navigation */}
-      <div className="flex gap-1 sm:gap-2 border-b border-grey-700 overflow-x-auto">
+      <div className="flex w-fit max-w-full overflow-x-auto rounded-xl border border-white/10 bg-black/40 p-1" role="tablist">
         <TabButton
           active={activeTab === "profile"}
           onClick={() => setActiveTab("profile")}
@@ -67,7 +66,7 @@ export function AccountSettings({ profile, subscription, patreonLink }: AccountS
       </div>
 
       {/* Tab Content */}
-      <div className="max-w-2xl">
+      <div className="max-w-3xl">
         {activeTab === "profile" && <ProfileTab profile={profile} />}
         {activeTab === "billing" && <BillingTab subscription={subscription} patreonLink={patreonLink} />}
         {activeTab === "password" && <PasswordTab />}
@@ -89,16 +88,14 @@ function TabButton({
 }) {
   return (
     <button
+      type="button"
+      role="tab"
+      aria-selected={active}
       onClick={onClick}
-      className={`
-        flex items-center gap-2 px-3 sm:px-4 py-3 text-sm sm:text-base whitespace-nowrap transition-all
-        border-b-2 -mb-[2px]
-        ${
-          active
-            ? "border-white text-white"
-            : "border-transparent text-text-muted hover:text-white"
-        }
-      `}
+      className={cn(
+        "flex h-9 items-center gap-2 whitespace-nowrap rounded-lg px-3 text-[12px] font-semibold uppercase tracking-[0.14em] transition-colors sm:px-4",
+        active ? "bg-white text-black" : "text-white/75 hover:text-white"
+      )}
     >
       {icon}
       {children}
@@ -137,56 +134,57 @@ function ProfileTab({ profile }: { profile: Profile }) {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Profile Information</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
-            <div className="bg-error/10 border border-error/50 rounded-lg p-3 text-error text-sm flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 flex-shrink-0" />
-              {error}
-            </div>
-          )}
+    <Panel title="Profile">
+      <form onSubmit={handleSubmit} className="space-y-5">
+        {error && <Notice tone="warning">{error}</Notice>}
+        {success && <Notice tone="success">Profile updated</Notice>}
 
-          {success && (
-            <div className="bg-success/10 border border-success/50 rounded-lg p-3 text-success text-sm flex items-center gap-2">
-              <CheckCircle className="w-4 h-4 flex-shrink-0" />
-              Profile updated successfully
-            </div>
-          )}
+        <Field label="Email" type="email" value={profile.email} disabled hint="Email can't be changed" />
 
-          <Input
-            label="Email"
-            type="email"
-            value={profile.email}
-            disabled
-            hint="Email cannot be changed"
-          />
+        <Field
+          label="Username"
+          type="text"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          placeholder="Choose a username for chat"
+        />
 
-          <Input
-            label="Username"
-            type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            placeholder="Choose a username for chat"
-          />
+        <Field
+          label="Full name"
+          type="text"
+          value={fullName}
+          onChange={(e) => setFullName(e.target.value)}
+          placeholder="Enter your full name"
+        />
 
-          <Input
-            label="Full Name"
-            type="text"
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
-            placeholder="Enter your full name"
-          />
+        <ActionButton type="submit" isLoading={isLoading}>
+          Save changes
+        </ActionButton>
+      </form>
+    </Panel>
+  );
+}
 
-          <Button type="submit" isLoading={isLoading}>
-            Save Changes
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+/** One idea per box: a glass panel with a small display heading */
+function Panel({ title, icon, children }: { title: string; icon?: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <GlassBox plain className="rounded-[24px] p-5 sm:p-8">
+      <h2 className="ssc-display flex items-center gap-2.5 text-[clamp(1.1rem,1.8vw,1.35rem)]">
+        {icon}
+        {title}
+      </h2>
+      <div className="mt-6">{children}</div>
+    </GlassBox>
+  );
+}
+
+/** Label over value, for dates and account details */
+function Detail({ label, children, className }: { label: string; children: React.ReactNode; className?: string }) {
+  return (
+    <div className={cn("rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3.5", className)}>
+      <p className="ssc-label">{label}</p>
+      <div className="mt-1.5 text-[14px] text-white">{children}</div>
+    </div>
   );
 }
 
@@ -257,298 +255,210 @@ function BillingTab({ subscription, patreonLink }: { subscription: Subscription 
   const hasNoAccess = !isStripeActive && !hasPatreonAccess;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* No subscription info nudge */}
       {hasNoAccess && (
-        <div className="bg-grey-800/50 border border-grey-700 rounded-xl p-4">
-          <div className="flex items-start gap-3">
-            <CreditCard className="w-5 h-5 text-white/70 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-white font-medium mb-1">Choose how to subscribe</p>
-              <p className="text-sm text-text-muted">
-                You only need <span className="text-white">one</span> subscription method to access downloads.
-                Either subscribe directly below, or connect your existing Patreon membership.
-                No need to do both.
-              </p>
-            </div>
-          </div>
-        </div>
+        <Notice title="Choose how to subscribe">
+          You only need <span className="font-semibold text-white">one</span> subscription method to access downloads.
+          Either subscribe directly below, or connect your existing Patreon membership. No need to do both.
+        </Notice>
       )}
 
       {/* Dual Subscription Warning */}
       {hasDualSubscription && (
-        <div className="bg-warning/10 border border-warning/30 rounded-xl p-4">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-warning font-medium mb-1">You have both subscriptions active</p>
-              <p className="text-sm text-text-muted">
-                You&apos;re currently paying for both a direct Stripe subscription and Patreon membership.
-                You only need one to access downloads. Consider canceling one to avoid double billing.
-              </p>
-            </div>
-          </div>
-        </div>
+        <Notice tone="warning" title="You have both subscriptions active">
+          You&apos;re currently paying for both a direct Stripe subscription and a Patreon membership.
+          You only need one to access downloads. Consider canceling one to avoid double billing.
+        </Notice>
       )}
 
-      {/* Subscription Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Subscription</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {subscription ? (
-            <div className="space-y-4">
-              {/* Status */}
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 bg-grey-800 rounded-lg">
-                <div>
-                  <p className="text-xs text-text-muted mb-1">Status</p>
-                  <div className="flex items-center gap-2">
-                    <Badge
-                      variant={
-                        subscription.status === "active"
-                          ? "success"
-                          : subscription.status === "trialing"
-                          ? "primary"
-                          : "warning"
-                      }
-                    >
-                      {subscription.status === "trialing" ? "Trial" : subscription.status}
-                    </Badge>
-                    {subscription.cancel_at_period_end && subscription.status === "trialing" && (
-                      <span className="text-xs text-warning">
-                        Trial canceled
-                      </span>
-                    )}
-                    {subscription.cancel_at_period_end && subscription.status !== "trialing" && (
-                      <span className="text-xs text-warning">
-                        Cancels at period end
-                      </span>
-                    )}
-                  </div>
+      {/* Subscription */}
+      <Panel title="Subscription" icon={<CreditCard className="h-5 w-5" />}>
+        {subscription ? (
+          <div className="space-y-4">
+            {/* Status */}
+            <div className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="ssc-label">Status</p>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <StatusChip strong={subscription.status === "active" || subscription.status === "trialing"}>
+                    {subscription.status === "trialing" ? "Trial" : subscription.status}
+                  </StatusChip>
+                  {subscription.cancel_at_period_end && subscription.status === "trialing" && (
+                    <span className="text-[12px] text-white/75">Trial canceled</span>
+                  )}
+                  {subscription.cancel_at_period_end && subscription.status !== "trialing" && (
+                    <span className="text-[12px] text-white/75">Cancels at period end</span>
+                  )}
                 </div>
-                {isStripeActive && (
-                  <div className="sm:text-right">
-                    <p className="text-xs text-text-muted mb-1">
-                      {subscription.status === "trialing" ? "Trial ends" : "Next billing date"}
-                    </p>
-                    <p className="text-sm text-white">
-                      {formatDate(subscription.current_period_end)}
-                    </p>
-                  </div>
-                )}
               </div>
-
-              {/* Canceled trial notice */}
-              {subscription.status === "trialing" && subscription.cancel_at_period_end && (
-                <div className="p-4 bg-warning/10 border border-warning/30 rounded-lg">
-                  <div className="flex items-start gap-3">
-                    <AlertCircle className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
-                    <div>
-                      <p className="text-warning font-medium mb-1">Your access ends on {formatDate(subscription.current_period_end)}</p>
-                      <p className="text-sm text-text-muted">
-                        Your trial has been canceled. You&apos;ll retain access until the trial period ends.
-                        After that, you&apos;ll need to subscribe for continued access.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Canceled subscription (non-trial) notice */}
-              {subscription.status !== "trialing" && subscription.cancel_at_period_end && (
-                <div className="p-4 bg-warning/10 border border-warning/30 rounded-lg">
-                  <div className="flex items-start gap-3">
-                    <AlertCircle className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
-                    <div>
-                      <p className="text-warning font-medium mb-1">Your subscription ends on {formatDate(subscription.current_period_end)}</p>
-                      <p className="text-sm text-text-muted">
-                        You&apos;ll retain access until the end of your current billing period. You can resubscribe anytime.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Post-cancellation: status is canceled */}
-              {subscription.status === "canceled" && (
-                <div className="p-4 bg-grey-800 rounded-lg">
-                  <div className="flex items-start gap-3">
-                    <AlertCircle className="w-5 h-5 text-text-muted flex-shrink-0 mt-0.5" />
-                    <div>
-                      <p className="text-white font-medium mb-1">Subscription ended</p>
-                      <p className="text-sm text-text-muted">
-                        Your subscription has ended. Subscribe again to regain access to downloads.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Billing Period */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="p-4 bg-grey-800 rounded-lg">
-                  <p className="text-xs text-text-muted mb-1">Current Period Start</p>
-                  <p className="text-sm text-white">
-                    {formatDate(subscription.current_period_start)}
+              {isStripeActive && (
+                <div className="sm:text-right">
+                  <p className="ssc-label">
+                    {subscription.status === "trialing" ? "Trial ends" : "Next billing date"}
                   </p>
+                  <p className="mt-1.5 text-[14px] text-white">{formatDate(subscription.current_period_end)}</p>
                 </div>
-                <div className="p-4 bg-grey-800 rounded-lg">
-                  <p className="text-xs text-text-muted mb-1">Current Period End</p>
-                  <p className="text-sm text-white">
-                    {formatDate(subscription.current_period_end)}
-                  </p>
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div className="flex flex-col sm:flex-row gap-3">
-                <Button
-                  onClick={handleManageBilling}
-                  isLoading={isLoading}
-                  rightIcon={<ExternalLink className="w-4 h-4" />}
-                >
-                  Manage Billing
-                </Button>
-                {!isStripeActive && (
-                  <Button
-                    onClick={() => handleSubscribe("monthly")}
-                    isLoading={isLoading}
-                  >
-                    Subscribe Again
-                  </Button>
-                )}
-              </div>
-              <p className="text-xs text-text-subtle mt-2">
-                Manage billing, update payment method, or cancel your subscription through Stripe.
-              </p>
-            </div>
-          ) : hasPatreonAccess ? (
-            <div className="py-6">
-              <div className="flex items-start gap-3 p-4 bg-success/10 border border-success/30 rounded-lg">
-                <CheckCircle className="w-5 h-5 text-success flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-white font-medium mb-1">You&apos;re subscribed via Patreon</p>
-                  <p className="text-sm text-text-muted">
-                    Your active Patreon pledge gives you full download access. No additional subscription needed.
-                  </p>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="text-center py-6">
-              <p className="text-sm text-text-muted mb-4">
-                You don&apos;t have an active subscription.
-              </p>
-              <div className="flex flex-col items-center gap-2">
-                <Button onClick={() => handleSubscribe("monthly")} isLoading={isLoading}>
-                  Subscribe to Download
-                </Button>
-                <button
-                  onClick={() => handleSubscribe("yearly")}
-                  disabled={isLoading}
-                  className="text-sm text-text-muted hover:text-white underline transition-colors disabled:opacity-50"
-                >
-                  or <s className="opacity-60">$49</s> $35/year, locked in for life
-                </button>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Patreon Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M15.386.524c-4.764 0-8.64 3.876-8.64 8.64 0 4.75 3.876 8.613 8.64 8.613 4.75 0 8.614-3.864 8.614-8.613C24 4.4 20.136.524 15.386.524M.003 23.537h4.22V.524H.003"/>
-            </svg>
-            Patreon Access
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {patreonLink ? (
-            <div className="space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 bg-grey-800 rounded-lg">
-                <div className="min-w-0">
-                  <p className="text-xs text-text-muted mb-1">Connected Account</p>
-                  <p className="text-sm text-white truncate">{patreonLink.patreon_email}</p>
-                </div>
-                <Badge variant={patreonLink.is_active ? "success" : "warning"} className="flex-shrink-0">
-                  {patreonLink.is_active ? "Active Patron" : "Not Active"}
-                </Badge>
-              </div>
-              {!patreonLink.is_active && (
-                <p className="text-sm text-text-muted">
-                  Your Patreon account is connected but you don&apos;t have an active pledge.
-                  Subscribe on Patreon to get access.
-                </p>
               )}
-              <Button
-                variant="secondary"
-                onClick={handleDisconnectPatreon}
-                isLoading={isPatreonLoading}
-                leftIcon={<Unlink className="w-4 h-4" />}
+            </div>
+
+            {/* Canceled trial notice */}
+            {subscription.status === "trialing" && subscription.cancel_at_period_end && (
+              <Notice tone="warning" title={`Your access ends on ${formatDate(subscription.current_period_end)}`}>
+                Your trial has been canceled. You&apos;ll keep access until the trial period ends.
+                After that, you&apos;ll need to subscribe for continued access.
+              </Notice>
+            )}
+
+            {/* Canceled subscription (non-trial) notice */}
+            {subscription.status !== "trialing" && subscription.cancel_at_period_end && (
+              <Notice tone="warning" title={`Your subscription ends on ${formatDate(subscription.current_period_end)}`}>
+                You&apos;ll keep access until the end of your current billing period. You can resubscribe anytime.
+              </Notice>
+            )}
+
+            {/* Post-cancellation: status is canceled */}
+            {subscription.status === "canceled" && (
+              <Notice title="Subscription ended">
+                Your subscription has ended. Subscribe again to regain access to downloads.
+              </Notice>
+            )}
+
+            {/* Billing Period */}
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <Detail label="Current period start">{formatDate(subscription.current_period_start)}</Detail>
+              <Detail label="Current period end">{formatDate(subscription.current_period_end)}</Detail>
+            </div>
+
+            {/* Actions */}
+            <div className="flex flex-col gap-3 pt-2 sm:flex-row">
+              <ActionButton
+                variant={isStripeActive ? "primary" : "ghost"}
+                onClick={handleManageBilling}
+                isLoading={isLoading}
+                icon={<ExternalLink className="h-4 w-4" />}
               >
-                Disconnect Patreon
-              </Button>
+                Manage billing
+              </ActionButton>
+              {!isStripeActive && (
+                <ActionButton onClick={() => handleSubscribe("monthly")} isLoading={isLoading}>
+                  Subscribe again
+                </ActionButton>
+              )}
             </div>
-          ) : (
-            <div className="text-center py-6">
-              <p className="text-sm text-text-muted mb-4">
-                Link your Patreon account to get access as an active patron.
+            <p className="text-[13px] text-white/55">
+              Manage billing, update your payment method, or cancel your subscription through Stripe.
+            </p>
+          </div>
+        ) : hasPatreonAccess ? (
+          <Notice tone="success" title="You're subscribed via Patreon">
+            Your active Patreon pledge gives you full download access. No additional subscription needed.
+          </Notice>
+        ) : (
+          <div className="flex flex-col items-start gap-4">
+            <p className="ssc-body text-[15px]">You don&apos;t have an active subscription.</p>
+            <ActionButton onClick={() => handleSubscribe("monthly")} isLoading={isLoading}>
+              Subscribe to download
+            </ActionButton>
+            <button
+              type="button"
+              onClick={() => handleSubscribe("yearly")}
+              disabled={isLoading}
+              className="text-[14px] text-white/75 underline underline-offset-4 transition-colors hover:text-white disabled:opacity-60"
+            >
+              or <s className="text-white/55">$49</s> <span className="font-semibold text-white">$35/year</span>, locked in for life
+            </button>
+          </div>
+        )}
+      </Panel>
+
+      {/* Patreon */}
+      <Panel
+        title="Patreon access"
+        icon={
+          <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+            <path d="M15.386.524c-4.764 0-8.64 3.876-8.64 8.64 0 4.75 3.876 8.613 8.64 8.613 4.75 0 8.614-3.864 8.614-8.613C24 4.4 20.136.524 15.386.524M.003 23.537h4.22V.524H.003"/>
+          </svg>
+        }
+      >
+        {patreonLink ? (
+          <div className="space-y-4">
+            <div className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0">
+                <p className="ssc-label">Connected account</p>
+                <p className="mt-1.5 truncate text-[14px] text-white">{patreonLink.patreon_email}</p>
+              </div>
+              <span className="flex-shrink-0">
+                <StatusChip strong={!!patreonLink.is_active}>{patreonLink.is_active ? "Active patron" : "Not active"}</StatusChip>
+              </span>
+            </div>
+            {!patreonLink.is_active && (
+              <p className="ssc-body text-[14px]">
+                Your Patreon account is connected but you don&apos;t have an active pledge.
+                Subscribe on Patreon to get access.
               </p>
-              <Button
-                onClick={handleConnectPatreon}
-                leftIcon={<Link2 className="w-4 h-4" />}
-              >
-                Connect Patreon
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            )}
+            <ActionButton
+              variant="ghost"
+              onClick={handleDisconnectPatreon}
+              isLoading={isPatreonLoading}
+              icon={<Unlink className="h-4 w-4" />}
+            >
+              Disconnect Patreon
+            </ActionButton>
+          </div>
+        ) : (
+          <div className="flex flex-col items-start gap-4">
+            <p className="ssc-body text-[15px]">Link your Patreon account to get access as an active patron.</p>
+            <ActionButton variant="ghost" onClick={handleConnectPatreon} icon={<Link2 className="h-4 w-4" />}>
+              Connect Patreon
+            </ActionButton>
+          </div>
+        )}
+      </Panel>
 
       {/* Help Section */}
-      <div className="border-t border-grey-700 pt-6">
-        <h3 className="text-sm font-medium text-white mb-3">Need help?</h3>
-        <div className="space-y-3">
-          <details className="group">
-            <summary className="text-sm text-text-muted cursor-pointer hover:text-white transition-colors">
-              I&apos;ve paid but don&apos;t have access
-            </summary>
-            <p className="text-sm text-text-subtle mt-2 pl-4">
-              Sometimes it takes a moment for access to sync. Try refreshing the page.
-              If you still don&apos;t have access, email us at{" "}
-              <a href="mailto:hello@soulsampleclub.com" className="text-white hover:underline">
-                hello@soulsampleclub.com
-              </a>{" "}
-              and we&apos;ll sort it out straight away.
-            </p>
-          </details>
-          <details className="group">
-            <summary className="text-sm text-text-muted cursor-pointer hover:text-white transition-colors">
-              Can I switch from Patreon to direct subscription?
-            </summary>
-            <p className="text-sm text-text-subtle mt-2 pl-4">
-              Yes! Cancel your Patreon pledge, then subscribe directly here.
-              You only need one active subscription for full access.
-            </p>
-          </details>
-          <details className="group">
-            <summary className="text-sm text-text-muted cursor-pointer hover:text-white transition-colors">
-              My payment failed but I have funds available
-            </summary>
-            <p className="text-sm text-text-subtle mt-2 pl-4">
-              This can happen with international cards or new subscriptions. Click &quot;Manage Billing&quot; to update your payment method, or try a different card. Still having issues? Email{" "}
-              <a href="mailto:hello@soulsampleclub.com" className="text-white hover:underline">
-                hello@soulsampleclub.com
-              </a>
-            </p>
-          </details>
+      <Panel title="Need help?">
+        <div className="space-y-2">
+          {[
+            {
+              q: "I've paid but don't have access",
+              a: (
+                <>
+                  Sometimes it takes a moment for access to sync. Try refreshing the page. If you still don&apos;t have access, email us at{" "}
+                  <a href="mailto:hello@soulsampleclub.com" className="font-medium text-white underline underline-offset-4">
+                    hello@soulsampleclub.com
+                  </a>{" "}
+                  and we&apos;ll sort it out straight away.
+                </>
+              ),
+            },
+            {
+              q: "Can I switch from Patreon to a direct subscription?",
+              a: "Yes. Cancel your Patreon pledge, then subscribe directly here. You only need one active subscription for full access.",
+            },
+            {
+              q: "My payment failed but I have funds available",
+              a: (
+                <>
+                  This can happen with international cards or new subscriptions. Click &quot;Manage billing&quot; to update your payment method, or try a different card. Still having issues? Email{" "}
+                  <a href="mailto:hello@soulsampleclub.com" className="font-medium text-white underline underline-offset-4">
+                    hello@soulsampleclub.com
+                  </a>
+                </>
+              ),
+            },
+          ].map((item) => (
+            <details key={item.q} className="group rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3.5 open:border-white/20">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-[14px] font-semibold text-white [&::-webkit-details-marker]:hidden">
+                {item.q}
+                <span className="text-[18px] leading-none text-white/55 transition-transform group-open:rotate-45">+</span>
+              </summary>
+              <p className="ssc-body mt-3 text-[14px] leading-relaxed">{item.a}</p>
+            </details>
+          ))}
         </div>
-      </div>
+      </Panel>
     </div>
   );
 }
@@ -605,71 +515,49 @@ function PasswordTab() {
   };
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Change Password</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {error && (
-              <div className="bg-error/10 border border-error/50 rounded-lg p-3 text-error text-sm flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                {error}
-              </div>
-            )}
+    <div className="space-y-5">
+      <Panel title="Change password" icon={<Key className="h-5 w-5" />}>
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {error && <Notice tone="warning">{error}</Notice>}
+          {success && <Notice tone="success">Password updated</Notice>}
 
-            {success && (
-              <div className="bg-success/10 border border-success/50 rounded-lg p-3 text-success text-sm flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 flex-shrink-0" />
-                Password updated successfully
-              </div>
-            )}
+          <Field
+            label="New password"
+            type="password"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            placeholder="Enter new password"
+            required
+          />
 
-            <Input
-              label="New Password"
-              type="password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              placeholder="Enter new password"
-              required
-            />
+          <Field
+            label="Confirm new password"
+            type="password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            placeholder="Confirm new password"
+            required
+          />
 
-            <Input
-              label="Confirm New Password"
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Confirm new password"
-              required
-            />
-
-            <Button type="submit" isLoading={isLoading}>
-              Update Password
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+          <ActionButton type="submit" isLoading={isLoading}>
+            Update password
+          </ActionButton>
+        </form>
+      </Panel>
 
       {/* Sign Out Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Sign Out</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-text-muted mb-4">
-            Sign out of your account on this device.
-          </p>
-          <Button
-            variant="danger"
-            onClick={handleSignOut}
-            isLoading={isSigningOut}
-            leftIcon={<LogOut className="w-4 h-4" />}
-          >
-            Sign Out
-          </Button>
-        </CardContent>
-      </Card>
+      <Panel title="Sign out" icon={<LogOut className="h-5 w-5" />}>
+        <p className="ssc-body text-[15px]">Sign out of your account on this device.</p>
+        <ActionButton
+          variant="ghost"
+          className="mt-5"
+          onClick={handleSignOut}
+          isLoading={isSigningOut}
+          icon={<LogOut className="h-4 w-4" />}
+        >
+          Sign out
+        </ActionButton>
+      </Panel>
     </div>
   );
 }

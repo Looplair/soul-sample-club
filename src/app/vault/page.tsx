@@ -6,8 +6,11 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { VaultClient } from "./VaultClient";
-import type { DrumBreakWithStatus } from "@/types/database";
+import type { DrumBreakWithStatus, Profile } from "@/types/database";
 import { hidePaths } from "@/lib/hide-paths";
+import { Navbar } from "@/components/layout";
+import { SiteFooter } from "@/components/ssc/SiteFooter";
+import { getNotificationsForUser } from "@/lib/notifications";
 
 export const metadata = {
   title: "Drum Vault | Soul Sample Club",
@@ -24,8 +27,8 @@ export default async function VaultPage() {
 
   const now = new Date().toISOString();
 
-  // Fetch breaks + collection status + hasUsedTrial
-  const [breaksResult, collectionsResult, anySubResult] = await Promise.all([
+  // Fetch breaks + collection status + hasUsedTrial, plus what the menu needs
+  const [breaksResult, collectionsResult, anySubResult, profileResult, { notifications, unreadCount }] = await Promise.all([
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (adminSupabase as any)
       .from("drum_breaks")
@@ -43,6 +46,8 @@ export default async function VaultPage() {
       .select("id")
       .eq("user_id", user.id)
       .limit(1),
+    supabase.from("profiles").select("*").eq("id", user.id).single(),
+    getNotificationsForUser(user.id),
   ]);
 
   const hasUsedTrial = (anySubResult.data?.length ?? 0) > 0;
@@ -61,7 +66,7 @@ export default async function VaultPage() {
     is_new: new Date(b.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
   }));
 
-  // Update vault_last_visited (fire and forget — don't block render)
+  // Update vault_last_visited (fire and forget, don't block render)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (adminSupabase as any)
     .from("profiles")
@@ -75,5 +80,11 @@ export default async function VaultPage() {
     total: breaks.length,
   };
 
-  return <VaultClient breaks={breaks} stats={stats} hasUsedTrial={hasUsedTrial} isLoggedIn={true} />;
+  return (
+    <div className="ssc min-h-screen overflow-x-clip">
+      <Navbar user={profileResult.data as Profile | null} notifications={notifications} unreadCount={unreadCount} />
+      <VaultClient breaks={breaks} stats={stats} hasUsedTrial={hasUsedTrial} isLoggedIn={true} />
+      <SiteFooter />
+    </div>
+  );
 }

@@ -1,12 +1,12 @@
-import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
-import { PackGrid } from "@/components/packs/PackGrid";
-import { SubscriptionBanner } from "@/components/packs/SubscriptionBanner";
-import { ActivityFeed } from "@/components/feed";
-import { PackCardSkeleton } from "@/components/ui";
-import { TrendingUp, Sparkles, Clock } from "lucide-react";
 import type { Subscription, Sample, Pack } from "@/types/database";
 import { hidePaths } from "@/lib/hide-paths";
+import { withCoverColors } from "@/lib/cover-color";
+import { GlassBox } from "@/components/ssc/Glass";
+import { PackCard } from "@/components/ssc/PackCard";
+import { SubscribeCTA } from "@/components/ui/SubscribeCTA";
+import { PageHead } from "@/components/member/MemberUI";
+import { ActivityList } from "@/components/member/ActivityList";
 
 export const metadata = {
   title: "Dashboard | Soul Sample Club",
@@ -90,35 +90,6 @@ async function getUserSubscription(): Promise<Subscription | null> {
   return result.data as Subscription | null;
 }
 
-function PackGridSkeleton() {
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-      {Array.from({ length: 8 }).map((_, i) => (
-        <PackCardSkeleton key={i} />
-      ))}
-    </div>
-  );
-}
-
-function FeedSkeleton() {
-  return (
-    <div className="space-y-3">
-      {Array.from({ length: 5 }).map((_, i) => (
-        <div key={i} className="bg-grey-800/50 rounded-card p-4 animate-pulse">
-          <div className="flex gap-4">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg bg-grey-700" />
-            <div className="flex-1 space-y-2">
-              <div className="h-4 bg-grey-700 rounded w-24" />
-              <div className="h-5 bg-grey-700 rounded w-48" />
-              <div className="h-3 bg-grey-700 rounded w-32" />
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 export default async function DashboardPage() {
   const [activePacks, allPacksWithSamples, subscription] = await Promise.all([
     getActivePacks(),
@@ -127,71 +98,70 @@ export default async function DashboardPage() {
   ]);
 
   const hasActiveSubscription = !!subscription;
+  const lit = await withCoverColors(activePacks);
 
   return (
-    <div className="section">
-      <div className="container-app">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-h1 text-white mb-2">Releases</h1>
-          <p className="text-body-lg text-text-muted">
-            Browse and download from the catalog
-          </p>
-        </div>
+    <div>
+      <PageHead pill="Members" title="Releases" body="Browse and download from the last three months of the catalog." />
 
-        {/* Subscription Banner */}
-        {!hasActiveSubscription && <SubscriptionBanner />}
+      {/* Subscribe prompt */}
+      {!hasActiveSubscription && (
+        <GlassBox plain className="mt-8 flex flex-col gap-5 rounded-[24px] p-6 sm:p-8 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="ssc-display text-[clamp(1.3rem,2.4vw,1.8rem)]">Unlock every pack</p>
+            <p className="ssc-body mt-2 max-w-lg text-[15px] leading-relaxed">
+              Subscribe to download anything released in the last three months. Cancel anytime.
+            </p>
+          </div>
+          <SubscribeCTA isLoggedIn hasSubscription={false} plan="monthly" bare className="ssc-btn ssc-btn--primary flex-shrink-0">
+            Subscribe to download
+          </SubscribeCTA>
+        </GlassBox>
+      )}
 
-        {/* Mobile-first layout: Stack on mobile, side-by-side on desktop */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Content - Pack Grid */}
-          <div className="lg:col-span-2 order-2 lg:order-1">
-            {/* Active Releases Section */}
-            <div className="mb-8">
-              <div className="flex items-center gap-2 mb-4">
-                <Sparkles className="w-5 h-5 text-success" />
-                <h2 className="text-h3 text-white">Available Releases</h2>
-                <span className="text-caption text-text-muted ml-auto">
-                  Last 3 months
-                </span>
-              </div>
-
-              <Suspense fallback={<PackGridSkeleton />}>
-                <PackGrid packs={activePacks} hasSubscription={hasActiveSubscription} />
-              </Suspense>
-
-              {activePacks.length === 0 && (
-                <div className="text-center py-12 bg-grey-800/30 rounded-card">
-                  <div className="w-12 h-12 rounded-full bg-grey-700 flex items-center justify-center mx-auto mb-3">
-                    <Clock className="w-6 h-6 text-text-subtle" />
-                  </div>
-                  <h3 className="text-body font-medium text-white mb-1">No active releases</h3>
-                  <p className="text-body-sm text-text-muted">
-                    Check back soon for new releases!
-                  </p>
-                </div>
-              )}
-            </div>
+      <div className="mt-12 grid grid-cols-1 gap-12 lg:grid-cols-3 lg:gap-8">
+        {/* Available releases */}
+        <section className="order-2 lg:order-1 lg:col-span-2">
+          <div className="mb-5 flex items-baseline justify-between gap-3">
+            <h2 className="ssc-display text-[clamp(1.4rem,2.6vw,2rem)]">Available now</h2>
+            <span className="text-[13px] text-white/55">Last 3 months</span>
           </div>
 
-          {/* Sidebar - Activity Feed */}
-          <div className="lg:col-span-1 order-1 lg:order-2">
-            <div className="lg:sticky lg:top-24">
-              <div className="flex items-center gap-2 mb-4">
-                <TrendingUp className="w-5 h-5 text-white" />
-                <h2 className="text-h3 text-white">Activity</h2>
-              </div>
-
-              <Suspense fallback={<FeedSkeleton />}>
-                <ActivityFeed
-                  packs={allPacksWithSamples}
-                  hasSubscription={hasActiveSubscription}
-                  limit={8}
+          {lit.length > 0 ? (
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3">
+              {lit.map((p) => (
+                <PackCard
+                  key={p.id}
+                  className="!w-full"
+                  pack={{
+                    id: p.id,
+                    slug: p.slug,
+                    name: p.name,
+                    cover_image_url: p.cover_image_url,
+                    release_date: p.release_date,
+                    end_date: p.end_date,
+                    is_returned: p.is_returned,
+                    glow: p.glow,
+                    sampleCount: p.samples[0]?.count || 0,
+                  }}
                 />
-              </Suspense>
+              ))}
             </div>
+          ) : (
+            <GlassBox plain className="rounded-[24px] px-6 py-14 text-center">
+              <p className="ssc-display text-[1.3rem]">No active releases</p>
+              <p className="ssc-body mt-2 text-[15px]">A new pack lands every week. Check back soon.</p>
+            </GlassBox>
+          )}
+        </section>
+
+        {/* Activity */}
+        <aside className="order-1 lg:order-2 lg:col-span-1">
+          <div className="lg:sticky lg:top-24">
+            <h2 className="ssc-display mb-5 text-[clamp(1.4rem,2.6vw,2rem)]">Activity</h2>
+            <ActivityList packs={allPacksWithSamples} hasSubscription={hasActiveSubscription} limit={8} />
           </div>
-        </div>
+        </aside>
       </div>
     </div>
   );

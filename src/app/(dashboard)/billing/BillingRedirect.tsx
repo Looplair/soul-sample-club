@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
+import { GlassBox, Pill } from "@/components/ssc/Glass";
 
 export function BillingRedirect() {
   const [error, setError] = useState<string | null>(null);
@@ -32,26 +33,24 @@ export function BillingRedirect() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4">
-        <div className="max-w-md w-full text-center space-y-4">
-          <h1 className="text-2xl font-bold text-white">Unable to Access Billing</h1>
-          <p className="text-text-muted">{error}</p>
-          <a
-            href="/account?tab=billing"
-            className="inline-block px-6 py-3 bg-white text-black rounded-md hover:bg-grey-200 transition-colors"
-          >
-            Go to Account Settings
+      <div className="flex min-h-[55vh] items-center justify-center">
+        <GlassBox plain className="w-full max-w-md rounded-[24px] p-8 text-center">
+          <Pill>Billing</Pill>
+          <h1 className="ssc-display mt-5 text-[clamp(1.6rem,3.4vw,2.2rem)]">Couldn&apos;t open billing</h1>
+          <p className="ssc-body mt-3 text-[15px] leading-relaxed">{error}</p>
+          <a href="/account?tab=billing" className="ssc-btn ssc-btn--primary mt-7">
+            Go to account settings
           </a>
-        </div>
+        </GlassBox>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="text-center space-y-4">
-        <Loader2 className="w-12 h-12 animate-spin mx-auto text-white" />
-        <p className="text-text-muted">Redirecting to billing portal...</p>
+    <div className="flex min-h-[55vh] items-center justify-center">
+      <div role="status" className="flex flex-col items-center text-center">
+        <Loader2 className="h-10 w-10 animate-spin text-white" />
+        <p className="ssc-label mt-5">Opening the billing portal</p>
       </div>
     </div>
   );

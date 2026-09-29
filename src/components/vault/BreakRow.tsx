@@ -2,6 +2,8 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
+import { Check, Download, Loader2, Pause, Play, Plus } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { BreakWaveform } from "./BreakWaveform";
 import type { DrumBreakWithStatus } from "@/types/database";
 
@@ -111,83 +113,67 @@ export function BreakRow({ drumBreak, index, onCollect, onDownload, isActive, on
 
   return (
     <div
-      className="flex items-center gap-3 sm:gap-5 relative overflow-hidden"
-      style={{
-        padding: "18px 0",
-        borderBottom: "1px solid #111",
-        background: "#0C0C0C",
-        scrollSnapAlign: "center",
-        transformOrigin: "center center",
-        willChange: "transform, opacity",
-        transition: "transform 0.12s cubic-bezier(.4,0,.2,1), opacity 0.12s cubic-bezier(.4,0,.2,1)",
-      }}
+      className={cn(
+        "relative flex items-center gap-3 overflow-hidden rounded-2xl px-2 py-3 transition-colors sm:gap-4 sm:px-4",
+        isActive ? "bg-white/[0.06]" : "hover:bg-white/[0.03]"
+      )}
     >
-      {/* Sweep layer */}
+      {/* Sweep layer: a quick sheen across the row when a break is collected */}
       <div
-        className="absolute inset-0 pointer-events-none"
+        className="pointer-events-none absolute inset-0"
         style={{
-          background: "linear-gradient(105deg, transparent 20%, rgba(255,255,255,.15) 50%, transparent 80%)",
+          background: "linear-gradient(105deg, transparent 20%, rgba(255,255,255,.14) 50%, transparent 80%)",
           transform: isSweeping ? "translateX(200%)" : "translateX(-100%)",
           transition: isSweeping ? "transform .5s cubic-bezier(.4,0,.2,1)" : "none",
         }}
       />
 
       {/* Row number */}
-      <div
-        className="hidden sm:block flex-shrink-0 text-right font-black"
-        style={{ width: 32, fontSize: 18, color: "#1C1C1C", letterSpacing: "-0.03em" }}
-      >
+      <span className="hidden w-7 flex-shrink-0 text-right text-[12px] font-semibold tabular-nums text-white/55 sm:block">
         {String(index + 1).padStart(2, "0")}
-      </div>
-
-      {/* Info */}
-      <div className="flex-shrink-0 w-[82px] sm:w-[120px]">
-        <div className="text-[11px] sm:text-[13px] font-semibold truncate" style={{ color: drumBreak.is_collected ? "#aaa" : "#888" }}>
-          {drumBreak.name}
-        </div>
-        <div className="text-[11px] font-medium mt-0.5" style={{ color: "#444" }}>
-          {drumBreak.bpm} BPM
-        </div>
-        {drumBreak.is_new && (
-          <div className="text-[9px] font-bold uppercase tracking-[0.1em] rounded px-1.5 py-0.5 w-fit mt-1"
-            style={{ color: "#4ade80", background: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.4)" }}>
-            New
-          </div>
-        )}
-        {drumBreak.is_exclusive && !drumBreak.is_new && (
-          <div className="text-[9px] font-bold uppercase tracking-[0.1em] rounded px-1.5 py-0.5 w-fit mt-1"
-            style={{ color: "#C0A860", background: "#C0A8600E", border: "1px solid #C0A86020" }}>
-            Exclusive
-          </div>
-        )}
-      </div>
+      </span>
 
       {/* Play button */}
       <button
+        type="button"
         onClick={handlePlay}
-        className="flex-shrink-0 flex items-center justify-center rounded-full"
-        style={{ width: 32, height: 32, border: "1px solid #1E1E1E", background: "#111" }}
+        aria-label={isPlaying ? `Pause ${drumBreak.name}` : `Play ${drumBreak.name}`}
+        className={cn(
+          "relative flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full transition-colors",
+          isPlaying ? "bg-white text-black" : "bg-white/10 text-white hover:bg-white/20"
+        )}
       >
         {isLoading ? (
-          <div
-            className="rounded-full border-t-white"
-            style={{
-              width: 12, height: 12,
-              border: "1.5px solid rgba(255,255,255,0.2)",
-              borderTopColor: "#fff",
-              animation: "spin 0.7s linear infinite",
-            }}
-          />
+          <Loader2 className="h-4 w-4 animate-spin" />
         ) : isPlaying ? (
-          <div className="flex gap-0.5">
-            <div className="bg-white rounded-sm" style={{ width: 2.5, height: 9 }} />
-            <div className="bg-white rounded-sm" style={{ width: 2.5, height: 9 }} />
-          </div>
+          <Pause className="h-4 w-4" fill="currentColor" />
         ) : (
-          <div style={{ width: 0, height: 0, borderStyle: "solid", borderWidth: "4px 0 4px 8px",
-            borderColor: "transparent transparent transparent #555", marginLeft: 2 }} />
+          <Play className="ml-0.5 h-4 w-4" fill="currentColor" />
         )}
       </button>
+
+      {/* Info */}
+      <div className="relative w-[92px] flex-shrink-0 sm:w-[190px] lg:w-[220px]">
+        <p className="truncate text-[13px] font-semibold uppercase tracking-[0.02em] text-white sm:text-[14px]">
+          {drumBreak.name}
+        </p>
+        <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+          {drumBreak.bpm ? <span className="text-[12px] tabular-nums text-white/55">{drumBreak.bpm} BPM</span> : null}
+          {drumBreak.is_new ? (
+            <span className="rounded-full bg-white px-2 py-[3px] text-[9px] font-bold uppercase tracking-[0.16em] text-black">New</span>
+          ) : drumBreak.is_exclusive ? (
+            <span className="rounded-full border border-white/15 px-2 py-[2px] text-[9px] font-semibold uppercase tracking-[0.16em] text-white/75">
+              Exclusive
+            </span>
+          ) : null}
+          {drumBreak.is_collected && (
+            <span className="hidden items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-white/75 sm:inline-flex">
+              <Check className="h-3 w-3" />
+              Yours
+            </span>
+          )}
+        </div>
+      </div>
 
       {/* Waveform */}
       <BreakWaveform
@@ -201,41 +187,25 @@ export function BreakRow({ drumBreak, index, onCollect, onDownload, isActive, on
       {/* Collect / Download button */}
       {drumBreak.is_collected ? (
         <button
+          type="button"
           onClick={() => onDownload(drumBreak.id)}
-          className="flex-shrink-0 text-[12px] font-semibold px-2 sm:px-5 py-2 rounded-lg"
-          style={{ color: "#22c55e", border: "1px solid #22c55e18", background: "transparent",
-            letterSpacing: "0.05em", whiteSpace: "nowrap" }}
+          aria-label={`Download ${drumBreak.name}`}
+          className="relative flex h-10 flex-shrink-0 items-center justify-center gap-2 rounded-full border border-white/14 bg-white/[0.04] px-3 text-[11px] font-bold uppercase tracking-[0.12em] text-white transition-colors hover:border-white/35 sm:px-5"
         >
-          <span className="sm:hidden">↓</span>
-          <span className="hidden sm:inline">↓ Download</span>
+          <Download className="h-4 w-4" />
+          <span className="hidden sm:inline">Download</span>
         </button>
       ) : (
         <button
+          type="button"
           onClick={handleCollect}
-          className="flex-shrink-0 text-[12px] font-semibold px-2 sm:px-5 py-2 rounded-lg transition-all"
-          style={{ color: "#666", border: "1px solid #2A2A2A", background: "transparent",
-            letterSpacing: "0.05em", whiteSpace: "nowrap",
-            boxShadow: "inset 0 0 12px rgba(255,255,255,0.03), 0 0 0 1px transparent" }}
-          onMouseEnter={(e) => {
-            const btn = e.currentTarget;
-            btn.style.background = "#fff";
-            btn.style.color = "#000";
-            btn.style.borderColor = "#fff";
-            btn.style.boxShadow = "0 0 18px rgba(255,255,255,0.25)";
-          }}
-          onMouseLeave={(e) => {
-            const btn = e.currentTarget;
-            btn.style.background = "transparent";
-            btn.style.color = "#666";
-            btn.style.borderColor = "#2A2A2A";
-            btn.style.boxShadow = "inset 0 0 12px rgba(255,255,255,0.03), 0 0 0 1px transparent";
-          }}
+          aria-label={`Collect ${drumBreak.name}`}
+          className="relative flex h-10 flex-shrink-0 items-center justify-center gap-2 rounded-full bg-white px-3 text-[11px] font-bold uppercase tracking-[0.12em] text-black transition-colors hover:bg-white/85 active:scale-[0.97] sm:px-5"
         >
-          Collect
+          <Plus className="h-4 w-4 sm:hidden" />
+          <span className="hidden sm:inline">Collect</span>
         </button>
       )}
-
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }

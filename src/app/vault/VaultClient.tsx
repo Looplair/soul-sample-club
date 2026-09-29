@@ -1,8 +1,9 @@
 // src/app/vault/VaultClient.tsx
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 import { VaultHero } from "@/components/vault/VaultHero";
 import { VaultPicker } from "@/components/vault/VaultPicker";
 import { PremiumModal } from "@/components/subscription/PremiumModal";
@@ -26,12 +27,6 @@ export function VaultClient({ breaks: initialBreaks, stats: initialStats, hasUse
   const [stats, setStats] = useState(initialStats);
   const [toast, setToast] = useState<Toast | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
-
-  // Lock page scroll so the site footer never peeks through
-  useEffect(() => {
-    document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = ""; };
-  }, []);
 
   const showToast = useCallback((message: string, sub: string) => {
     setToast({ message, sub, key: Date.now() });
@@ -99,43 +94,54 @@ export function VaultClient({ breaks: initialBreaks, stats: initialStats, hasUse
     window.location.href = url;
   }, [breaks]);
 
+  const newCount = breaks.filter((b) => b.is_new).length;
+
   return (
-    <div
-      className="flex flex-col bg-[#0C0C0C] text-white"
-      style={{ height: "100dvh", overflow: "hidden" }}
-    >
-      <VaultHero stats={stats} backLink={<Link href="/feed" className="text-[11px] font-medium text-[#444] hover:text-white transition-colors tracking-[0.04em]">← Back to Catalog</Link>} />
+    <main className="px-5 pb-24 pt-6 sm:px-8 sm:pt-10">
+      <div className="mx-auto max-w-[1240px]">
+        <VaultHero
+          stats={stats}
+          backLink={
+            <Link href="/feed" className="inline-flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.14em] text-white/55 transition-colors hover:text-white">
+              <ArrowLeft className="h-4 w-4" />
+              Catalog
+            </Link>
+          }
+        />
 
-      <hr className="border-t border-[#141414] flex-shrink-0" />
+        <section className="mt-14">
+          <div className="mb-5 flex flex-wrap items-baseline justify-between gap-3">
+            <div className="flex items-baseline gap-3">
+              <h2 className="ssc-display text-[clamp(1.4rem,2.6vw,2rem)]">All breaks</h2>
+              <span className="text-[13px] text-white/55">{stats.total} in the vault</span>
+            </div>
+            {newCount > 0 && (
+              <span className="ssc-pill">
+                <span className="ssc-pill__dot" />
+                {newCount} new since your last visit
+              </span>
+            )}
+          </div>
 
-      {/* Picker bar */}
-      <div className="flex-shrink-0 border-b border-[#141414]">
-        <div className="max-w-[860px] mx-auto px-10 py-3 flex items-center justify-between">
-          <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#2E2E2E]">
-            All Breaks · {stats.total} total
-          </span>
-          {breaks.some((b) => b.is_new) && (
-            <span className="text-[11px] font-semibold text-[#22C55E] tracking-[0.06em]">
-              ↑ {breaks.filter((b) => b.is_new).length} new since your last visit
-            </span>
-          )}
-        </div>
+          <VaultPicker breaks={breaks} onCollect={handleCollect} onDownload={handleDownload} />
+
+          <p className="mt-5 text-[13px] leading-relaxed text-white/55">
+            Breaks are added to the vault on a rolling basis. Once you collect one it stays in your account to download whenever you like.
+          </p>
+        </section>
       </div>
-
-      <VaultPicker
-        breaks={breaks}
-        onCollect={handleCollect}
-        onDownload={handleDownload}
-      />
 
       {/* Toast */}
       {toast && (
-        <div
-          key={toast.key}
-          className="fixed bottom-7 left-1/2 -translate-x-1/2 bg-[#181818] border border-[#2A2A2A] rounded-xl px-5 py-3 z-50 animate-fade-in-up"
-        >
-          <div className="text-[13px] font-semibold tracking-tight">{toast.message}</div>
-          <div className="text-[11px] text-[#444] mt-0.5">{toast.sub}</div>
+        // Outer layer centres, inner layer animates, so the slide-up never fights the centring
+        <div key={toast.key} role="status" className="pointer-events-none fixed inset-x-0 bottom-8 z-50 flex justify-center px-5">
+          <div
+            className="ssc-glass ssc-glass--plain rounded-2xl px-5 py-3.5 animate-fade-in-up"
+            style={{ background: "linear-gradient(180deg, rgba(24,24,24,0.94), rgba(10,10,10,0.94))" }}
+          >
+            <p className="text-[13px] font-semibold uppercase tracking-[0.04em] text-white">{toast.message}</p>
+            <p className="mt-0.5 text-[12px] text-white/55">{toast.sub}</p>
+          </div>
         </div>
       )}
 
@@ -145,6 +151,6 @@ export function VaultClient({ breaks: initialBreaks, stats: initialStats, hasUse
         hasUsedTrial={hasUsedTrial}
         isLoggedIn={isLoggedIn}
       />
-    </div>
+    </main>
   );
 }

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { Navbar, Footer } from "@/components/layout";
+import { Navbar } from "@/components/layout";
+import { SiteFooter } from "@/components/ssc/SiteFooter";
 import { getNotificationsForUser } from "@/lib/notifications";
 import type { Profile } from "@/types/database";
 
@@ -29,11 +30,13 @@ export default async function DashboardLayout({
   const { notifications, unreadCount } = await getNotificationsForUser(user.id);
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="ssc flex min-h-screen flex-col overflow-x-clip">
       <Navbar user={profile} notifications={notifications} unreadCount={unreadCount} />
-      {/* Padding for the now-playing bar, which overlays the bottom on mobile */}
-      <main className="flex-1 pb-24 sm:pb-0">{children}</main>
-      <Footer />
+      {/* Bottom padding clears the now-playing bar */}
+      <main className="flex-1 px-5 pb-24 pt-6 sm:px-8 sm:pt-10">
+        <div className="mx-auto max-w-[1240px]">{children}</div>
+      </main>
+      <SiteFooter cta={false} />
     </div>
   );
 }

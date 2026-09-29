@@ -3,6 +3,7 @@ export const revalidate = 0;
 
 import { createClient } from "@/lib/supabase/server";
 import { AccountSettings } from "./AccountSettings";
+import { PageHead } from "@/components/member/MemberUI";
 import type { Profile, Subscription, PatreonLink } from "@/types/database";
 
 export const metadata = {
@@ -60,9 +61,9 @@ export default async function AccountPage() {
   }
 
   return (
-    <div className="py-6 sm:py-8 px-4 sm:px-6">
-      <div className="max-w-3xl mx-auto">
-        <h1 className="text-2xl sm:text-3xl font-bold text-white mb-6">Account Settings</h1>
+    <div>
+      <PageHead pill="Account" title="Your account" body="Your profile, membership and sign-in details." />
+      <div className="mt-8">
         <AccountSettings
           profile={data.profile}
           subscription={data.subscription}

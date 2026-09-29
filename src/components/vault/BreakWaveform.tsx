@@ -59,7 +59,7 @@ export function BreakWaveform({ peaks, seed, playedFraction, isCollected, onClic
         height: 48,
         display: "grid",
         gridTemplateColumns: `repeat(${displayPeaks.length}, 1fr)`,
-        gap: "1px",
+        gap: "2px",
         alignItems: "center",
       }}
       onClick={onClick}
@@ -67,10 +67,10 @@ export function BreakWaveform({ peaks, seed, playedFraction, isCollected, onClic
       {displayPeaks.map((p, i) => {
         const height = Math.max(4, Math.round(p * 46));
         const isPlayed = i < playedCount;
-        const isHead = i === playedCount;
-        // Brighter baseline so bars are visible against the dark #0C0C0C row background
-        let bg = isCollected ? "#303030" : "#262626";
-        if (isPlayed) bg = "#C0C0C0";
+        const isHead = playedFraction > 0 && i === playedCount;
+        // Unplayed bars stay readable on glass; played fills white like the sample rows
+        let bg = isCollected ? "rgba(255,255,255,0.32)" : "rgba(255,255,255,0.2)";
+        if (isPlayed) bg = "rgba(255,255,255,0.85)";
         if (isHead) bg = "#fff";
         return (
           <div
@@ -78,6 +78,7 @@ export function BreakWaveform({ peaks, seed, playedFraction, isCollected, onClic
             style={{
               height,
               background: bg,
+              borderRadius: 1.5,
               boxShadow: isHead ? "0 0 6px rgba(255,255,255,.5)" : undefined,
               transition: "background 0.04s",
             }}
