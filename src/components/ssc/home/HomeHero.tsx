@@ -69,7 +69,7 @@ export function HomeHero({
             )}
           </div>
           {secondaryLine && <div className="mt-5 text-[13px] text-white/55">{secondaryLine}</div>}
-          {extra && <div className="mt-8">{extra}</div>}
+          {extra && <div className="mt-6 w-full">{extra}</div>}
         </div>
 
         {/* Floating covers */}

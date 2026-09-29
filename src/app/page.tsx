@@ -14,7 +14,7 @@ import { HomeHero } from "@/components/ssc/home/HomeHero";
 import { WhyBoxes } from "@/components/ssc/home/WhyBoxes";
 import { ControlFilm } from "@/components/ssc/home/ControlFilm";
 import { ArtistRoll } from "@/components/ssc/home/ArtistRoll";
-import { MemberCap } from "@/components/ssc/MemberCap";
+import { HeroStats } from "@/components/ssc/home/HeroStats";
 import { getNotificationsForUser } from "@/lib/notifications";
 import { SITE_URL } from "@/lib/site";
 import { isGuidePublished, hasPublishedGuides } from "@/lib/guides";
@@ -253,10 +253,36 @@ export default async function HomePage() {
       {isLoggedIn && hasUsedTrial ? "Subscribe now" : "Start for $0.99"}
     </SubscribeCTA>
   );
-  const yearlyLink = (
-    <SubscribeCTA isLoggedIn={isLoggedIn} hasSubscription={false} plan="yearly" bare className="font-medium text-white underline underline-offset-4">
-      $35 a year
-    </SubscribeCTA>
+  // The offer at a glance under the hero buttons (non-members only)
+  const heroStats = (
+    <HeroStats
+      glow={latest ? glowOf(latest) : undefined}
+      stats={[
+        isLoggedIn && hasUsedTrial
+          ? { value: "$6.99", label: "a month, cancel anytime" }
+          : { value: "$0.99", label: "first month, then $6.99" },
+        {
+          value: "$35",
+          label: (
+            <>
+              a year, offer price <span className="text-white">→</span>
+            </>
+          ),
+          wrap: (cell) => (
+            <SubscribeCTA
+              isLoggedIn={isLoggedIn}
+              hasSubscription={false}
+              plan="yearly"
+              bare
+              className="block h-full w-full text-left transition-colors hover:bg-white/[0.05]"
+            >
+              {cell}
+            </SubscribeCTA>
+          ),
+        },
+        { value: "5,000", label: "member cap", live: true },
+      ]}
+    />
   );
 
   return (
@@ -275,14 +301,7 @@ export default async function HomePage() {
           covers={current.slice(0, 3).map((p) => ({ name: p.name, href: packPath(p), cover_image_url: p.cover_image_url, glow: glowOf(p) }))}
           tracks={reelTracks}
           primaryCta={primaryCta}
-          extra={!hasSubscription ? <MemberCap /> : undefined}
-          secondaryLine={
-            !hasSubscription && (
-              <>
-                {isLoggedIn && hasUsedTrial ? "$6.99 a month" : "Then $6.99 a month"}, cancel anytime. Or {yearlyLink}, offer price.
-              </>
-            )
-          }
+          extra={!hasSubscription ? heroStats : undefined}
         />
 
         {/* THIS WEEK'S PACK */}
