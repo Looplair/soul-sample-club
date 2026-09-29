@@ -23,7 +23,6 @@ import {
 import { VaultButton } from "@/components/vault/VaultButton";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
-import { Button } from "@/components/ui";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { UserDropdown } from "./UserDropdown";
 import type { Profile, NotificationWithReadStatus } from "@/types/database";
@@ -32,6 +31,8 @@ interface NavbarProps {
   user: Profile | null;
   notifications?: NotificationWithReadStatus[];
   unreadCount?: number;
+  /** This week's pack, shown as a chip next to the logo */
+  latest?: { name: string; href: string; cover_image_url: string | null };
 }
 
 const NAV_LINKS = [
@@ -41,7 +42,7 @@ const NAV_LINKS = [
   { href: "/app", label: "App", icon: Monitor },
 ];
 
-export function Navbar({ user, notifications = [], unreadCount = 0 }: NavbarProps) {
+export function Navbar({ user, notifications = [], unreadCount = 0, latest }: NavbarProps) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const supabase = createClient();
@@ -58,27 +59,40 @@ export function Navbar({ user, notifications = [], unreadCount = 0 }: NavbarProp
     pathname === href || (href === "/feed" && pathname.startsWith("/packs"));
 
   return (
-    <nav className="h-16 bg-charcoal border-b border-grey-700 sticky top-0 z-40 backdrop-blur-xl bg-charcoal/90">
-      <div className="container-app h-full flex items-center justify-between">
-        {/* Logo - always links to homepage */}
-        <Link href="/" className="flex items-center group">
-          <Image
-            src="/logo.svg"
-            alt="Soul Sample Club"
-            width={160}
-            height={36}
-            className="h-8 sm:h-9 w-auto"
-            priority
-          />
-        </Link>
+    // Floating glass bar inside the same 64px band the old bar used, so page offsets don't change
+    <nav className="sticky top-0 z-40 h-16 px-3 pt-2 sm:px-5">
+      <div
+        className="ssc-glass ssc-glass--plain relative mx-auto flex h-12 max-w-[1240px] items-center justify-between gap-3 rounded-2xl px-2.5 sm:px-3"
+        style={{ background: "linear-gradient(180deg, rgba(20,20,20,0.82), rgba(8,8,8,0.78))" }}
+      >
+        <div className="flex min-w-0 items-center gap-3">
+          {/* Logo - always links to homepage */}
+          <Link href="/" className="flex flex-shrink-0 items-center pl-1.5">
+            <Image src="/logo.svg" alt="Soul Sample Club" width={160} height={36} className="h-7 w-auto" priority />
+          </Link>
+          {latest && (
+            <Link
+              href={latest.href}
+              className="hidden items-center gap-2 rounded-full border border-white/12 bg-white/[0.04] py-1 pl-1 pr-3 transition-colors hover:border-white/30 lg:flex"
+            >
+              <span className="relative h-6 w-6 overflow-hidden rounded-full">
+                {latest.cover_image_url && <Image src={latest.cover_image_url} alt="" fill sizes="24px" className="object-cover" />}
+              </span>
+              <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/75">New release</span>
+            </Link>
+          )}
+        </div>
 
         {/* Desktop Navigation */}
-        <div className="hidden md:flex items-center gap-8">
+        <div className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-7 md:flex">
           {navLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className={cn("nav-link py-1", isActive(link.href) && "nav-link-active")}
+              className={cn(
+                "py-1 text-[12px] font-semibold uppercase tracking-[0.14em] transition-colors",
+                isActive(link.href) ? "text-white" : "text-white/60 hover:text-white"
+              )}
             >
               {link.label}
             </Link>
@@ -106,14 +120,18 @@ export function Navbar({ user, notifications = [], unreadCount = 0 }: NavbarProp
               </div>
             </>
           ) : (
-            <div className="hidden md:flex items-center gap-2">
-              <Link href="/login">
-                <Button variant="ghost" size="sm">
-                  Log in
-                </Button>
+            <div className="hidden md:flex items-center gap-1.5">
+              <Link
+                href="/login"
+                className="rounded-xl px-3 py-2 text-[12px] font-semibold uppercase tracking-[0.12em] text-white/75 transition-colors hover:text-white"
+              >
+                Log in
               </Link>
-              <Link href="/subscribe">
-                <Button size="sm">Get started</Button>
+              <Link
+                href="/subscribe"
+                className="rounded-xl bg-white px-4 py-2 text-[12px] font-extrabold uppercase tracking-[0.1em] text-black transition-colors hover:bg-white/85"
+              >
+                Join
               </Link>
             </div>
           )}
@@ -137,9 +155,9 @@ export function Navbar({ user, notifications = [], unreadCount = 0 }: NavbarProp
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="md:hidden bg-charcoal-elevated border-b border-grey-700 overflow-hidden"
+            className="md:hidden mx-auto mt-2 max-w-[1240px] overflow-hidden rounded-2xl border border-white/10 bg-black/90 backdrop-blur-xl"
           >
-            <div className="container-app py-4 space-y-1">
+            <div className="p-2 space-y-1">
               {navLinks.map((link) => {
                 const Icon = link.icon;
                 return (

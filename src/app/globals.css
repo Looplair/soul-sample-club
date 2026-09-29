@@ -541,3 +541,144 @@
     aspect-ratio: 1 / 1;
   }
 }
+
+/* ==========================================
+   SSC REDESIGN (Looplair glass system, cover-lit)
+   Chrome is black and white. Colour only comes from pack covers,
+   passed in as --glow: "r, g, b" on a box or section.
+   ========================================== */
+
+.ssc {
+  --ink: #ffffff;
+  --body: rgba(255, 255, 255, 0.75);
+  --soft: rgba(255, 255, 255, 0.55);
+  --edge: rgba(255, 255, 255, 0.08);
+  --glow: 255, 255, 255;
+  background: #000;
+  color: var(--ink);
+}
+
+/* Display face: Unbounded by default, wide Archivo when data-display="wide" */
+.ssc .ssc-display {
+  font-family: var(--font-display), system-ui, sans-serif;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: -0.025em;
+  line-height: 0.95;
+}
+.ssc[data-display="wide"] .ssc-display {
+  font-family: var(--font-display-alt), system-ui, sans-serif;
+  font-weight: 900;
+  font-variation-settings: "wdth" 125;
+  letter-spacing: -0.02em;
+}
+
+.ssc .ssc-body {
+  font-weight: 300;
+  color: var(--body);
+}
+
+.ssc .ssc-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--soft);
+}
+
+/* The glass box: edge, faint top tint, blur, and always three shadows */
+.ssc-glass {
+  border: 1px solid var(--edge, rgba(255, 255, 255, 0.08));
+  border-radius: 24px;
+  background:
+    radial-gradient(110% 90% at 50% 0%, rgba(var(--glow), 0.14) 0%, rgba(var(--glow), 0) 60%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.012));
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  box-shadow:
+    0 40px 90px -30px rgba(0, 0, 0, 0.9),
+    0 0 70px -22px rgba(var(--glow), 0.42),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.07);
+}
+/* Neutral glass: same box, no colour bleed */
+.ssc-glass--plain {
+  --glow: 255, 255, 255;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.012));
+  box-shadow:
+    0 40px 90px -30px rgba(0, 0, 0, 0.9),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.07);
+}
+
+.ssc-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.75);
+}
+.ssc-pill__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgb(var(--glow));
+  box-shadow: 0 0 10px rgba(var(--glow), 0.9);
+}
+
+/* Buttons: white primary, glass secondary */
+.ssc-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 52px;
+  padding: 0 26px;
+  border-radius: 14px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+}
+.ssc-btn:active { transform: scale(0.98); }
+.ssc-btn--primary { background: #fff; color: #000; }
+.ssc-btn--primary:hover { background: rgba(255, 255, 255, 0.88); }
+.ssc-btn--ghost {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.04);
+  color: #fff;
+}
+.ssc-btn--ghost:hover { border-color: rgba(255, 255, 255, 0.3); }
+
+/* Live things breathe */
+@keyframes ssc-breathe {
+  0%, 100% { box-shadow: 0 40px 90px -30px rgba(0, 0, 0, 0.9), 0 0 60px -24px rgba(var(--glow), 0.35), inset 0 1px 0 0 rgba(255, 255, 255, 0.07); }
+  50% { box-shadow: 0 40px 90px -30px rgba(0, 0, 0, 0.9), 0 0 90px -18px rgba(var(--glow), 0.55), inset 0 1px 0 0 rgba(255, 255, 255, 0.07); }
+}
+.ssc-breathe { animation: ssc-breathe 5s ease-in-out infinite; }
+
+/* Rails: snap-scrolling rows of equivalents */
+.ssc-rail {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+}
+.ssc-rail::-webkit-scrollbar { display: none; }
+.ssc-rail > * { scroll-snap-align: start; flex: 0 0 auto; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ssc *, .ssc *::before, .ssc *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}

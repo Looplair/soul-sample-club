@@ -25,6 +25,7 @@
     "react-dropzone": "^14.3.5",
     "react-markdown": "^10.1.0",
     "remark-gfm": "^4.0.1",
+    "sharp": "^0.35.5",
     "soundtouchjs": "^0.2.1",
     "stripe": "^17.4.0",
     "tailwind-merge": "^2.6.0",

@@ -1,46 +1,26 @@
-import Link from "next/link";
 import Image from "next/image";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { CatalogSearch } from "@/components/catalog/CatalogSearch";
-import { PackCard } from "@/components/packs/PackCard";
-import { CreatorHeroStrip } from "@/components/sections/CreatorHeroStrip";
-import { CompleteControlSection } from "@/components/sections/CompleteControlSection";
-import { PriceJustificationSection } from "@/components/sections/PriceJustificationSection";
-import { MembershipCounter } from "@/components/sections/MembershipCounter";
-import { CommunityProof } from "@/components/sections/CommunityProof";
-import { MemberTestimonials } from "@/components/sections/MemberTestimonials";
-import { FAQSection } from "@/components/sections/FAQSection";
-import { PricingCard } from "@/components/sections/PricingCard";
-import { ArchivedPacksSection } from "@/components/catalog/ArchivedPacksSection";
-import { HowItWorksSection } from "@/components/sections/HowItWorksSection";
-import { Button } from "@/components/ui";
-import { SubscribeCTA } from "@/components/ui/SubscribeCTA";
 import { Navbar } from "@/components/layout";
+import { SubscribeCTA } from "@/components/ui/SubscribeCTA";
+import { GlassBox, Pill, Section, SectionHead } from "@/components/ssc/Glass";
+import { PackCard, type CardPack } from "@/components/ssc/PackCard";
+import { Rail, type RailTab } from "@/components/ssc/Rail";
+import { FaqList } from "@/components/ssc/FaqList";
+import { TrackList } from "@/components/ssc/TrackList";
+import { SiteFooter } from "@/components/ssc/SiteFooter";
+import { HomeHero } from "@/components/ssc/home/HomeHero";
+import { WhyBoxes } from "@/components/ssc/home/WhyBoxes";
 import { getNotificationsForUser } from "@/lib/notifications";
 import { SITE_URL } from "@/lib/site";
 import { isGuidePublished, hasPublishedGuides } from "@/lib/guides";
-import {
-  Music,
-  Sparkles,
-  Download,
-  Headphones,
-  ArrowRight,
-  Play,
-  Zap,
-  Shield,
-  Clock,
-  Star,
-  ChevronRight,
-  Shuffle,
-} from "lucide-react";
-import type { Sample, Profile, NotificationWithReadStatus } from "@/types/database";
+import { faqs } from "@/lib/faqs";
+import { withCoverColors } from "@/lib/cover-color";
 import { packPath } from "@/lib/pack-url";
 import { hidePaths } from "@/lib/hide-paths";
+import type { Sample, Profile, NotificationWithReadStatus } from "@/types/database";
 
-// ============================================
-// TYPES
-// ============================================
 export const metadata = {
   alternates: { canonical: "/" },
 };
@@ -69,33 +49,28 @@ const organizationJsonLd = {
 
 interface PackWithSamples {
   id: string;
+  slug?: string | null;
   name: string;
   description: string;
   cover_image_url: string | null;
-  hero_image_url: string | null;
   release_date: string;
   end_date: string | null;
   is_published: boolean;
-  is_staff_pick?: boolean;
   is_bonus: boolean;
   is_returned?: boolean;
-  scheduled_publish_at: string | null;
-  created_at: string;
-  updated_at: string;
+  genres?: string[] | null;
   samples: Sample[];
 }
 
 // ============================================
-// DATA FETCHING
+// DATA
 // ============================================
 async function getAllPacks(): Promise<PackWithSamples[]> {
-  const adminSupabase = createAdminClient();
-  const result = await adminSupabase
+  const result = await createAdminClient()
     .from("packs")
     .select(`*, samples(*)`)
     .eq("is_published", true)
     .order("release_date", { ascending: false });
-
   return hidePaths((result.data as PackWithSamples[]) || []);
 }
 
@@ -111,46 +86,21 @@ async function getUserState(): Promise<{
     const {
       data: { user },
     } = await supabase.auth.getUser();
+    if (!user) return { isLoggedIn: false, hasSubscription: false, profile: null, userId: null, hasUsedTrial: false };
 
-    if (!user) {
-      return { isLoggedIn: false, hasSubscription: false, profile: null, userId: null, hasUsedTrial: false };
-    }
+    const profileResult = await supabase.from("profiles").select("*").eq("id", user.id).single();
+    const subResult = await supabase.from("subscriptions").select("*").eq("user_id", user.id).in("status", ["active", "trialing"]).single();
 
-    // Get profile
-    const profileResult = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", user.id)
-      .single();
-
-    // Check subscription
-    const subResult = await supabase
-      .from("subscriptions")
-      .select("*")
-      .eq("user_id", user.id)
-      .in("status", ["active", "trialing"])
-      .single();
-
-    // Check Patreon
     let hasPatreon = false;
     try {
-      const patreonResult = await supabase
-        .from("patreon_links")
-        .select("*")
-        .eq("user_id", user.id)
-        .eq("is_active", true)
-        .single();
+      const patreonResult = await supabase.from("patreon_links").select("*").eq("user_id", user.id).eq("is_active", true).single();
       hasPatreon = !!patreonResult.data;
     } catch {
       // Table might not exist
     }
 
-    // Check if user has ever had any subscription (for trial messaging)
-    const anySubResult = await supabase
-      .from("subscriptions")
-      .select("id")
-      .eq("user_id", user.id)
-      .limit(1);
+    // Has ever had any subscription (for trial messaging)
+    const anySubResult = await supabase.from("subscriptions").select("id").eq("user_id", user.id).limit(1);
 
     return {
       isLoggedIn: true,
@@ -164,618 +114,409 @@ async function getUserState(): Promise<{
   }
 }
 
-// Helper to check if pack is archived
 function isArchived(pack: PackWithSamples): boolean {
-  if (pack.is_returned) {
-    return pack.end_date ? new Date() > new Date(pack.end_date) : false;
-  }
-  if (pack.end_date && new Date() > new Date(pack.end_date)) {
-    return true;
-  }
+  if (pack.is_returned) return pack.end_date ? new Date() > new Date(pack.end_date) : false;
+  if (pack.end_date && new Date() > new Date(pack.end_date)) return true;
   const threeMonthsAgo = new Date();
   threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
   return new Date(pack.release_date) < threeMonthsAgo;
 }
 
-// ============================================
-// CONSTANTS
-// ============================================
-const features = [
-  {
-    icon: Music,
-    title: "Exclusive Compositions",
-    description: "Original soul, gospel, and funk compositions curated for real releases.",
-  },
-  {
-    icon: Download,
-    title: "Full Stems Included",
-    description: "Download full compositions with individual stems.",
-  },
-  {
-    icon: Shield,
-    title: "100% Royalty Free",
-    description: "No clearance needed. Ever.",
-  },
+const byOrder = (a: Sample, b: Sample) => a.order_index - b.order_index;
+
+const ARTISTS = [
+  { name: "Dave East", image: "/placeholders/Daveast.jpg" },
+  { name: "Statik Selektah", image: "/placeholders/statik.jpg" },
+  { name: "Apollo Brown", image: "/placeholders/apollobrown.jpg" },
+  { name: "Mick Jenkins", image: "/placeholders/mickjenkins.jpg" },
+  { name: "Westside Boogie", image: "/placeholders/westideboogie.jpeg" },
+  { name: "BeatsByJBlack", image: "/placeholders/beatsbyjblack.webp" },
 ];
 
-const stats = [
-  { value: "$0.99", label: "first month" },
-  { value: "0", label: "restrictions" },
+const QUOTES = [
+  { name: "Kimba", quote: "One of the best decisions to jump on board at the top of 2025. Looking forward to the masterpieces. You're an inspiration." },
+  { name: "Sef Lateef", quote: "Finally great musicianship. AND I FUGGIN LOVE IT!!!" },
+  { name: "Joshua Spann", quote: "Thanks so much for quality material" },
+  { name: "Shaun D.", quote: "How sweet it is! Great work!" },
+  { name: "Wilson", quote: "I jumped on it with the quickness" },
+  { name: "Pharoe", quote: "Looking forward to this. Appreciate it!" },
 ];
 
+// The questions a first-time visitor actually asks before joining
+const HOME_FAQS = [
+  "What exactly is the Soul Sample Club",
+  "Are the samples really royalty free",
+  "Will I ever need to clear a sample later",
+  "Can I use the sounds in commercial releases",
+  "Why do packs expire after 90 days",
+  "Do I keep access to samples if I cancel",
+  "Are these compositions made with AI",
+  "Can I cancel anytime",
+];
+
+const PERKS = ["A new pack every week", "Full stems on every release", "Pre-cleared. No clearance needed, ever.", "Cancel anytime"];
+
 // ============================================
-// PAGE COMPONENT
+// PAGE
 // ============================================
-export default async function HomePage() {
+export default async function HomePage({ searchParams }: { searchParams: { font?: string } }) {
   const [allPacks, userState, hasClearanceGuide, hasGuides] = await Promise.all([
     getAllPacks(),
     getUserState(),
     isGuidePublished("sample-clearance"),
     hasPublishedGuides(),
   ]);
-
   const { isLoggedIn, hasSubscription, profile, userId, hasUsedTrial } = userState;
-
-  // Fetch notifications for logged-in users
   const { notifications, unreadCount } = userId
     ? await getNotificationsForUser(userId)
     : { notifications: [] as NotificationWithReadStatus[], unreadCount: 0 };
 
-  // Organize packs
-  const staffPicks = allPacks.filter((p) => p.is_staff_pick && !isArchived(p));
-  const recentPacks = allPacks.filter((p) => !isArchived(p));
-  const archivedPacks = allPacks.filter((p) => isArchived(p));
+  // Bonus packs are member extras and never featured in marketing
+  const marketed = allPacks.filter((p) => !p.is_bonus);
+  const current = marketed.filter((p) => !isArchived(p));
+  const archived = marketed.filter(isArchived);
 
-  // Featured pack for hero - most recent with cover image
-  const featuredPack = recentPacks.find((p) => p.cover_image_url) || recentPacks[0];
+  // Covers light the page, so only colour what's shown
+  const shown = [...current, ...archived.slice(0, 12)];
+  const lit = new Map((await withCoverColors(shown)).map((p) => [p.id, p]));
+  const glowOf = (p: PackWithSamples) => lit.get(p.id)?.glow ?? "196, 160, 120";
+  const card = (p: PackWithSamples): CardPack => ({
+    id: p.id,
+    slug: p.slug,
+    name: p.name,
+    cover_image_url: p.cover_image_url,
+    release_date: p.release_date,
+    end_date: p.end_date,
+    is_returned: p.is_returned,
+    glow: glowOf(p),
+    sampleCount: p.samples.length,
+    archived: isArchived(p),
+  });
+
+  const latest = current.find((p) => p.cover_image_url) ?? current[0];
+  const latestTracks = latest ? [...latest.samples].sort(byOrder) : [];
+  const reelTracks = latestTracks.map((s) => ({
+    id: s.id,
+    name: s.name,
+    bpm: s.bpm,
+    key: s.key,
+    duration: s.duration,
+    peaks: Array.isArray(s.waveform_peaks) ? (s.waveform_peaks as number[]) : [],
+    hasStems: !!s.stems_path,
+  }));
+  const bpms = latestTracks.map((s) => s.bpm).filter((b): b is number => !!b);
+  const keys = Array.from(new Set(latestTracks.map((s) => s.key?.replace(/\s*minor$/i, "m").replace(/\s*major$/i, "")).filter(Boolean)));
+
+  // Releases rail: New, Returning, then any genre with enough packs, then the archive
+  const genreCounts = new Map<string, PackWithSamples[]>();
+  current.forEach((p) => (p.genres ?? []).forEach((g) => genreCounts.set(g, [...(genreCounts.get(g) ?? []), p])));
+  const railTabs: RailTab[] = [
+    { label: "New", items: current.slice(0, 12).map((p) => <PackCard key={p.id} pack={card(p)} size="lg" />) },
+    ...(current.some((p) => p.is_returned)
+      ? [{ label: "Returning", items: current.filter((p) => p.is_returned).map((p) => <PackCard key={p.id} pack={card(p)} size="lg" />) }]
+      : []),
+    ...Array.from(genreCounts)
+      .filter(([, packs]) => packs.length >= 3)
+      .sort((a, b) => b[1].length - a[1].length)
+      .slice(0, 4)
+      .map(([genre, packs]) => ({ label: genre, items: packs.map((p) => <PackCard key={p.id} pack={card(p)} size="lg" />) })),
+    ...(archived.length ? [{ label: "Archive", items: archived.slice(0, 12).map((p) => <PackCard key={p.id} pack={card(p)} size="lg" />) }] : []),
+  ];
+
+  const recent = current.slice(0, 5).map((p) => ({ name: p.name, cover_image_url: p.cover_image_url, release_date: p.release_date, glow: glowOf(p) }));
+  const stemPeaks = latestTracks.map((s) => (Array.isArray(s.waveform_peaks) ? (s.waveform_peaks as number[]) : [])).filter((p) => p.length);
+
+  const faqItems = HOME_FAQS.map((q) => faqs.find((f) => f.question === q))
+    .filter((f): f is (typeof faqs)[number] => !!f)
+    .map((f) => ({
+      question: `${f.question}?`,
+      answer: f.answer,
+      href: "guideLink" in f && f.guideLink && hasClearanceGuide ? "/guides/sample-clearance" : undefined,
+      linkLabel: "Read the sample clearance guide",
+    }));
+
+  const primaryCta = hasSubscription ? (
+    <Link href="/feed" className="ssc-btn ssc-btn--primary">
+      Open the catalog
+    </Link>
+  ) : (
+    <SubscribeCTA isLoggedIn={isLoggedIn} hasSubscription={false} plan="monthly" bare className="ssc-btn ssc-btn--primary">
+      {isLoggedIn && hasUsedTrial ? "Subscribe now" : "Start for $0.99"}
+    </SubscribeCTA>
+  );
+  const yearlyLink = (
+    <SubscribeCTA isLoggedIn={isLoggedIn} hasSubscription={false} plan="yearly" bare className="font-medium text-white underline underline-offset-4">
+      $35 a year
+    </SubscribeCTA>
+  );
 
   return (
-    <div className="min-h-screen bg-charcoal overflow-x-hidden">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+    <div className="ssc min-h-screen overflow-x-clip" data-display={searchParams.font === "wide" ? "wide" : undefined}>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }} />
+      <Navbar
+        user={profile}
+        notifications={notifications}
+        unreadCount={unreadCount}
+        latest={latest ? { name: latest.name, href: packPath(latest), cover_image_url: latest.cover_image_url } : undefined}
       />
-      {/* ============================================
-          HEADER
-          ============================================ */}
-      <div className="fixed top-0 left-0 right-0 z-50">
-        <Navbar user={profile} notifications={notifications} unreadCount={unreadCount} />
-      </div>
 
-      <main className={!hasSubscription ? "pt-24 sm:pt-[104px]" : "pt-14 sm:pt-16"}>
-        {/* ============================================
-            HERO SECTION - Tracklib inspired
-            ============================================ */}
-        <section className="relative min-h-[80vh] sm:min-h-[90vh] flex items-center overflow-hidden">
-          {/* Background with featured pack artwork */}
-          <div className="absolute inset-0">
-            {(featuredPack?.hero_image_url || featuredPack?.cover_image_url) && (
-              <Image
-                src={featuredPack.hero_image_url || featuredPack.cover_image_url!}
-                alt=""
-                fill
-                className="object-cover opacity-20 blur-2xl scale-110"
-                priority
-              />
-            )}
-            <div className="absolute inset-0 bg-gradient-to-b from-charcoal via-charcoal/95 to-charcoal" />
-            <div className="absolute inset-0 bg-gradient-to-r from-charcoal via-transparent to-charcoal/50" />
-          </div>
+      <main>
+        {/* HERO */}
+        <HomeHero
+          covers={current.slice(0, 3).map((p) => ({ name: p.name, href: packPath(p), cover_image_url: p.cover_image_url, glow: glowOf(p) }))}
+          tracks={reelTracks}
+          primaryCta={primaryCta}
+          secondaryLine={
+            !hasSubscription && (
+              <>
+                {isLoggedIn && hasUsedTrial ? "$6.99 a month" : "Then $6.99 a month"}, cancel anytime. Or {yearlyLink}, offer price.
+              </>
+            )
+          }
+        />
 
-          <div className="container-app relative z-10 py-12 sm:py-20">
-            <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
-              {/* Left: Text content */}
-              <div className="text-center lg:text-left">
-                {/* Badge */}
-                {!(isLoggedIn && hasUsedTrial) && (
-                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 mb-6 sm:mb-8">
-                    <Sparkles className="w-4 h-4 text-white" />
-                    <span className="text-sm text-white font-medium">First month $0.99</span>
-                    <span className="text-sm text-white/60">• Cancel anytime</span>
+        {/* THIS WEEK'S PACK */}
+        {latest && (
+          <Section>
+            <GlassBox glow={glowOf(latest)} className="grid gap-8 rounded-[28px] p-4 sm:p-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.3fr)] lg:gap-10 lg:p-8">
+              {/* Big cover on desktop only: on phones the hero right above already shows it */}
+              <Link href={packPath(latest)} className="relative hidden aspect-square overflow-hidden rounded-[20px] lg:block">
+                {latest.cover_image_url && (
+                  <Image src={latest.cover_image_url} alt={latest.name} fill sizes="(max-width: 1024px) 90vw, 460px" className="object-cover" />
+                )}
+              </Link>
+              <div className="flex min-w-0 flex-col">
+                <div className="flex items-center gap-4">
+                  <Link href={packPath(latest)} className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl lg:hidden">
+                    {latest.cover_image_url && <Image src={latest.cover_image_url} alt="" fill sizes="64px" className="object-cover" />}
+                  </Link>
+                  <div className="flex min-w-0 flex-col items-start">
+                    <Pill dot glow={glowOf(latest)}>This week</Pill>
+                    <h2 className="ssc-display mt-3 break-words text-[clamp(2.2rem,5vw,4rem)] lg:mt-4">{latest.name}</h2>
                   </div>
-                )}
-
-                {/* Headline */}
-                <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-white mb-6 leading-[1.1] tracking-tight">
-                  Pre-cleared and original soul compositions.{" "}
-                  <span className="text-gradient">Built for producers.</span>
-                </h1>
-
-                {/* Subheadline */}
-                <p className="text-lg sm:text-xl text-text-muted max-w-xl mx-auto lg:mx-0 mb-8">
-                  Exclusive, curated soul packs delivered regularly.
-                  <br />
-                  Preview everything free. Subscribe for full access.
-                </p>
-
-                {/* CTAs */}
-                <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start mb-8">
-                  {isLoggedIn ? (
-                    <>
-                      <a href="#catalog">
-                        <Button size="lg" className="w-full sm:w-auto" rightIcon={<ArrowRight className="w-4 h-4" />}>
-                          Browse catalog
-                        </Button>
-                      </a>
-                      {!hasSubscription && (
-                        <SubscribeCTA
-                          isLoggedIn={isLoggedIn}
-                          hasSubscription={hasSubscription}
-                          plan="monthly"
-                          variant="secondary"
-                          size="lg"
-                          className="w-full sm:w-auto"
-                        >
-                          {hasUsedTrial ? "Subscribe now" : "Get started"}
-                        </SubscribeCTA>
-                      )}
-                    </>
-                  ) : (
-                    <>
-                      <Link href="/subscribe">
-                        <Button size="lg" className="w-full sm:w-auto" rightIcon={<ArrowRight className="w-4 h-4" />}>
-                          Get started
-                        </Button>
-                      </Link>
-                      <a href="#catalog">
-                        <Button variant="secondary" size="lg" className="w-full sm:w-auto">
-                          <Play className="w-4 h-4 mr-2" />
-                          Preview catalog
-                        </Button>
-                      </a>
-                    </>
-                  )}
                 </div>
-
-                {!hasSubscription && (
-                  <p className="text-sm text-text-muted text-center lg:text-left">
-                    or{" "}
-                    <SubscribeCTA
-                      isLoggedIn={isLoggedIn}
-                      hasSubscription={hasSubscription}
-                      plan="yearly"
-                      variant="ghost"
-                      size="sm"
-                      hideArrow
-                      className="!p-0 !h-auto !font-normal !text-sm text-white underline hover:text-grey-200 !bg-transparent !border-0 !rounded-none inline"
-                    >
-                      <s className="opacity-60">$49</s> $35/year, locked in for life
-                    </SubscribeCTA>
-                  </p>
-                )}
-
-                {/* Stats */}
-                <div className="flex items-center justify-center lg:justify-start gap-6 sm:gap-8 pt-4">
-                  <MembershipCounter />
-                  {stats.map((stat) => (
-                    <div key={stat.label} className="text-center">
-                      <div className="text-2xl sm:text-3xl font-bold text-white">{stat.value}</div>
-                      <div className="text-sm text-text-muted">{stat.label}</div>
-                    </div>
-                  ))}
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {[
+                    `${latestTracks.length} compositions`,
+                    latestTracks.some((s) => s.stems_path) ? "Full stems" : null,
+                    bpms.length ? (Math.min(...bpms) === Math.max(...bpms) ? `${bpms[0]} BPM` : `${Math.min(...bpms)}–${Math.max(...bpms)} BPM`) : null,
+                    keys.length ? keys.slice(0, 4).join(" · ") : null,
+                  ]
+                    .filter(Boolean)
+                    .map((chip) => (
+                      <span key={chip} className="rounded-full border border-white/12 bg-white/[0.04] px-3 py-1.5 text-[12px] font-medium text-white/75">
+                        {chip}
+                      </span>
+                    ))}
                 </div>
-
-                {/* Explore Button - with shine/gleam effect */}
-                <div className="pt-6 pb-8 sm:pb-0 flex justify-center lg:justify-start">
-                  <Link
-                    href="/explore"
-                    className="group relative flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all overflow-hidden"
-                  >
-                    {/* Shine/gleam effect */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out" />
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-[shimmer_3s_ease-in-out_infinite]" />
-                    <Shuffle className="w-4 h-4 text-white/70 group-hover:text-white transition-colors relative z-10" />
-                    <span className="text-sm text-white/70 group-hover:text-white transition-colors relative z-10">
-                      Explore random samples
-                    </span>
-                    <ChevronRight className="w-4 h-4 text-white/40 group-hover:text-white/70 transition-colors relative z-10" />
+                <TrackList tracks={reelTracks} packName={latest.name} className="-mx-3 mt-6" />
+                <div className="mt-6 flex flex-wrap gap-3">
+                  <Link href={packPath(latest)} className="ssc-btn ssc-btn--ghost">
+                    Open the pack
                   </Link>
                 </div>
               </div>
-
-              {/* Right: Featured pack showcase */}
-              <div className="relative hidden lg:block">
-                {featuredPack && (
-                  <Link href={packPath(featuredPack)} className="block group">
-                    <div className="relative">
-                      {/* Main featured pack */}
-                      <div className="relative aspect-square rounded-2xl overflow-hidden shadow-2xl transform group-hover:scale-[1.02] transition-transform duration-500">
-                        {(featuredPack.hero_image_url || featuredPack.cover_image_url) ? (
-                          <Image
-                            src={featuredPack.hero_image_url || featuredPack.cover_image_url!}
-                            alt={featuredPack.name}
-                            fill
-                            className="object-cover"
-                            sizes="(max-width: 1024px) 100vw, 50vw"
-                            priority
-                          />
-                        ) : (
-                          <div className="absolute inset-0 bg-gradient-to-br from-grey-700 to-grey-800 flex items-center justify-center">
-                            <Music className="w-24 h-24 text-grey-600" />
-                          </div>
-                        )}
-
-                        {/* Overlay */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-60 group-hover:opacity-40 transition-opacity" />
-
-                        {/* Play button */}
-                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                          <div className="w-20 h-20 rounded-full bg-white flex items-center justify-center shadow-2xl transform scale-90 group-hover:scale-100 transition-transform">
-                            <Play className="w-8 h-8 text-charcoal ml-1" fill="currentColor" />
-                          </div>
-                        </div>
-
-                        {/* Info */}
-                        <div className="absolute bottom-0 left-0 right-0 p-6">
-                          <div className="flex items-center gap-2">
-                            <span className="px-2 py-1 rounded-full bg-white text-charcoal text-xs font-bold uppercase">
-                              Featured
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Decorative smaller packs */}
-                      {recentPacks[1] && (
-                        <div className="absolute -bottom-8 -left-8 w-32 h-32 rounded-xl overflow-hidden shadow-xl transform -rotate-6 opacity-80">
-                          {recentPacks[1].cover_image_url && (
-                            <Image
-                              src={recentPacks[1].cover_image_url}
-                              alt=""
-                              fill
-                              className="object-cover"
-                            />
-                          )}
-                        </div>
-                      )}
-                      {recentPacks[2] && (
-                        <div className="absolute -top-4 -right-4 w-28 h-28 rounded-xl overflow-hidden shadow-xl transform rotate-6 opacity-80">
-                          {recentPacks[2].cover_image_url && (
-                            <Image
-                              src={recentPacks[2].cover_image_url}
-                              alt=""
-                              fill
-                              className="object-cover"
-                            />
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </Link>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Scroll indicator - positioned lower on mobile to give more space */}
-          <div className="absolute bottom-6 sm:bottom-4 left-1/2 -translate-x-1/2 animate-bounce">
-            <ChevronRight className="w-6 h-6 text-white/40 rotate-90" />
-          </div>
-        </section>
-
-        {/* ============================================
-            FEATURES STRIP
-            ============================================ */}
-        <section className="border-y border-grey-800 bg-grey-900/30">
-          <div className="container-app py-8 sm:py-12">
-            <div className="grid sm:grid-cols-3 gap-6 sm:gap-8">
-              {features.map((feature) => (
-                <div key={feature.title} className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center flex-shrink-0">
-                    <feature.icon className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-semibold text-white mb-1">{feature.title}</h3>
-                    <p className="text-sm text-text-muted">{feature.description}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* ============================================
-            WEEKLY DROP BADGE
-            ============================================ */}
-        {!hasSubscription && (
-          <div className="container-app py-3 sm:py-4 flex justify-center">
-            <div className="flex items-center gap-2 bg-velvet/[0.1] border border-velvet/20 rounded-full px-4 py-2">
-              <Sparkles className="w-3 h-3 text-velvet-light/70 flex-shrink-0" />
-              <span className="text-[12px] font-medium text-white/50 tracking-wide">New drop every week</span>
-            </div>
-          </div>
+            </GlassBox>
+          </Section>
         )}
 
-        {/* ============================================
-            CATALOG FEED
-            ============================================ */}
-        <section id="catalog" className="section scroll-mt-20">
-          <div className="container-app">
+        {/* RELEASES RAIL */}
+        <Section id="catalog">
+          <SectionHead
+            pill="The catalog"
+            title="Every week, a new pack"
+            body="Preview any composition before you join. Packs stay for 90 days, and the ones members vote for come back."
+            action={
+              <Link href="/feed" className="ssc-btn ssc-btn--ghost self-start md:self-auto">
+                Browse everything
+              </Link>
+            }
+          />
+          <Rail tabs={railTabs} className="mt-10" />
+        </Section>
 
-            {/* LOGGED-OUT: clean catalog grid */}
-            {!isLoggedIn && (
-              <div className="space-y-10 sm:space-y-14">
-                {recentPacks.length > 0 && (
-                  <CatalogSearch packs={recentPacks} hasSubscription={false} />
-                )}
-                {archivedPacks.length > 0 && (
-                  <ArchivedPacksSection archivedPacks={archivedPacks} />
-                )}
-              </div>
-            )}
+        {/* WHY SSC */}
+        <Section>
+          <SectionHead pill="Why producers join" title="Sample soul without the paperwork" align="center" className="mb-12" />
+          <WhyBoxes latestName={latest?.name ?? "This week"} stemPeaks={stemPeaks} recent={recent} />
+        </Section>
 
-            {/* LOGGED-IN: searchable catalog */}
-            {isLoggedIn && (
-              <>
-                <div className="mb-8">
-                  <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">Catalog</h2>
-                  <p className="text-text-muted">Preview any composition. Subscribe to save and download.</p>
+        {/* PROOF */}
+        <Section>
+          <SectionHead
+            pill="Heard on"
+            title="Used by artists you know"
+            body="Our sounds have been used by everyone from independent artists to industry heavyweights."
+          />
+          <div className="mt-10 grid grid-cols-3 gap-3 sm:grid-cols-6">
+            {ARTISTS.map((a) => (
+              <GlassBox key={a.name} plain className="rounded-[20px] p-2">
+                <div className="relative aspect-square overflow-hidden rounded-[14px]">
+                  <Image src={a.image} alt={a.name} fill sizes="200px" className="object-cover grayscale transition-[filter] duration-500 hover:grayscale-0" />
                 </div>
-                <CatalogSearch packs={allPacks} hasSubscription={hasSubscription} />
-              </>
-            )}
-
+                <p className="px-1 pb-1 pt-2.5 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-white">{a.name}</p>
+              </GlassBox>
+            ))}
           </div>
-        </section>
-
-        {/* ============================================
-            MADE BY HUMANS STRIP
-            ============================================ */}
-        <section className="py-16 sm:py-24 border-y border-grey-800 bg-gradient-to-b from-charcoal via-grey-900/20 to-charcoal overflow-hidden">
-          <div className="container-app">
-            <div className="flex flex-col items-center text-center">
-              {/* Decorative elements */}
-              <div className="flex items-center gap-4 mb-10">
-                <div className="w-12 h-[1px] bg-gradient-to-r from-transparent to-white/30" />
-                <div className="w-1.5 h-1.5 rounded-full bg-white/40" />
-                <div className="w-12 h-[1px] bg-gradient-to-l from-transparent to-white/30" />
-              </div>
-
-              {/* Main text with premium styling */}
-              <div className="relative">
-                {/* Background glow effect */}
-                <div className="absolute inset-0 blur-[100px] bg-white/10 rounded-full scale-150" />
-
-                <h2 className="relative text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight leading-none">
-                  <span className="text-white">MADE IN HOUSE.</span>
-                  <br />
-                  <span className="text-white/70">MADE BY HUMANS.</span>
-                </h2>
-              </div>
-
-              {/* Decorative elements */}
-              <div className="flex items-center gap-4 mt-10">
-                <div className="w-12 h-[1px] bg-gradient-to-r from-transparent to-white/30" />
-                <div className="w-1.5 h-1.5 rounded-full bg-white/40" />
-                <div className="w-12 h-[1px] bg-gradient-to-l from-transparent to-white/30" />
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ============================================
-            CREATOR STRIP
-            ============================================ */}
-        <CreatorHeroStrip />
-
-        {/* ============================================
-            COMPLETE CONTROL (Licensing/Clearance)
-            ============================================ */}
-        <CompleteControlSection />
-
-        {/* ============================================
-            PRICE JUSTIFICATION
-            ============================================ */}
-        <PriceJustificationSection />
-
-        {/* ============================================
-            COMMUNITY PROOF
-            ============================================ */}
-        <CommunityProof />
-
-        {/* ============================================
-            MEMBER TESTIMONIALS
-            ============================================ */}
-        <MemberTestimonials />
-
-        {/* ============================================
-            HOW IT WORKS
-            ============================================ */}
-        <HowItWorksSection />
-
-        {/* ============================================
-            PRICING
-            ============================================ */}
-        <section id="pricing" className="section scroll-mt-20">
-          <div className="container-app">
-            <div className="text-center mb-12">
-              <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3">Simple Pricing</h2>
-              <p className="text-text-muted max-w-xl mx-auto">
-                One price. Full access to everything.
-              </p>
-            </div>
-
-            {/* Main Pricing Card */}
-            <PricingCard
-              isLoggedIn={isLoggedIn}
-              hasSubscription={hasSubscription}
-              hasUsedTrial={hasUsedTrial}
+          <div className="mt-14">
+            <Rail
+              tabs={[
+                {
+                  label: "From members",
+                  items: QUOTES.map((q) => (
+                    <GlassBox key={q.name} plain className="flex w-[min(80vw,340px)] flex-col justify-between gap-6 rounded-[22px] p-6">
+                      <p className="text-[17px] font-light leading-relaxed text-white">&ldquo;{q.quote}&rdquo;</p>
+                      <p className="ssc-label">{q.name}</p>
+                    </GlassBox>
+                  )),
+                },
+              ]}
             />
+          </div>
+        </Section>
 
-            {/* Patreon Alternative */}
-            <div className="mt-8 max-w-lg mx-auto text-center">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-grey-800/50 border border-grey-700 mb-4">
-                <svg viewBox="0 0 24 24" className="w-4 h-4 text-[#FF424D]" fill="currentColor">
-                  <path d="M14.82 2.41C18.78 2.41 22 5.65 22 9.62C22 13.58 18.78 16.8 14.82 16.8C10.85 16.8 7.61 13.58 7.61 9.62C7.61 5.65 10.85 2.41 14.82 2.41M2 21.6H5.5V2.41H2V21.6Z" />
-                </svg>
-                <span className="text-sm text-text-muted">Already a Patreon member?</span>
-              </div>
-              <p className="text-sm text-text-muted max-w-md mx-auto mb-4">
-                If you&apos;re already supporting on Patreon, just sign up and connect your account to unlock downloads. No need to subscribe twice.
-              </p>
-              <Link href="/signup" className="text-white text-sm underline hover:text-grey-200 transition-colors">
-                Create account and link Patreon
+        {/* APP */}
+        <Section>
+          <GlassBox plain className="grid items-center gap-10 overflow-hidden rounded-[28px] p-7 sm:p-10 lg:grid-cols-[0.8fr_1.2fr]">
+            <div>
+              <SectionHead
+                pill="Desktop app"
+                title="Drag it straight into your session"
+                body="The free Soul Sample Club app puts the catalog on your Mac or PC. Search by key and BPM, then drag any sample into your DAW."
+              />
+              <Link href="/app" className="ssc-btn ssc-btn--primary mt-8">
+                Get the app
               </Link>
             </div>
-          </div>
-        </section>
-
-        {/* ============================================
-            FAQ SECTION
-            ============================================ */}
-        <FAQSection clearanceGuideHref={hasClearanceGuide ? "/guides/sample-clearance" : undefined} />
-
-        {/* ============================================
-            TRUST SIGNALS
-            ============================================ */}
-        <section className="section border-t border-grey-800">
-          <div className="container-app">
-            <div className="grid sm:grid-cols-3 gap-8 text-center">
-              <div>
-                <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mx-auto mb-4">
-                  <Shield className="w-5 h-5 text-white" />
-                </div>
-                <h3 className="text-base font-semibold text-white mb-1">Pre-Cleared for Release</h3>
-                <p className="text-sm text-text-muted">Every sound is original and safe to use in real releases. No sample clearance stress.</p>
-              </div>
-              <div>
-                <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mx-auto mb-4">
-                  <Zap className="w-5 h-5 text-white" />
-                </div>
-                <h3 className="text-base font-semibold text-white mb-1">Instant Access</h3>
-                <p className="text-sm text-text-muted">Download everything immediately. No waiting, no unlocks.</p>
-              </div>
-              <div>
-                <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mx-auto mb-4">
-                  <Clock className="w-5 h-5 text-white" />
-                </div>
-                <h3 className="text-base font-semibold text-white mb-1">Cancel Anytime</h3>
-                <p className="text-sm text-text-muted">Month to month. Stay because it&apos;s useful, not because you&apos;re locked in.</p>
-              </div>
+            <div className="relative aspect-[1404/902] overflow-hidden rounded-[14px] border border-white/10 shadow-[0_40px_90px_-30px_rgba(0,0,0,0.9)]">
+              <Image src="/app-library.png" alt="The Soul Sample Club desktop app library" fill sizes="(max-width: 1024px) 90vw, 700px" className="object-cover" />
             </div>
-          </div>
-        </section>
+          </GlassBox>
+        </Section>
 
-        {/* ============================================
-            FINAL CTA
-            ============================================ */}
-        {!isLoggedIn && (
-          <section className="section">
-            <div className="container-app">
-              <div className="relative overflow-hidden bg-gradient-to-br from-white/5 to-transparent border border-white/10 rounded-3xl p-8 sm:p-12 lg:p-16 text-center">
-                <div className="relative z-10">
-                  <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-4">
-                    Ready to find your sound?
-                  </h2>
-                  <p className="text-lg text-text-muted mb-8 max-w-xl mx-auto">
-                    Join producers who use Soul Sample Club for inspiration. Sign up today.
+        {/* PRICING */}
+        <Section id="pricing">
+          <SectionHead
+            pill="Membership"
+            title={isLoggedIn && hasUsedTrial ? "Come back to the club" : "Start for $0.99"}
+            body="One membership, full access to every pack in the catalog."
+            align="center"
+            className="mb-12"
+          />
+          {hasSubscription ? (
+            <GlassBox glow={latest ? glowOf(latest) : undefined} className="mx-auto max-w-xl rounded-[28px] p-8 text-center">
+              <p className="ssc-display text-2xl">You&apos;re a member</p>
+              <p className="ssc-body mt-3">Everything in the catalog is yours to download.</p>
+              <Link href="/feed" className="ssc-btn ssc-btn--primary mt-6">
+                Open the catalog
+              </Link>
+            </GlassBox>
+          ) : (
+            <div className="mx-auto grid max-w-4xl gap-4 md:grid-cols-2">
+              <GlassBox glow={latest ? glowOf(latest) : undefined} className="ssc-breathe flex flex-col rounded-[28px] p-8">
+                <p className="ssc-label">Monthly</p>
+                {isLoggedIn && hasUsedTrial ? (
+                  <p className="mt-4 flex items-baseline gap-2">
+                    <span className="ssc-display text-[3.4rem]">$6.99</span>
+                    <span className="text-white/55">a month</span>
                   </p>
-                  <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                    <Link href="/subscribe">
-                      <Button size="lg" className="w-full sm:w-auto">
-                        Get started
-                        <ArrowRight className="w-4 h-4 ml-2" />
-                      </Button>
-                    </Link>
-                    <a href="#catalog">
-                      <Button variant="secondary" size="lg" className="w-full sm:w-auto">
-                        Browse catalog first
-                      </Button>
-                    </a>
-                  </div>
-                </div>
-
-                {/* Background decoration */}
-                <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl" />
-                <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full blur-3xl" />
-              </div>
+                ) : (
+                  <>
+                    <p className="mt-4 flex items-baseline gap-2">
+                      <span className="ssc-display text-[3.4rem]">$0.99</span>
+                      <span className="text-white/55">first month</span>
+                    </p>
+                    <p className="mt-1 text-[14px] text-white/55">Then $6.99 a month. Cancel anytime.</p>
+                  </>
+                )}
+                <ul className="mt-6 flex-1 space-y-2.5">
+                  {PERKS.map((perk) => (
+                    <li key={perk} className="flex items-center gap-3 text-[15px] text-white/75">
+                      <span className="h-1.5 w-1.5 rounded-full bg-white" />
+                      {perk}
+                    </li>
+                  ))}
+                </ul>
+                <SubscribeCTA isLoggedIn={isLoggedIn} hasSubscription={false} plan="monthly" bare className="ssc-btn ssc-btn--primary mt-8 w-full">
+                  {isLoggedIn && hasUsedTrial ? "Subscribe now" : "Start for $0.99"}
+                </SubscribeCTA>
+              </GlassBox>
+              <GlassBox plain className="flex flex-col rounded-[28px] p-8">
+                <p className="ssc-label">Yearly · offer price</p>
+                <p className="mt-4 flex items-baseline gap-2">
+                  <span className="text-2xl text-white/55 line-through">$49</span>
+                  <span className="ssc-display text-[3.4rem]">$35</span>
+                  <span className="text-white/55">a year</span>
+                </p>
+                <p className="mt-1 text-[14px] text-white/55">Locked in for life while you stay a member.</p>
+                <ul className="mt-6 flex-1 space-y-2.5">
+                  {PERKS.slice(0, 3).map((perk) => (
+                    <li key={perk} className="flex items-center gap-3 text-[15px] text-white/75">
+                      <span className="h-1.5 w-1.5 rounded-full bg-white" />
+                      {perk}
+                    </li>
+                  ))}
+                </ul>
+                <SubscribeCTA isLoggedIn={isLoggedIn} hasSubscription={false} plan="yearly" bare className="ssc-btn ssc-btn--ghost mt-8 w-full">
+                  Start for $35 a year
+                </SubscribeCTA>
+              </GlassBox>
             </div>
-          </section>
-        )}
+          )}
+          {!hasSubscription && (
+            <p className="mx-auto mt-8 max-w-md text-center text-[14px] text-white/55">
+              Already on Patreon?{" "}
+              <Link href="/signup" className="font-medium text-white underline underline-offset-4">
+                Create an account and link it
+              </Link>{" "}
+              to unlock downloads. No need to pay twice.
+            </p>
+          )}
+        </Section>
 
-        {/* Logged-in user CTA */}
-        {isLoggedIn && !hasSubscription && (
-          <section className="section">
-            <div className="container-app">
-              <div className="bg-gradient-to-r from-white/5 to-transparent border border-white/10 rounded-2xl p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div>
-                  <h3 className="text-lg font-semibold text-white mb-1">Ready to download?</h3>
-                  <p className="text-text-muted">
-                    {hasUsedTrial
-                      ? "Subscribe to download all samples."
-                      : "Start today, first month $0.99, then $6.99/month."}
-                  </p>
-                </div>
-                <div className="flex flex-col sm:flex-row gap-2 items-center">
-                  <SubscribeCTA
-                    isLoggedIn={isLoggedIn}
-                    hasSubscription={hasSubscription}
-                    plan="monthly"
-                    size="md"
-                  >
-                    {hasUsedTrial ? "Subscribe now" : "Get started"}
-                  </SubscribeCTA>
-                  <SubscribeCTA
-                    isLoggedIn={isLoggedIn}
-                    hasSubscription={hasSubscription}
-                    plan="yearly"
-                    variant="ghost"
-                    size="sm"
-                    hideArrow
-                    className="text-text-muted hover:text-white underline text-sm !bg-transparent !border-0"
-                  >
-                    or <s className="opacity-60">$49</s> $35/year, locked in for life
-                  </SubscribeCTA>
-                </div>
+        {/* FAQ */}
+        <Section>
+          <div className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr]">
+            <SectionHead
+              pill="Questions"
+              title="Before you join"
+              body={
+                <>
+                  Anything else, email{" "}
+                  <a href="mailto:hello@soulsampleclub.com" className="font-medium text-white underline underline-offset-4">
+                    hello@soulsampleclub.com
+                  </a>
+                  .
+                </>
+              }
+            />
+            <FaqList faqs={faqItems} />
+          </div>
+        </Section>
+
+        {/* CLOSING CTA */}
+        {!hasSubscription && (
+          <Section>
+            <GlassBox glow={latest ? glowOf(latest) : undefined} className="ssc-breathe rounded-[32px] px-7 py-14 text-center sm:px-12 sm:py-20">
+              <Pill dot glow={latest ? glowOf(latest) : undefined}>
+                Join the club
+              </Pill>
+              <h2 className="ssc-display mx-auto mt-6 max-w-3xl text-[clamp(2.2rem,5.4vw,4.4rem)]">Your next flip is in here</h2>
+              <p className="ssc-body mx-auto mt-5 max-w-xl text-[17px]">
+                {isLoggedIn && hasUsedTrial ? "$6.99 a month. Cancel anytime." : "Start for $0.99, then $6.99 a month. Cancel anytime."}
+              </p>
+              <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+                {primaryCta}
+                <Link href="/feed" className="ssc-btn ssc-btn--ghost">
+                  Browse the catalog
+                </Link>
               </div>
-            </div>
-          </section>
+            </GlassBox>
+          </Section>
         )}
       </main>
 
-      {/* ============================================
-          FOOTER
-          ============================================ */}
-      <footer className={`border-t border-grey-700 py-8 sm:py-12 ${isLoggedIn ? 'pb-20 sm:pb-12' : ''}`}>
-        <div className="container-app">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            {/* Logo */}
-            <Image
-              src="/logo.svg"
-              alt="Soul Sample Club"
-              width={140}
-              height={32}
-              className="h-7 w-auto"
-            />
-
-            {/* Links */}
-            <div className="flex items-center gap-6 text-sm text-text-muted">
-              <a href="#catalog" className="hover:text-white transition-colors">
-                Catalog
-              </a>
-              <a href="#pricing" className="hover:text-white transition-colors">
-                Pricing
-              </a>
-              {hasGuides && (
-                <Link href="/guides" className="hover:text-white transition-colors">
-                  Guides
-                </Link>
-              )}
-              <Link href="/terms" className="hover:text-white transition-colors">
-                Terms
-              </Link>
-              <Link href="/privacy" className="hover:text-white transition-colors">
-                Privacy
-              </Link>
-            </div>
-
-            {/* Copyright */}
-            <p className="text-sm text-text-subtle">
-              © {new Date().getFullYear()} Soul Sample Club by Looplair
-            </p>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter showGuides={hasGuides} />
     </div>
   );
 }

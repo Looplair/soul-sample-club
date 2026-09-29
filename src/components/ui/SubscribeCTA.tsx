@@ -15,6 +15,8 @@ interface SubscribeCTAProps {
   children?: React.ReactNode;
   plan?: "monthly" | "yearly";
   hideArrow?: boolean;
+  /** Render a plain link/button styled only by className (redesign buttons) */
+  bare?: boolean;
 }
 
 export function SubscribeCTA({
@@ -26,6 +28,7 @@ export function SubscribeCTA({
   children,
   plan = "monthly",
   hideArrow = false,
+  bare = false,
 }: SubscribeCTAProps) {
   const [isLoading, setIsLoading] = useState(false);
 
@@ -37,6 +40,13 @@ export function SubscribeCTA({
   // If not logged in, link to signup (preserve plan for yearly)
   if (!isLoggedIn) {
     const signupHref = "/subscribe";
+    if (bare) {
+      return (
+        <Link href={signupHref} className={className}>
+          {children || "Start for $0.99"}
+        </Link>
+      );
+    }
     return (
       <Link href={signupHref}>
         <Button className={className} size={size} variant={variant}>
@@ -74,6 +84,15 @@ export function SubscribeCTA({
       setIsLoading(false);
     }
   };
+
+  if (bare) {
+    return (
+      <button type="button" className={className} onClick={handleCheckout} disabled={isLoading}>
+        {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+        {children || "Subscribe to download"}
+      </button>
+    );
+  }
 
   return (
     <Button
