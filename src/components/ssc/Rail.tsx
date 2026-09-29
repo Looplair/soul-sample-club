@@ -12,7 +12,7 @@ export interface RailTab {
   items: ReactNode[];
 }
 
-export function Rail({ tabs, className }: { tabs: RailTab[]; className?: string }) {
+export function Rail({ tabs, title, className }: { tabs: RailTab[]; title?: ReactNode; className?: string }) {
   const [active, setActive] = useState(0);
   const [edges, setEdges] = useState({ start: true, end: false });
   const track = useRef<HTMLDivElement>(null);
@@ -65,7 +65,7 @@ export function Rail({ tabs, className }: { tabs: RailTab[]; className?: string 
             ))}
           </div>
         ) : (
-          <span />
+          title ?? <span />
         )}
         <div className="hidden flex-shrink-0 gap-2 sm:flex">
           {([-1, 1] as const).map((dir) => (
