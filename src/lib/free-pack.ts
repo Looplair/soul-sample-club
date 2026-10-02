@@ -142,12 +142,17 @@ export async function getOfferDeadline(userId: string): Promise<Date | null> {
 export async function startOffer(userId: string, packId: string): Promise<Date | null> {
   const existing = await getOfferDeadline(userId);
   if (existing) return existing;
-  await db()
+  // Take the deadline from the write itself rather than reading it back
+  // straight away, so a brand new account can never be told it has ended
+  const { data } = await db()
     .from("free_pack_claims")
     .update({ offer_started_at: new Date().toISOString() })
     .eq("user_id", userId)
     .eq("pack_id", packId)
-    .is("offer_started_at", null);
+    .is("offer_started_at", null)
+    .select("offer_started_at");
+  const started = data?.[0]?.offer_started_at;
+  if (started) return new Date(new Date(started).getTime() + OFFER_MINUTES * 60_000);
   return getOfferDeadline(userId);
 }
 
