@@ -9,6 +9,7 @@ import { PriceJustificationSection } from "@/components/sections/PriceJustificat
 import { GlassBox, Pill, Section, SectionHead } from "@/components/ssc/Glass";
 import { MemberCap } from "@/components/ssc/MemberCap";
 import { withCoverColors } from "@/lib/cover-color";
+import { promoFromCookies } from "@/lib/promo";
 
 export const metadata = {
   title: "Join Soul Sample Club | Pre-Cleared Soul Samples",
@@ -76,9 +77,10 @@ const coreFacts = [
 ];
 
 export default async function SubscribePage() {
-  const [{ isLoggedIn, hasSubscription, hasUsedTrial }, rawPacks] = await Promise.all([
+  const [{ isLoggedIn, hasSubscription, hasUsedTrial }, rawPacks, promo] = await Promise.all([
     getUserState(),
     getPackCovers(),
+    promoFromCookies(),
   ]);
 
   if (hasSubscription) redirect("/feed");
@@ -121,17 +123,36 @@ export default async function SubscribePage() {
             <GlassBox plain className="flex flex-col rounded-[28px] p-7 sm:p-9">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="ssc-label">Monthly</p>
-                {showTrial && (
+                {promo ? (
                   <Pill dot glow={glow}>
-                    Start for $0.99
+                    Your offer
                   </Pill>
+                ) : (
+                  showTrial && (
+                    <Pill dot glow={glow}>
+                      Start for $0.99
+                    </Pill>
+                  )
                 )}
               </div>
-              <p className="mt-6 flex items-baseline gap-2">
-                <span className="ssc-display text-[clamp(3rem,6vw,4.2rem)]">{showTrial ? "$0.99" : "$6.99"}</span>
-                <span className="text-white/55">{showTrial ? "first month" : "a month"}</span>
-              </p>
-              <p className="mt-2 min-h-[1.5em] text-[14px] text-white/55">{showTrial ? "Then $6.99 a month." : ""}</p>
+              {promo ? (
+                // From a promo link: the deal, spelled out in full
+                <>
+                  <p className="mt-6 flex items-baseline gap-2">
+                    <span className="ssc-display text-[clamp(3rem,6vw,4.2rem)]">{promo.firstPrice}</span>
+                    <span className="text-white/75">a month</span>
+                  </p>
+                  <p className="mt-3 text-[17px] font-medium leading-relaxed text-white">{promo.line}</p>
+                </>
+              ) : (
+                <>
+                  <p className="mt-6 flex items-baseline gap-2">
+                    <span className="ssc-display text-[clamp(3rem,6vw,4.2rem)]">{showTrial ? "$0.99" : "$6.99"}</span>
+                    <span className="text-white/55">{showTrial ? "first month" : "a month"}</span>
+                  </p>
+                  <p className="mt-2 min-h-[1.5em] text-[14px] text-white/55">{showTrial ? "Then $6.99 a month." : ""}</p>
+                </>
+              )}
 
               <div className="mt-auto pt-8">
                 {isLoggedIn ? (

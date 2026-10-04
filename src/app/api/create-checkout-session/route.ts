@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getBlockingPastDueSubscription } from "@/lib/payment-status";
 import { FREE_PACK_OFFER_COUPON, markOfferCheckout, offerIsLive } from "@/lib/free-pack";
+import { parseUtmCookie, resolvePromo, type Promo } from "@/lib/promo";
+import { PROMO_COOKIE, UTM_COOKIE } from "@/lib/promo-cookie";
 
 // Yearly offer: $14 off forever ($49 -> $35, locked in for life). Set to "" to end the offer.
 const YEARLY_OFFER_COUPON: string = "wjveVSUF";
@@ -54,6 +56,22 @@ export async function POST(request: Request) {
     // A failed payment is fixed by paying the open invoice, not by starting a second subscription
     if (await getBlockingPastDueSubscription(user.id)) {
       return NextResponse.json({ url: `${process.env.NEXT_PUBLIC_APP_URL}/api/billing/fix-payment` });
+    }
+
+    // Promo link visitors (/join?promo=CODE). The code is looked up in Stripe;
+    // missing, invalid or expired codes fall back to the standard offer.
+    const promoCode = getCookieValue(cookieHeader, PROMO_COOKIE);
+    const promoRequested = plan === "monthly" && !wantsFreePackOffer && !!promoCode;
+    const utm = parseUtmCookie(getCookieValue(cookieHeader, UTM_COOKIE));
+    const accountUrl = `${process.env.NEXT_PUBLIC_APP_URL}/account`;
+
+    // Promo visitors who already have access go to their account, never a second subscription
+    if (promoRequested) {
+      const [activeSub, patreon] = await Promise.all([
+        adminSupabase.from("subscriptions").select("id").eq("user_id", user.id).in("status", ["active", "trialing"]).limit(1),
+        adminSupabase.from("patreon_links").select("id").eq("user_id", user.id).eq("is_active", true).limit(1),
+      ]);
+      if (activeSub.data?.length || patreon.data?.length) return NextResponse.json({ url: accountUrl });
     }
 
     // Get user profile
@@ -129,6 +147,14 @@ export async function POST(request: Request) {
 
     let customerId = existingSubscription?.stripe_customer_id;
 
+    // Promo visitors: reuse the Stripe customer already linked to this user
+    if (!customerId && promoRequested) {
+      const linked = await stripe.customers
+        .search({ query: `metadata['supabase_user_id']:'${user.id}'`, limit: 1 })
+        .catch(() => null);
+      customerId = linked?.data[0]?.id;
+    }
+
     // Create or retrieve Stripe customer
     if (!customerId) {
       // Check if customer already exists in Stripe with this email
@@ -153,6 +179,14 @@ export async function POST(request: Request) {
           },
         });
         customerId = customer.id;
+      }
+    }
+
+    // Promo visitors: Stripe is the source of truth for an active subscription too
+    if (promoRequested && customerId) {
+      const subs = await stripe.subscriptions.list({ customer: customerId, status: "all", limit: 10 });
+      if (subs.data.some((sub) => sub.status === "active" || sub.status === "trialing")) {
+        return NextResponse.json({ url: accountUrl });
       }
     }
 
@@ -191,26 +225,31 @@ export async function POST(request: Request) {
       if (monthlyPrice.unit_amount) firstChargeValue = (monthlyPrice.unit_amount - (offerCoupon.amount_off ?? 0)) / 100;
     }
 
-    // Create checkout session with auto-applied $0.99 first month discount
-    const session = await stripe.checkout.sessions.create({
+    const promo = promoRequested ? await resolvePromo(promoCode) : null;
+
+    // Checkout session: the promo link's deal when there is one, otherwise the
+    // standard offer (auto-applied $0.99 first month discount)
+    const createSession = (p: Promo | null) => stripe.checkout.sessions.create({
       customer: customerId,
       mode: "subscription",
       payment_method_types: ["card"],
       line_items: [
         {
-          price: plan === "yearly" ? STRIPE_YEARLY_PRICE_ID : STRIPE_PRICE_ID,
+          price: plan === "yearly" ? STRIPE_YEARLY_PRICE_ID : p ? p.priceId : STRIPE_PRICE_ID,
           quantity: 1,
         },
       ],
-      ...(plan === "monthly" && {
-        discounts: [{ coupon: monthlyCoupon }],
-      }),
+      ...(p
+        ? { discounts: [{ promotion_code: p.id }] }
+        : plan === "monthly" && { discounts: [{ coupon: monthlyCoupon }] }),
       ...(plan === "yearly" && YEARLY_OFFER_COUPON
         ? { discounts: [{ coupon: YEARLY_OFFER_COUPON }] }
         : {}),
-      subscription_data: subscriptionData,
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/feed?success=true&meta_event_id=${metaEventId}&value=${firstChargeValue}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}${useFreePackOffer ? "/free/offer" : "/feed?canceled=true"}`,
+      subscription_data: p
+        ? { ...subscriptionData, metadata: { ...subscriptionData.metadata, promo_code: p.code, ...utm } }
+        : subscriptionData,
+      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/feed?success=true&meta_event_id=${metaEventId}&value=${p ? p.firstChargeValue : firstChargeValue}`,
+      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}${useFreePackOffer ? "/free/offer" : p ? "/join" : "/feed?canceled=true"}`,
       metadata: {
         supabase_user_id: user.id,
         meta_fbc: metaFbc,
@@ -221,18 +260,31 @@ export async function POST(request: Request) {
         meta_country: metaCountry,
         meta_city: metaCity,
         meta_state: metaState,
+        ...(p ? { promo_code: p.code, ...utm } : {}),
       },
       billing_address_collection: "auto",
       custom_text: {
         submit: {
           message: plan === "yearly"
             ? "Annual membership. No refunds on annual plans."
-            : useFreePackOffer
-              ? "$1.99/month for your first 3 months, then $6.99/month. Cancel anytime."
-              : "Your first month is $0.99, then $6.99/month. Cancel anytime.",
+            : p
+              ? p.line
+              : useFreePackOffer
+                ? "$1.99/month for your first 3 months, then $6.99/month. Cancel anytime."
+                : "Your first month is $0.99, then $6.99/month. Cancel anytime.",
         },
       },
     });
+
+    let session;
+    try {
+      session = await createSession(promo);
+    } catch (error) {
+      if (!promo) throw error;
+      // Stripe turned the promo down for this customer: carry on with the standard offer
+      console.error("Promo checkout failed, using the standard offer:", error);
+      session = await createSession(null);
+    }
 
     return NextResponse.json({ url: session.url });
   } catch (error) {

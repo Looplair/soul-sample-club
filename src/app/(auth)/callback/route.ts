@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import type { Database } from "@/types/database";
 import { syncUserToKlaviyo } from "@/lib/klaviyo";
+import { PROMO_COOKIE } from "@/lib/promo-cookie";
 
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
@@ -13,6 +14,8 @@ export async function GET(request: Request) {
   // Support both "next" and "redirect" parameters
   const next = requestUrl.searchParams.get("next") || requestUrl.searchParams.get("redirect") || "/feed";
   const origin = requestUrl.origin;
+  // Visitors from a promo link (/join?promo=...) carry on to checkout
+  const hasPromo = (request.headers.get("cookie") || "").split("; ").some((c) => c.startsWith(`${PROMO_COOKIE}=`));
 
   // Log all incoming parameters for debugging
   console.log("Auth callback received:", {
@@ -160,7 +163,7 @@ export async function GET(request: Request) {
 
       // Handle password recovery
       if (type === "recovery") {
-        finalRedirectUrl = `${origin}/account?tab=password`;
+        finalRedirectUrl = `${origin}/account?tab=password${hasPromo ? "&next=/checkout" : ""}`;
       } else {
         // Check subscription status for non-recovery flows
         const {
@@ -207,7 +210,7 @@ export async function GET(request: Request) {
           // If no subscription or Patreon, redirect to subscribe
           // Preserve any existing /subscribe URL (e.g. with ?plan=yearly)
           // Free pack sign-ups go back to /free to download, everyone else to payment
-          if (!hasStripeSubscription && !hasPatreonAccess && !next.startsWith("/subscribe") && !next.startsWith("/free")) {
+          if (!hasStripeSubscription && !hasPatreonAccess && !next.startsWith("/subscribe") && !next.startsWith("/free") && !(hasPromo && next.startsWith("/checkout"))) {
             finalRedirectUrl = `${origin}/subscribe`;
           }
         }

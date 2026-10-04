@@ -175,7 +175,10 @@ export function LoginForm() {
 
       <p className="text-center text-[15px] text-white/75">
         Don&apos;t have an account?{" "}
-        <Link href="/signup" className="font-semibold text-white underline-offset-4 hover:underline">
+        <Link
+          href={redirect === "/checkout" ? "/signup?redirect=/checkout" : "/signup"}
+          className="font-semibold text-white underline-offset-4 hover:underline"
+        >
           Sign up
         </Link>
       </p>

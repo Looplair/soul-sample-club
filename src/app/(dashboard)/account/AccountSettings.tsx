@@ -466,6 +466,8 @@ function BillingTab({ subscription, patreonLink }: { subscription: Subscription 
 function PasswordTab() {
   const supabase = createClient();
   const router = useRouter();
+  // Set by the reset link for promo link visitors: once the password is saved, on to checkout
+  const next = useSearchParams().get("next");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -500,6 +502,10 @@ function PasswordTab() {
       setSuccess(true);
       setNewPassword("");
       setConfirmPassword("");
+      if (next === "/checkout") {
+        router.push("/checkout");
+        return;
+      }
       setTimeout(() => setSuccess(false), 3000);
     } catch (err: any) {
       setError(err.message || "Failed to update password");
