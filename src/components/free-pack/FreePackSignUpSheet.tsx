@@ -4,11 +4,13 @@ import { useState } from "react";
 import Link from "next/link";
 import { Loader2, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { Honeypot, Turnstile, authErrorMessage, caughtByHoneypot, useTurnstile } from "@/components/auth/Turnstile";
 
 // Sign-up without leaving /free. Both routes come back to /free (the login
 // handler lets /free through instead of sending people to /subscribe).
 export function FreePackSignUpSheet({ packName, open, onClose }: { packName: string; open: boolean; onClose: () => void }) {
   const supabase = createClient();
+  const turnstile = useTurnstile();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState<null | "google" | "email">(null);
@@ -30,11 +32,18 @@ export function FreePackSignUpSheet({ packName, open, onClose }: { packName: str
 
   const signUpWithEmail = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Bot trap: a normal "check your email", but nothing is created or sent
+    if (caughtByHoneypot(e.currentTarget as HTMLFormElement)) return setSent(true);
     setBusy("email");
     setError(null);
-    const { data, error } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: back() } });
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { emailRedirectTo: back(), ...(await turnstile.captcha()) },
+    });
+    turnstile.reset();
     setBusy(null);
-    if (error) return setError(error.message);
+    if (error) return setError(authErrorMessage(error.message));
     // Supabase hides existing accounts by returning a user with no identities
     if (data.user && (data.user.identities?.length ?? 0) === 0) return setExists(true);
     if (data.session) return window.location.reload();
@@ -134,6 +143,8 @@ export function FreePackSignUpSheet({ packName, open, onClose }: { packName: str
                 {busy === "email" && <Loader2 className="h-4 w-4 animate-spin" />}
                 Continue with email
               </button>
+              <Turnstile ref={turnstile.ref} onToken={turnstile.onToken} />
+              <Honeypot />
             </form>
 
             {error && <p className="mt-3 text-center text-sm text-red-400">{error}</p>}

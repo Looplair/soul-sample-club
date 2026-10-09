@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { ArrowRight, ArrowLeft, Check } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { Turnstile, authErrorMessage, useTurnstile } from "@/components/auth/Turnstile";
 import { Field, Notice, PrimaryButton, StateIcon } from "../AuthUI";
 
 export function ResetPasswordForm() {
@@ -13,6 +14,7 @@ export function ResetPasswordForm() {
   const [success, setSuccess] = useState(false);
 
   const supabase = createClient();
+  const turnstile = useTurnstile();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,10 +24,12 @@ export function ResetPasswordForm() {
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/callback?type=recovery`,
+        ...(await turnstile.captcha()),
       });
+      turnstile.reset();
 
       if (error) {
-        setError(error.message);
+        setError(authErrorMessage(error.message));
         return;
       }
 
@@ -74,6 +78,7 @@ export function ResetPasswordForm() {
       <PrimaryButton type="submit" loading={isLoading} trailing={<ArrowRight className="h-4 w-4" />}>
         Send Reset Link
       </PrimaryButton>
+      <Turnstile ref={turnstile.ref} onToken={turnstile.onToken} />
 
       <div className="pt-1 text-center">
         <Link href="/login" className="inline-flex items-center gap-2 text-[14px] text-white/75 transition-colors hover:text-white">

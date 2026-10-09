@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ArrowRight, Check, AlertCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { Honeypot, Turnstile, authErrorMessage, caughtByHoneypot, useTurnstile } from "@/components/auth/Turnstile";
 import { Divider, Field, GhostButton, GoogleButton, Notice, PatreonMark, PrimaryButton, StateIcon } from "../AuthUI";
 
 const benefits = [
@@ -33,6 +34,7 @@ export function SignupForm() {
   const [success, setSuccess] = useState(false);
 
   const supabase = createClient();
+  const turnstile = useTurnstile();
 
   const validateTerms = () => {
     if (!acceptedTerms) {
@@ -50,6 +52,13 @@ export function SignupForm() {
 
     if (!validateTerms()) return;
 
+    // Bots that fill the hidden field see the normal "check your email" screen,
+    // but no account is made and no email goes to the stranger they typed in
+    if (caughtByHoneypot(e.currentTarget as HTMLFormElement)) {
+      setSuccess(true);
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -61,11 +70,13 @@ export function SignupForm() {
             full_name: fullName,
           },
           emailRedirectTo: `${window.location.origin}/callback${redirect ? `?redirect=${encodeURIComponent(redirect)}` : ""}`,
+          ...(await turnstile.captcha()),
         },
       });
+      turnstile.reset();
 
       if (error) {
-        setError(error.message);
+        setError(authErrorMessage(error.message));
         return;
       }
 
@@ -230,6 +241,8 @@ export function SignupForm() {
         <PrimaryButton type="submit" loading={isLoading} disabled={oauthLoading !== null} trailing={<ArrowRight className="h-4 w-4" />}>
           Create Account
         </PrimaryButton>
+        <Turnstile ref={turnstile.ref} onToken={turnstile.onToken} />
+        <Honeypot />
       </form>
 
       {/* Patreon Access Section */}

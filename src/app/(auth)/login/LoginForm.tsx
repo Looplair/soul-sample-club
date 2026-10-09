@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { Turnstile, authErrorMessage, useTurnstile } from "@/components/auth/Turnstile";
 import { Divider, Field, GhostButton, GoogleButton, Notice, PatreonMark, PrimaryButton } from "../AuthUI";
 
 export function LoginForm() {
@@ -30,6 +31,7 @@ export function LoginForm() {
   const [oauthLoading, setOauthLoading] = useState<string | null>(null);
 
   const supabase = createClient();
+  const turnstile = useTurnstile();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,10 +42,12 @@ export function LoginForm() {
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
+        options: await turnstile.captcha(),
       });
+      turnstile.reset();
 
       if (error) {
-        setError(error.message);
+        setError(authErrorMessage(error.message));
         return;
       }
 
@@ -154,6 +158,7 @@ export function LoginForm() {
         <PrimaryButton type="submit" loading={isLoading} disabled={oauthLoading !== null} trailing={<ArrowRight className="h-4 w-4" />}>
           Sign In
         </PrimaryButton>
+        <Turnstile ref={turnstile.ref} onToken={turnstile.onToken} />
       </form>
 
       {/* Patreon Access Section */}
