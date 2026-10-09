@@ -18,8 +18,9 @@ import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef } from 
 // outage can't lock anyone out before step 3, and after it Supabase's error is
 // shown as TURNSTILE_BLOCKED_MESSAGE.
 
-// Site keys are public by design (they ship in the page). Empty = check off.
-const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "";
+// Site keys are public by design (they ship in the page), so SSC's widget key
+// lives here; an env var can override it
+const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "0x4AAAAAAFSVW66oQL_ZSpKU";
 // The widget only accepts these hostnames; elsewhere (localhost, Vercel
 // previews) Cloudflare would reject it, so it's skipped
 const HOSTS = ["soulsampleclub.com", "www.soulsampleclub.com"];
