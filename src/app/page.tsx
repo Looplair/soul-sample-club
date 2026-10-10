@@ -348,6 +348,21 @@ export default async function HomePage() {
           </Section>
         )}
 
+        {/* RELEASES RAIL */}
+        <Section id="catalog">
+          <SectionHead
+            pill="The catalog"
+            title="Every week, a new pack"
+            body="Preview any composition before you join. Packs stay for 90 days, and the ones members vote for come back."
+            action={
+              <Link href="/feed" className="ssc-btn ssc-btn--ghost self-start md:self-auto">
+                Browse everything
+              </Link>
+            }
+          />
+          <Rail tabs={railTabs} className="mt-10" />
+        </Section>
+
         {/* COMPLETE CONTROL FILM */}
         <Section id="control">
           <div className="grid items-center gap-12 lg:grid-cols-[1fr_1fr] lg:gap-16">
@@ -372,21 +387,6 @@ export default async function HomePage() {
             </div>
             <ControlFilm />
           </div>
-        </Section>
-
-        {/* RELEASES RAIL */}
-        <Section id="catalog">
-          <SectionHead
-            pill="The catalog"
-            title="Every week, a new pack"
-            body="Preview any composition before you join. Packs stay for 90 days, and the ones members vote for come back."
-            action={
-              <Link href="/feed" className="ssc-btn ssc-btn--ghost self-start md:self-auto">
-                Browse everything
-              </Link>
-            }
-          />
-          <Rail tabs={railTabs} className="mt-10" />
         </Section>
 
         {/* WHY SSC */}
