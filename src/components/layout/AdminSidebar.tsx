@@ -17,6 +17,7 @@ import {
   Bell,
   Megaphone,
   BookOpen,
+  UploadCloud,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DrumIcon } from "@/components/icons/DrumIcon";
@@ -94,6 +95,18 @@ export function AdminSidebar() {
           <Plus className="w-4 h-4" />
           New Pack
         </Link>
+        {/* The local pack uploader (tools/uploader): Dropbox release -> draft pack, with scheduled go-live */}
+        <a
+          href="http://localhost:4747"
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => setIsOpen(false)}
+          className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-grey-700 px-3 py-2.5 text-body text-white transition-colors hover:bg-grey-800"
+        >
+          <UploadCloud className="w-4 h-4" />
+          SSC Uploader
+        </a>
+        <p className="mt-2 text-center text-caption text-text-muted">Runs on your Mac. Open the SSC Uploader app first.</p>
       </div>
     </>
   );
