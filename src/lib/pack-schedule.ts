@@ -26,8 +26,9 @@ export async function readSchedule(): Promise<PackSchedule> {
 }
 
 async function writeSchedule(schedule: PackSchedule) {
-  const body = new Blob([JSON.stringify(schedule, null, 2)], { type: "application/json" });
-  const { error } = await db().storage.from(SCHEDULE_BUCKET).upload(SCHEDULE_PATH, body, { upsert: true, contentType: "application/json" });
+  // The samples bucket only accepts audio/zip/octet-stream, so JSON goes up as octet-stream
+  const body = new Blob([JSON.stringify(schedule, null, 2)], { type: "application/octet-stream" });
+  const { error } = await db().storage.from(SCHEDULE_BUCKET).upload(SCHEDULE_PATH, body, { upsert: true, contentType: "application/octet-stream" });
   if (error) throw new Error(`Couldn't save the pack schedule: ${error.message}`);
 }
 
