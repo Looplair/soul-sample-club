@@ -1,0 +1,17 @@
+name: Publish scheduled packs
+
+# Puts Soul Sample Club packs live at their scheduled time (set in the local
+# pack uploader). GitHub runs this roughly every 10 minutes; the site route
+# only publishes packs whose time has already passed.
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Publish due packs
+        run: curl -fsS --retry 3 --max-time 60 https://www.soulsampleclub.com/api/cron/publish-scheduled-packs
