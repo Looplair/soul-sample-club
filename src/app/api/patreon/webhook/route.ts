@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { afterResponse, emailForUser, sendFlaireStatus } from "@/lib/flaire/membership";
 
 function verifySignature(body: string, signature: string, secret: string): boolean {
   const hmac = crypto.createHmac("md5", secret);
@@ -83,6 +84,20 @@ export async function POST(request: NextRequest) {
     }
 
     console.log(`Patreon ${event}: set is_active=${isActive} for user ${patreonUserId}`);
+  }
+
+  // Tell Flaire about the change (free Flaire credits for members). Never throws.
+  if (event.startsWith("members:pledge:")) {
+    await afterResponse(async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: links } = await (adminSupabase as any)
+        .from("patreon_links")
+        .select("user_id")
+        .eq("patreon_user_id", patreonUserId);
+      for (const link of (links || []) as Array<{ user_id: string }>) {
+        await sendFlaireStatus(await emailForUser(link.user_id), `patreon ${event}`);
+      }
+    });
   }
 
   return NextResponse.json({ ok: true });

@@ -16,14 +16,16 @@ import { cn, formatDate } from "@/lib/utils";
 import { GlassBox } from "@/components/ssc/Glass";
 import { ActionButton, Field, Notice, StatusChip } from "@/components/member/MemberUI";
 import type { Profile, Subscription, PatreonLink } from "@/types/database";
+import type { FlaireCreditsState } from "@/lib/flaire/eligibility";
 
 interface AccountSettingsProps {
   profile: Profile;
   subscription: Subscription | null;
   patreonLink?: PatreonLink | null;
+  flaireCredits?: FlaireCreditsState;
 }
 
-export function AccountSettings({ profile, subscription, patreonLink }: AccountSettingsProps) {
+export function AccountSettings({ profile, subscription, patreonLink, flaireCredits = null }: AccountSettingsProps) {
   const searchParams = useSearchParams();
   const initialTab = searchParams.get("tab") as "profile" | "billing" | "password" | null;
   const [activeTab, setActiveTab] = useState<"profile" | "billing" | "password">(
@@ -68,7 +70,9 @@ export function AccountSettings({ profile, subscription, patreonLink }: AccountS
       {/* Tab Content */}
       <div className="max-w-3xl">
         {activeTab === "profile" && <ProfileTab profile={profile} />}
-        {activeTab === "billing" && <BillingTab subscription={subscription} patreonLink={patreonLink} />}
+        {activeTab === "billing" && (
+          <BillingTab subscription={subscription} patreonLink={patreonLink} flaireCredits={flaireCredits} />
+        )}
         {activeTab === "password" && <PasswordTab />}
       </div>
     </div>
@@ -188,7 +192,15 @@ function Detail({ label, children, className }: { label: string; children: React
   );
 }
 
-function BillingTab({ subscription, patreonLink }: { subscription: Subscription | null; patreonLink?: PatreonLink | null }) {
+function BillingTab({
+  subscription,
+  patreonLink,
+  flaireCredits = null,
+}: {
+  subscription: Subscription | null;
+  patreonLink?: PatreonLink | null;
+  flaireCredits?: FlaireCreditsState;
+}) {
   const [isLoading, setIsLoading] = useState(false);
   const [isPatreonLoading, setIsPatreonLoading] = useState(false);
 
@@ -370,6 +382,9 @@ function BillingTab({ subscription, patreonLink }: { subscription: Subscription 
             </button>
           </div>
         )}
+
+        {/* Flaire: part of the membership (members only) */}
+        {flaireCredits && <FlaireMembershipRow state={flaireCredits} />}
       </Panel>
 
       {/* Patreon */}
@@ -459,6 +474,52 @@ function BillingTab({ subscription, patreonLink }: { subscription: Subscription 
           ))}
         </div>
       </Panel>
+    </div>
+  );
+}
+
+/** One quiet line in the membership: free Flaire credits, and a way to link the Flaire account */
+function FlaireMembershipRow({ state }: { state: Exclude<FlaireCreditsState, null> }) {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleConnect = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await fetch("/api/flaire/connect", { method: "POST" });
+      const data = (await response.json().catch(() => ({}))) as { url?: string; error?: string };
+      if (data.url) {
+        window.location.href = data.url;
+        return;
+      }
+      setError(data.error || "Couldn't reach Flaire. Try again in a minute.");
+    } catch {
+      setError("Couldn't reach Flaire. Try again in a minute.");
+    }
+    setIsLoading(false);
+  };
+
+  return (
+    <div className="mt-4 space-y-3">
+      <div className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <p className="ssc-label">Flaire</p>
+          <p className="mt-1.5 text-[14px] text-white">3 free vocal credits every month in Flaire, our vocal plugin.</p>
+        </div>
+        <span className="flex-shrink-0">
+          {state === "connected" ? (
+            <StatusChip strong>Connected</StatusChip>
+          ) : state === "eligible" ? (
+            <ActionButton type="button" variant="ghost" onClick={handleConnect} isLoading={isLoading}>
+              Connect your Flaire account
+            </ActionButton>
+          ) : (
+            <span className="text-[12px] text-white/75">Starts after your first full month</span>
+          )}
+        </span>
+      </div>
+      {error && <Notice tone="warning">{error}</Notice>}
     </div>
   );
 }

@@ -4,6 +4,8 @@ export const revalidate = 0;
 import { createClient } from "@/lib/supabase/server";
 import { AccountSettings } from "./AccountSettings";
 import { PageHead } from "@/components/member/MemberUI";
+import { flaireConfigured, getFlaireMembershipByEmail } from "@/lib/flaire/membership";
+import { FLAIRE_CONNECTED_KEY, type FlaireCreditsState } from "@/lib/flaire/eligibility";
 import type { Profile, Subscription, PatreonLink } from "@/types/database";
 
 export const metadata = {
@@ -14,6 +16,24 @@ interface UserData {
   profile: Profile;
   subscription: Subscription | null;
   patreonLink: PatreonLink | null;
+  flaireConnected: boolean;
+}
+
+/** Which Flaire credits card to show. Never breaks the page: anything slow or failing shows no card. */
+async function getFlaireCreditsState(email: string, connected: boolean): Promise<FlaireCreditsState> {
+  if (!flaireConfigured() || !email) return null;
+  try {
+    const membership = await Promise.race([
+      getFlaireMembershipByEmail(email),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), 4000)),
+    ]);
+    if (!membership?.active) return null;
+    if (connected) return "connected";
+    return membership.eligible ? "eligible" : "pending";
+  } catch (error) {
+    console.error("[flaire] account card:", error instanceof Error ? error.message : error);
+    return null;
+  }
 }
 
 async function getUserData(): Promise<UserData | null> {
@@ -50,6 +70,7 @@ async function getUserData(): Promise<UserData | null> {
     profile,
     subscription,
     patreonLink,
+    flaireConnected: !!user.app_metadata?.[FLAIRE_CONNECTED_KEY],
   };
 }
 
@@ -60,6 +81,8 @@ export default async function AccountPage() {
     return null;
   }
 
+  const flaireCredits = await getFlaireCreditsState(data.profile.email, data.flaireConnected);
+
   return (
     <div>
       <PageHead pill="Account" title="Your account" body="Your profile, membership and sign-in details." />
@@ -68,6 +91,7 @@ export default async function AccountPage() {
           profile={data.profile}
           subscription={data.subscription}
           patreonLink={data.patreonLink}
+          flaireCredits={flaireCredits}
         />
       </div>
     </div>

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { afterResponse, emailForUser, sendFlaireStatus } from "@/lib/flaire/membership";
 
 // Disconnect Patreon
 export async function POST() {
@@ -21,6 +22,9 @@ export async function POST() {
   if (error) {
     return NextResponse.json({ error: "Failed to disconnect" }, { status: 500 });
   }
+
+  // Patreon access may have just ended: tell Flaire. Never throws.
+  await afterResponse(async () => sendFlaireStatus(await emailForUser(user.id), "patreon disconnect"));
 
   return NextResponse.json({ success: true });
 }

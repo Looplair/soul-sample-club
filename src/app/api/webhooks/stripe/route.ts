@@ -6,8 +6,18 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { syncUserToKlaviyo } from "@/lib/klaviyo";
 import { sendStartTrialEvent } from "@/lib/meta-conversions";
 import { notifyNewTrial, notifyNewAnnualSubscriber, notifyTrialConverted } from "@/lib/notifications-admin";
+import { afterResponse, emailForStripeObject, sendFlaireStatus } from "@/lib/flaire/membership";
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
+
+// Membership changes Flaire hears about (free Flaire credits for members)
+const FLAIRE_STATUS_EVENTS = new Set<string>([
+  "customer.subscription.created",
+  "customer.subscription.updated",
+  "customer.subscription.deleted",
+  "invoice.paid",
+  "invoice.payment_failed",
+]);
 
 // Helper to get user ID from various Stripe objects
 function getUserIdFromMetadata(
@@ -598,6 +608,12 @@ export async function POST(request: Request) {
 
       default:
         console.log(`Unhandled event type: ${event.type}`);
+    }
+
+    // After SSC's own processing: tell Flaire the member's current status.
+    // Capped and never throws, so it can't change this response.
+    if (FLAIRE_STATUS_EVENTS.has(event.type)) {
+      await afterResponse(async () => sendFlaireStatus(await emailForStripeObject(event), event.type));
     }
 
     return NextResponse.json({ received: true });
