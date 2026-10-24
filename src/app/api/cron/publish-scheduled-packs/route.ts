@@ -8,6 +8,8 @@ import { publishDuePacks } from "@/lib/pack-schedule";
 // calling it early or often changes nothing. ?dry=1 reports without publishing.
 
 export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
+export const revalidate = 0;
 export const maxDuration = 60;
 
 export async function GET(request: Request) {

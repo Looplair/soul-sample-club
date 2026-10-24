@@ -1,5 +1,5 @@
 import { revalidatePath, revalidateTag } from "next/cache";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@supabase/supabase-js";
 
 // Scheduled go-live for packs. The local pack uploader (tools/uploader) writes
 // a small JSON file of { packId: publishAt } into the private samples bucket;
@@ -13,7 +13,14 @@ export const SCHEDULE_PATH = "_admin/pack-schedule.json";
 export type PackSchedule = Record<string, { publishAt: string; setAt: string }>;
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-const db = () => createAdminClient() as any;
+// Every read here must be fresh. Next.js was serving these GETs from its fetch
+// cache, so a published pack still looked "due and unpublished" and each run
+// posted another New pack notification.
+const db = () =>
+  createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
+    auth: { persistSession: false, autoRefreshToken: false },
+    global: { fetch: (input: RequestInfo | URL, init?: RequestInit) => fetch(input, { ...init, cache: "no-store" }) },
+  }) as any;
 
 export async function readSchedule(): Promise<PackSchedule> {
   const { data, error } = await db().storage.from(SCHEDULE_BUCKET).download(SCHEDULE_PATH);
