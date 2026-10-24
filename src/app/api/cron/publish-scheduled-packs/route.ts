@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { publishDuePacks } from "@/lib/pack-schedule";
 
-// Puts scheduled packs live once their time has passed. Called every few
-// minutes by GitHub Actions (.github/workflows/publish-scheduled-packs.yml),
-// daily by Vercel cron as a backup, and by the local uploader. It only ever
+// Puts scheduled packs live once their time has passed. Called every 5 minutes
+// by Supabase pg_cron (job "publish-scheduled-packs"), with GitHub Actions and a
+// daily Vercel cron as backups, and by the local uploader. It only ever
 // publishes packs whose scheduled time is already up, so it needs no secret:
 // calling it early or often changes nothing. ?dry=1 reports without publishing.
 

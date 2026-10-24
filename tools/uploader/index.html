@@ -207,7 +207,7 @@ function render() {
         <input type="time" id="g-time" value="${esc(current.goTime)}" style="max-width:130px" ${!current.schedOn ? "disabled" : ""}>
         <span class="faint">UTC${current.schedOn ? ` · ${esc(fmtUTC(goISO()))}` : ""}</span>
       </div>
-      <p class="faint" style="margin:10px 0 0">It goes live within about 10 minutes of that time, posts the "New pack" notification, and shows up on the homepage and catalog.</p>
+      <p class="faint" style="margin:10px 0 0">It goes live within about 5 minutes of that time, posts the "New pack" notification, and shows up on the homepage and catalog.</p>
       ${site && !live ? `<div class="actions">
         <button class="ghost" id="save-sched">${current.schedOn ? "Save go-live time" : "Remove from schedule"}</button>
         <button class="ghost danger" id="go-now">Put it live now</button></div>` : ""}
@@ -246,7 +246,7 @@ const goISO = () => new Date(`${current.goDate}T${current.goTime || "12:00"}:00Z
 async function schedule(publishAt, now = false) {
   const res = await fetch("/api/schedule", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ packId: current.site.id, publishAt, now }) }).then((r) => r.json());
   if (res.error) return alert(res.error);
-  if (now && !res.published?.published?.length) alert("Saved, but the site didn't publish it straight away. It'll go live on the next check (within 10 minutes).");
+  if (now && !res.published?.published?.length) alert("Saved, but the site didn't publish it straight away. It'll go live on the next check (within 5 minutes).");
   openRelease(current.release.dir);
 }
 

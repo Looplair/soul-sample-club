@@ -19,5 +19,5 @@ Re-running carries on where it stopped (progress is kept in
 
 Going live: the schedule is a small JSON file in the samples bucket
 (`_admin/pack-schedule.json`). `/api/cron/publish-scheduled-packs` publishes
-anything due; GitHub Actions calls it every 10 minutes, Vercel cron daily as a
-backup. Supabase keys are read from the site's `.env.local`.
+anything due. Supabase pg_cron calls it every 5 minutes (job `publish-scheduled-packs`),
+with GitHub Actions and a daily Vercel cron as backups. Supabase keys are read from the site's `.env.local`.

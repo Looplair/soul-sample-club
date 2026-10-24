@@ -1,7 +1,8 @@
 name: Publish scheduled packs
 
 # Puts Soul Sample Club packs live at their scheduled time (set in the local
-# pack uploader). GitHub runs this roughly every 10 minutes; the site route
+# pack uploader). Backup only: Supabase pg_cron calls the route every 5 minutes,
+# and GitHub runs this far less often than asked. The site route
 # only publishes packs whose time has already passed.
 on:
   schedule:
