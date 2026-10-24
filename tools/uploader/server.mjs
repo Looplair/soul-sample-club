@@ -10,6 +10,7 @@ import { listReleases, inspectRelease } from "./lib/scan.mjs";
 import { prepareRelease } from "./lib/prepare.mjs";
 import { uploadRelease, supabase } from "./lib/upload.mjs";
 import { setSchedule, runPublisher, siteStatus } from "./lib/schedule.mjs";
+import * as dropbox from "./lib/dropbox.mjs";
 import { DROPBOX, MONTHS_DIR, PORT, REPO, SITE } from "./lib/config.mjs";
 
 const HERE = join(REPO, "tools/uploader");
@@ -129,6 +130,45 @@ async function handle(req, res) {
       res.end();
     }
     return;
+  }
+
+  // Dropbox: connect once, then make/read each release's Patreon link
+  if (p === "/api/dropbox/status") return json(res, 200, { ...(await dropbox.status()), redirectUri: dropbox.REDIRECT_URI });
+  if (p === "/api/dropbox/connect" && req.method === "POST") {
+    const { appKey } = await readBody(req);
+    if (!appKey?.trim()) return json(res, 400, { error: "Paste the App key first." });
+    return json(res, 200, { url: dropbox.authorizeUrl(appKey.trim()) });
+  }
+  if (p === "/dropbox/callback") {
+    const code = url.searchParams.get("code");
+    const err = url.searchParams.get("error_description") || url.searchParams.get("error");
+    let msg = "Dropbox connected. You can close this tab and go back to the uploader.";
+    try {
+      if (!code) throw new Error(err || "Dropbox didn't send a code back.");
+      await dropbox.finishAuth(code);
+    } catch (e) {
+      msg = `Couldn't connect Dropbox: ${e.message}`;
+    }
+    res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
+    return res.end(`<body style="background:#070707;color:#fff;font:16px -apple-system,sans-serif;padding:60px;text-align:center">${msg.replace(/</g, "&lt;")}<script>setTimeout(()=>{location.href="/"},2500)</script></body>`);
+  }
+  if (p === "/api/dropbox/disconnect" && req.method === "POST") {
+    await dropbox.disconnect();
+    return json(res, 200, { ok: true });
+  }
+  if (p === "/api/dropbox/link") {
+    const dir = url.searchParams.get("dir");
+    const releaseDate = url.searchParams.get("releaseDate");
+    if (!dir || !inDropbox(dir)) return json(res, 400, { error: "Unknown release folder" });
+    try {
+      if (req.method === "POST") {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(releaseDate || "")) return json(res, 400, { error: "Pick a release date first." });
+        return json(res, 200, { link: await dropbox.makeLink(dir, releaseDate) });
+      }
+      return json(res, 200, { link: await dropbox.findLink(dir) });
+    } catch (e) {
+      return json(res, 500, { error: e.message });
+    }
   }
 
   // Change or clear the go-live time, or go live now

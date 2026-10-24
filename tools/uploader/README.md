@@ -21,3 +21,8 @@ Going live: the schedule is a small JSON file in the samples bucket
 (`_admin/pack-schedule.json`). `/api/cron/publish-scheduled-packs` publishes
 anything due. Supabase pg_cron calls it every 5 minutes (job `publish-scheduled-packs`),
 with GitHub Actions and a daily Vercel cron as backups. Supabase keys are read from the site's `.env.local`.
+
+Patreon link: the box at the bottom of each pack makes a Dropbox link to the
+release folder (view and download, expires 3 months after the release date).
+Dropbox is connected once from that box; its refresh token is kept in
+`~/Library/Application Support/SSC Uploader/dropbox.json`, not in the repo.
