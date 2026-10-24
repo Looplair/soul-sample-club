@@ -1,0 +1,23 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>SSC Reels render</title>
+<link rel="stylesheet" href="fonts/fonts.css">
+<style>html,body{margin:0;background:#000}</style>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script src="render.js"></script>
+<script>
+  // Export page: the exporter loads a reading, then asks for each frame at an exact
+  // time with the reel's settings. The Instagram overlay is never drawn here.
+  const canvas = document.getElementById('c');
+  let R = null;
+  window.reel = {
+    ready: LooplairReel.ready(),
+    // the pack's cover is drawn in the toolbar and behind the Cover skin, so it must be loaded first
+    async load(data, opts) {
+      const o = { ...opts };
+      if (o.coverUrl) { const img = new Image(); img.src = o.coverUrl; try { await img.decode(); o.cover = img; } catch (e) {} }
+      R = LooplairReel.create(canvas, data, o); return { dur: R.dur };
+    },
+    frame(t, dt, state) { R.step(t, dt); R.render(t, Object.assign({}, state, { ig: false })); return canvas.toDataURL('image/jpeg', .95); },
+  };
+</script>
