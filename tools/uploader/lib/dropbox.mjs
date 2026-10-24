@@ -1,18 +1,19 @@
 // Dropbox share links for Patreon: a view-and-download link to the release
 // folder that expires 3 months after the release date. Connects once with
-// Dropbox's PKCE sign-in (no app secret needed); the refresh token is kept in
+// Dropbox's PKCE sign-in (no app secret, no redirect URI: Dropbox shows a code
+// that's pasted back into the uploader, since its app console won't take a
+// localhost redirect). The refresh token is kept in
 // ~/Library/Application Support/SSC Uploader, never in the repo.
 import { createHash, randomBytes } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { join, relative } from "node:path";
-import { DROPBOX, PORT } from "./config.mjs";
+import { DROPBOX } from "./config.mjs";
 
 const STORE_DIR = join(homedir(), "Library/Application Support/SSC Uploader");
 const STORE = join(STORE_DIR, "dropbox.json");
 const LOCAL_ROOT = join(DROPBOX, ".."); // ~/Library/CloudStorage/Dropbox
-export const REDIRECT_URI = `http://localhost:${PORT}/dropbox/callback`;
 const SCOPES = "files.metadata.read sharing.read sharing.write";
 
 let pending = null; // { appKey, verifier } while the sign-in page is open
@@ -42,18 +43,17 @@ export function authorizeUrl(appKey) {
     code_challenge: challenge,
     code_challenge_method: "S256",
     token_access_type: "offline",
-    redirect_uri: REDIRECT_URI,
     scope: SCOPES,
   });
   return `https://www.dropbox.com/oauth2/authorize?${q}`;
 }
 
-/** Step 2: Dropbox sends the user back here with a code */
+/** Step 2: the code Dropbox shows after approving, pasted into the uploader */
 export async function finishAuth(code) {
   if (!pending) throw new Error("Start the Dropbox connection from the uploader first.");
   const res = await fetch("https://api.dropboxapi.com/oauth2/token", {
     method: "POST",
-    body: new URLSearchParams({ code, grant_type: "authorization_code", client_id: pending.appKey, code_verifier: pending.verifier, redirect_uri: REDIRECT_URI }),
+    body: new URLSearchParams({ code: code.trim(), grant_type: "authorization_code", client_id: pending.appKey, code_verifier: pending.verifier }),
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error_description || data.error || "Dropbox refused the connection");

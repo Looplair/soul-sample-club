@@ -335,21 +335,33 @@ function renderDropbox() {
   const head = `<h3>Patreon download link</h3>`;
   if (!status) return;
   if (!status.connected) {
+    const waiting = !!current.dbx.awaitingCode;
     box.innerHTML = `${head}
       <p class="muted" style="margin-top:0">A view-and-download link to <b>${esc(current.release.folder)}</b> (samples, stems, cover and licence) that expires 3 months after release. Connect Dropbox once and it's made for you.</p>
       <ol class="faint" style="padding-left:18px;line-height:1.9">
         <li>Open <a href="https://www.dropbox.com/developers/apps/create" target="_blank">dropbox.com/developers/apps/create</a>: <b>Scoped access</b>, <b>Full Dropbox</b>, name it e.g. "SSC Uploader".</li>
-        <li><b>Permissions</b> tab: tick <b>files.metadata.read</b>, <b>sharing.read</b>, <b>sharing.write</b>, then Submit.</li>
-        <li><b>Settings</b> tab: under Redirect URIs add <code>${esc(status.redirectUri)}</code>, then copy the <b>App key</b>.</li>
+        <li><b>Permissions</b> tab: tick <b>files.metadata.read</b>, <b>sharing.read</b>, <b>sharing.write</b>, then Submit. No redirect URI needed.</li>
+        <li><b>Settings</b> tab: copy the <b>App key</b>, paste it below and press Connect. Dropbox opens in a new tab: approve it, and it shows you a code.</li>
+        <li>Paste that code in the second box.</li>
       </ol>
-      <div class="row"><input type="text" id="dbx-key" placeholder="App key" style="max-width:280px" value="${esc(status.appKey || "")}"><button class="ghost" id="dbx-connect">Connect Dropbox</button></div>
+      <div class="row"><input type="text" id="dbx-key" placeholder="App key" style="max-width:280px" value="${esc(current.dbx.appKey || status.appKey || "")}"><button class="ghost" id="dbx-connect">${waiting ? "Open Dropbox again" : "Connect Dropbox"}</button></div>
+      ${waiting ? `<div class="row" style="margin-top:10px"><input type="text" id="dbx-code" placeholder="Code from Dropbox" style="max-width:420px"><button class="btn" id="dbx-finish">Finish connecting</button></div>` : ""}
       ${error ? `<div class="msg bad">${esc(error)}</div>` : ""}`;
     $("#dbx-connect").onclick = async () => {
       const appKey = $("#dbx-key").value.trim();
       const r = await fetch("/api/dropbox/connect", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ appKey }) }).then((r) => r.json());
       if (r.error) return alert(r.error);
-      location.href = r.url;
+      window.open(r.url, "_blank");
+      Object.assign(current.dbx, { awaitingCode: true, appKey, error: null });
+      renderDropbox();
     };
+    $("#dbx-finish")?.addEventListener("click", async () => {
+      const code = $("#dbx-code").value.trim();
+      const r = await fetch("/api/dropbox/code", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ code }) }).then((r) => r.json());
+      if (r.error) { current.dbx.error = r.error; return renderDropbox(); }
+      Object.assign(current.dbx, { awaitingCode: false, error: null, link: undefined });
+      loadDropbox(current);
+    });
     return;
   }
   const want = wantedExpiry(current.form.releaseDate);

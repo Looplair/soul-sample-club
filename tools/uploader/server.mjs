@@ -133,24 +133,21 @@ async function handle(req, res) {
   }
 
   // Dropbox: connect once, then make/read each release's Patreon link
-  if (p === "/api/dropbox/status") return json(res, 200, { ...(await dropbox.status()), redirectUri: dropbox.REDIRECT_URI });
+  if (p === "/api/dropbox/status") return json(res, 200, await dropbox.status());
   if (p === "/api/dropbox/connect" && req.method === "POST") {
     const { appKey } = await readBody(req);
     if (!appKey?.trim()) return json(res, 400, { error: "Paste the App key first." });
     return json(res, 200, { url: dropbox.authorizeUrl(appKey.trim()) });
   }
-  if (p === "/dropbox/callback") {
-    const code = url.searchParams.get("code");
-    const err = url.searchParams.get("error_description") || url.searchParams.get("error");
-    let msg = "Dropbox connected. You can close this tab and go back to the uploader.";
+  if (p === "/api/dropbox/code" && req.method === "POST") {
+    const { code } = await readBody(req);
+    if (!code?.trim()) return json(res, 400, { error: "Paste the code Dropbox showed you." });
     try {
-      if (!code) throw new Error(err || "Dropbox didn't send a code back.");
       await dropbox.finishAuth(code);
+      return json(res, 200, await dropbox.status());
     } catch (e) {
-      msg = `Couldn't connect Dropbox: ${e.message}`;
+      return json(res, 400, { error: e.message });
     }
-    res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
-    return res.end(`<body style="background:#070707;color:#fff;font:16px -apple-system,sans-serif;padding:60px;text-align:center">${msg.replace(/</g, "&lt;")}<script>setTimeout(()=>{location.href="/"},2500)</script></body>`);
   }
   if (p === "/api/dropbox/disconnect" && req.method === "POST") {
     await dropbox.disconnect();
