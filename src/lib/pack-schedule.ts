@@ -23,10 +23,14 @@ const db = () =>
   }) as any;
 
 export async function readSchedule(): Promise<PackSchedule> {
-  const { data, error } = await db().storage.from(SCHEDULE_BUCKET).download(SCHEDULE_PATH);
-  if (error || !data) return {};
+  // A fresh one-off signed link each time: a plain download can come back as a
+  // stale cached copy from Supabase's CDN
+  const { data: signed } = await db().storage.from(SCHEDULE_BUCKET).createSignedUrl(SCHEDULE_PATH, 60);
+  if (!signed?.signedUrl) return {};
+  const res = await fetch(`${signed.signedUrl}&fresh=${Date.now()}`, { cache: "no-store" });
+  if (!res.ok) return {};
   try {
-    return JSON.parse(await data.text()) as PackSchedule;
+    return JSON.parse(await res.text()) as PackSchedule;
   } catch {
     return {};
   }
@@ -35,7 +39,7 @@ export async function readSchedule(): Promise<PackSchedule> {
 async function writeSchedule(schedule: PackSchedule) {
   // The samples bucket only accepts audio/zip/octet-stream, so JSON goes up as octet-stream
   const body = new Blob([JSON.stringify(schedule, null, 2)], { type: "application/octet-stream" });
-  const { error } = await db().storage.from(SCHEDULE_BUCKET).upload(SCHEDULE_PATH, body, { upsert: true, contentType: "application/octet-stream" });
+  const { error } = await db().storage.from(SCHEDULE_BUCKET).upload(SCHEDULE_PATH, body, { upsert: true, contentType: "application/octet-stream", cacheControl: "0" });
   if (error) throw new Error(`Couldn't save the pack schedule: ${error.message}`);
 }
 
@@ -73,10 +77,21 @@ export async function publishDuePacks({ dryRun = false } = {}): Promise<PublishR
       continue;
     }
 
-    const { error } = await db().from("packs").update({ is_published: true }).eq("id", id).eq("is_published", false);
+    // Only the run that actually flips it from hidden to live posts the
+    // notification, so a stale read can never announce a pack twice
+    const { data: flipped, error } = await db()
+      .from("packs")
+      .update({ is_published: true })
+      .eq("id", id)
+      .eq("is_published", false)
+      .select("id");
     if (error) {
       remaining[id] = entry; // try again next run
       result.skipped.push({ id, reason: error.message });
+      continue;
+    }
+    if (!flipped?.length) {
+      result.skipped.push({ id, reason: "already live" });
       continue;
     }
     result.published.push({ id, name: pack.name });

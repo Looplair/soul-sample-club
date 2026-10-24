@@ -4,10 +4,13 @@ import { supabase } from "./upload.mjs";
 import { SCHEDULE_BUCKET, SCHEDULE_PATH, SITE } from "./config.mjs";
 
 export async function readSchedule() {
-  const { data, error } = await supabase.storage.from(SCHEDULE_BUCKET).download(SCHEDULE_PATH);
-  if (error || !data) return {};
+  // Fresh one-off signed link: a plain download can return a stale CDN copy
+  const { data: signed } = await supabase.storage.from(SCHEDULE_BUCKET).createSignedUrl(SCHEDULE_PATH, 60);
+  if (!signed?.signedUrl) return {};
+  const res = await fetch(`${signed.signedUrl}&fresh=${Date.now()}`, { cache: "no-store" });
+  if (!res.ok) return {};
   try {
-    return JSON.parse(await data.text());
+    return JSON.parse(await res.text());
   } catch {
     return {};
   }
@@ -16,7 +19,7 @@ export async function readSchedule() {
 async function writeSchedule(schedule) {
   // The samples bucket only accepts audio/zip/octet-stream, so JSON goes up as octet-stream
   const body = new Blob([JSON.stringify(schedule, null, 2)], { type: "application/octet-stream" });
-  const { error } = await supabase.storage.from(SCHEDULE_BUCKET).upload(SCHEDULE_PATH, body, { upsert: true, contentType: "application/octet-stream" });
+  const { error } = await supabase.storage.from(SCHEDULE_BUCKET).upload(SCHEDULE_PATH, body, { upsert: true, contentType: "application/octet-stream", cacheControl: "0" });
   if (error) throw new Error(`Couldn't save the schedule: ${error.message}`);
 }
 
