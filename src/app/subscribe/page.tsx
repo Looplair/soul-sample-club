@@ -32,7 +32,8 @@ async function getUserState() {
         .select("id")
         .eq("user_id", user.id)
         .in("status", ["active", "trialing"])
-        .single(),
+        .limit(1)
+        .maybeSingle(), // not .single(): it errors when someone has two
       supabase.from("subscriptions").select("id").eq("user_id", user.id).limit(1),
     ]);
 

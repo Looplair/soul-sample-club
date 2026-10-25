@@ -345,62 +345,10 @@ export async function POST(request: Request) {
           }
         }
 
-        // Only cancel if there isn't a newer active subscription for this user.
-        // This prevents out-of-order webhook events from clobbering a new subscription.
-        if (canceledUserId) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const { data: activeSubs } = await (supabase.from("subscriptions") as any)
-            .select("id")
-            .eq("user_id", canceledUserId)
-            .in("status", ["active", "trialing"])
-            .neq("stripe_subscription_id", subscription.id)
-            .limit(1);
-
-          if (activeSubs && activeSubs.length > 0) {
-            console.log(
-              "Skipping subscription.deleted — user has a newer active subscription:",
-              subscription.id
-            );
-            break;
-          }
-
-          // Double-check with Stripe: does this customer have ANY active subscription?
-          // This catches cases where the new subscription has a different ID but exists.
-          const stripeCustomerId = subscription.customer as string;
-          const activeStripeSubs = await stripe.subscriptions.list({
-            customer: stripeCustomerId,
-            status: "active",
-            limit: 1,
-          });
-
-          if (activeStripeSubs.data.length > 0) {
-            console.log(
-              "Skipping subscription.deleted — customer has active subscription in Stripe:",
-              subscription.id,
-              "active:",
-              activeStripeSubs.data[0].id
-            );
-            break;
-          }
-
-          // Also check for trialing subscriptions
-          const trialingStripeSubs = await stripe.subscriptions.list({
-            customer: stripeCustomerId,
-            status: "trialing",
-            limit: 1,
-          });
-
-          if (trialingStripeSubs.data.length > 0) {
-            console.log(
-              "Skipping subscription.deleted — customer has trialing subscription in Stripe:",
-              subscription.id,
-              "trialing:",
-              trialingStripeSubs.data[0].id
-            );
-            break;
-          }
-        }
-
+        // Always mark THIS subscription canceled. The update only touches this
+        // subscription's row, so it can't clobber a newer one. (It used to be
+        // skipped whenever the user had another "active" row, which left both of
+        // a duplicate pair active forever once they ended.)
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { error } = await (supabase.from("subscriptions") as any)
           .update({
@@ -413,21 +361,40 @@ export async function POST(request: Request) {
           console.error("Error updating canceled subscription:", error);
         }
 
-        // Sync to Klaviyo with canceled status
+        // Only tell Klaviyo they've canceled if they have no other live subscription
         if (canceledUserId) {
-          const { data: canceledProfile } = await supabase
-            .from("profiles")
-            .select("email, full_name")
-            .eq("id", canceledUserId)
-            .single();
+          const stripeCustomerId = subscription.customer as string;
+          const [{ data: otherSubs }, activeStripeSubs, trialingStripeSubs] = await Promise.all([
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (supabase.from("subscriptions") as any)
+              .select("id")
+              .eq("user_id", canceledUserId)
+              .in("status", ["active", "trialing"])
+              .neq("stripe_subscription_id", subscription.id)
+              .limit(1),
+            stripe.subscriptions.list({ customer: stripeCustomerId, status: "active", limit: 1 }),
+            stripe.subscriptions.list({ customer: stripeCustomerId, status: "trialing", limit: 1 }),
+          ]);
+          const stillSubscribed =
+            activeStripeSubs.data.length > 0 || trialingStripeSubs.data.length > 0 || (otherSubs?.length ?? 0) > 0;
 
-          if (canceledProfile) {
-            const profileData = canceledProfile as { email: string; full_name: string | null };
-            syncUserToKlaviyo({
-              email: profileData.email,
-              fullName: profileData.full_name,
-              subscriptionType: "canceled",
-            }).catch((err) => console.error("Klaviyo sync error:", err));
+          if (stillSubscribed) {
+            console.log("subscription.deleted: marked canceled, user still has another subscription:", subscription.id);
+          } else {
+            const { data: canceledProfile } = await supabase
+              .from("profiles")
+              .select("email, full_name")
+              .eq("id", canceledUserId)
+              .single();
+
+            if (canceledProfile) {
+              const profileData = canceledProfile as { email: string; full_name: string | null };
+              syncUserToKlaviyo({
+                email: profileData.email,
+                fullName: profileData.full_name,
+                subscriptionType: "canceled",
+              }).catch((err) => console.error("Klaviyo sync error:", err));
+            }
           }
         }
         break;

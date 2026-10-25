@@ -2,8 +2,12 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { stripe } from "@/lib/stripe";
 import { syncUserToKlaviyo } from "@/lib/klaviyo";
+import { selectAll } from "@/lib/supabase/select-all";
 
 export const dynamic = "force-dynamic";
+// It checks every live subscription against Stripe; give it room to finish
+export const maxDuration = 60;
+const CONCURRENCY = 8;
 
 /**
  * Automatic daily sync of all active subscriptions with Stripe
@@ -17,6 +21,7 @@ export const dynamic = "force-dynamic";
  *   }]
  * }
  */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export async function GET(request: Request) {
   try {
     // Verify this is coming from Vercel Cron
@@ -48,12 +53,20 @@ export async function GET(request: Request) {
 
     // Get all subscriptions that might need syncing
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: subscriptions, error: fetchError } = await (adminSupabase
-      .from("subscriptions") as any)
-      .select("*, profiles!inner(email, full_name)")
-      .in("status", ["active", "trialing"]);
-
-    if (fetchError) {
+    let subscriptions: any[];
+    try {
+      // Every row (a plain select stops at 1,000). Manual grants and comps
+      // aren't Stripe subscriptions, so there's nothing to check them against.
+      subscriptions = (
+        await selectAll<any>((from, to) =>
+          (adminSupabase.from("subscriptions") as any)
+            .select("*, profiles!inner(email, full_name)")
+            .in("status", ["active", "trialing"])
+            .order("id")
+            .range(from, to)
+        )
+      ).filter((sub) => String(sub.stripe_subscription_id || "").startsWith("sub_"));
+    } catch (fetchError) {
       console.error("[CRON] Error fetching subscriptions:", fetchError);
       return NextResponse.json(
         { error: "Failed to fetch subscriptions" },
@@ -79,8 +92,8 @@ export async function GET(request: Request) {
 
     console.log(`[CRON] Found ${subscriptions.length} subscriptions to check`);
 
-    // Sync each subscription
-    for (const sub of subscriptions) {
+    // Sync each subscription, several at a time so the run finishes
+    const syncOne = async (sub: any) => {
       try {
         // Fetch fresh data from Stripe
         const stripeSubscription = await stripe.subscriptions.retrieve(
@@ -96,7 +109,7 @@ export async function GET(request: Request) {
 
         if (!needsUpdate) {
           results.unchanged++;
-          continue;
+          return;
         }
 
         console.log(`[CRON] Updating subscription ${sub.stripe_subscription_id}:`, {
@@ -133,8 +146,10 @@ export async function GET(request: Request) {
         if (stripeSubscription.status !== sub.status) {
           const profile = sub.profiles;
           if (profile?.email) {
-            let klaviyoType: "stripe_active" | "stripe_trialing" =
-              stripeSubscription.status === "trialing"
+            const ended = ["canceled", "unpaid", "incomplete_expired"].includes(stripeSubscription.status);
+            const klaviyoType: "stripe_active" | "stripe_trialing" | "canceled" = ended
+              ? "canceled"
+              : stripeSubscription.status === "trialing"
                 ? "stripe_trialing"
                 : "stripe_active";
 
@@ -161,6 +176,10 @@ export async function GET(request: Request) {
           `${sub.stripe_subscription_id}: ${error instanceof Error ? error.message : "Unknown error"}`
         );
       }
+    };
+
+    for (let i = 0; i < subscriptions.length; i += CONCURRENCY) {
+      await Promise.all(subscriptions.slice(i, i + CONCURRENCY).map(syncOne));
     }
 
     console.log("[CRON] Sync complete:", results);

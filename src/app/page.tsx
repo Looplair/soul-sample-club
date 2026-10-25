@@ -91,7 +91,7 @@ async function getUserState(): Promise<{
     if (!user) return { isLoggedIn: false, hasSubscription: false, profile: null, userId: null, hasUsedTrial: false };
 
     const profileResult = await supabase.from("profiles").select("*").eq("id", user.id).single();
-    const subResult = await supabase.from("subscriptions").select("*").eq("user_id", user.id).in("status", ["active", "trialing"]).single();
+    const subResult = await supabase.from("subscriptions").select("*").eq("user_id", user.id).in("status", ["active", "trialing"]).limit(1).maybeSingle();
 
     let hasPatreon = false;
     try {

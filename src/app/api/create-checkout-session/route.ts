@@ -65,8 +65,9 @@ export async function POST(request: Request) {
     const utm = parseUtmCookie(getCookieValue(cookieHeader, UTM_COOKIE));
     const accountUrl = `${process.env.NEXT_PUBLIC_APP_URL}/account`;
 
-    // Promo visitors who already have access go to their account, never a second subscription
-    if (promoRequested) {
+    // Anyone who already has access goes to their account, never a second
+    // subscription (double clicks and second tabs were creating duplicates)
+    {
       const [activeSub, patreon] = await Promise.all([
         adminSupabase.from("subscriptions").select("id").eq("user_id", user.id).in("status", ["active", "trialing"]).limit(1),
         adminSupabase.from("patreon_links").select("id").eq("user_id", user.id).eq("is_active", true).limit(1),
@@ -182,8 +183,8 @@ export async function POST(request: Request) {
       }
     }
 
-    // Promo visitors: Stripe is the source of truth for an active subscription too
-    if (promoRequested && customerId) {
+    // Stripe is the source of truth for an active subscription too
+    if (customerId) {
       const subs = await stripe.subscriptions.list({ customer: customerId, status: "all", limit: 10 });
       if (subs.data.some((sub) => sub.status === "active" || sub.status === "trialing")) {
         return NextResponse.json({ url: accountUrl });

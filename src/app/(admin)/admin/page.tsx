@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { selectAll } from "@/lib/supabase/select-all";
 import {
   Package,
   Users,
@@ -150,13 +151,15 @@ async function getSubscriptionBreakdown(): Promise<SubscriptionBreakdown> {
   const adminSupabase = createAdminClient();
 
   // Fetch all data and compute accurate counts per unique user
-  const [subscriptionsResult, patreonResult] = await Promise.all([
-    adminSupabase.from("subscriptions").select("user_id, status"),
-    adminSupabase.from("patreon_links").select("user_id, is_active"),
+  // Every row, not just the first 1,000 (there are more subscriptions than that now)
+  const [subscriptions, patreonLinks] = await Promise.all([
+    selectAll<{ user_id: string; status: string }>((from, to) =>
+      adminSupabase.from("subscriptions").select("user_id, status").order("id").range(from, to)
+    ),
+    selectAll<{ user_id: string; is_active: boolean }>((from, to) =>
+      adminSupabase.from("patreon_links").select("user_id, is_active").order("id").range(from, to)
+    ),
   ]);
-
-  const subscriptions = (subscriptionsResult.data || []) as Array<{ user_id: string; status: string }>;
-  const patreonLinks = (patreonResult.data || []) as Array<{ user_id: string; is_active: boolean }>;
 
   // Build maps for unique users (in case of duplicates, take the "best" status)
   const userStripeStatus = new Map<string, string>();

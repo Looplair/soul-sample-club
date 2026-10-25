@@ -80,7 +80,9 @@ export async function GET(request: Request) {
         .select("status")
         .eq("user_id", user.id)
         .in("status", ["active", "trialing", "past_due"])
-        .single();
+        .order("status") // "active" sorts first; one row even if they have two subscriptions
+        .limit(1)
+        .maybeSingle();
 
       const patreonResult = await supabase
         .from("patreon_links")
@@ -177,7 +179,9 @@ export async function GET(request: Request) {
             .select("status")
             .eq("user_id", user.id)
             .in("status", ["active", "trialing", "past_due"])
-            .single();
+            .order("status") // "active" sorts first; one row even if they have two subscriptions
+            .limit(1)
+            .maybeSingle();
 
           // Check for Patreon link
           const patreonResult = await supabase

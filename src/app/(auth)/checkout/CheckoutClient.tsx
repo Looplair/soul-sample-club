@@ -31,7 +31,8 @@ function SubscribeContent({ promoLine }: { promoLine: string | null }) {
         .select("status")
         .eq("user_id", user.id)
         .in("status", ["active", "trialing"])
-        .single();
+        .limit(1)
+        .maybeSingle(); // not .single(): it errors (and lets them through) when they have two
 
       if (subscription) {
         // Promo link visitors who are already members land on their account

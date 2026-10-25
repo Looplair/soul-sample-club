@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { bulkSyncUsersToKlaviyo } from "@/lib/klaviyo";
+import { selectAll } from "@/lib/supabase/select-all";
 
 export async function POST() {
   try {
@@ -47,10 +48,13 @@ export async function POST() {
     }
 
     // Fetch profiles for full_name, and subscription info
+    // Every row: a plain select stops at 1,000, and there are more profiles than that
     const [profilesResult, subscriptionsResult, patreonResult] = await Promise.all([
-      adminSupabase.from("profiles").select("id, full_name"),
-      adminSupabase.from("subscriptions").select("user_id, status, current_period_end"),
-      adminSupabase.from("patreon_links").select("user_id, is_active"),
+      selectAll((from, to) => adminSupabase.from("profiles").select("id, full_name").order("id").range(from, to)).then((data) => ({ data })),
+      selectAll((from, to) =>
+        adminSupabase.from("subscriptions").select("user_id, status, current_period_end").order("id").range(from, to)
+      ).then((data) => ({ data })),
+      selectAll((from, to) => adminSupabase.from("patreon_links").select("user_id, is_active").order("id").range(from, to)).then((data) => ({ data })),
     ]);
 
     // Build profiles lookup
