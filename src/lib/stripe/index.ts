@@ -11,3 +11,6 @@ export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
 
 export const STRIPE_PRICE_ID = process.env.STRIPE_PRICE_ID!;
 export const STRIPE_YEARLY_PRICE_ID = process.env.STRIPE_YEARLY_PRICE_ID!;
+
+// Yearly offer: $14 off forever ($49 -> $35, locked in for life). Set to "" to end the offer.
+export const YEARLY_OFFER_COUPON: string = "wjveVSUF";

@@ -1,14 +1,11 @@
 import { NextResponse } from "next/server";
-import { stripe, STRIPE_PRICE_ID, STRIPE_YEARLY_PRICE_ID } from "@/lib/stripe";
+import { stripe, STRIPE_PRICE_ID, STRIPE_YEARLY_PRICE_ID, YEARLY_OFFER_COUPON } from "@/lib/stripe";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getBlockingPastDueSubscription } from "@/lib/payment-status";
 import { FREE_PACK_OFFER_COUPON, markOfferCheckout, offerIsLive } from "@/lib/free-pack";
 import { parseUtmCookie, resolvePromo, type Promo } from "@/lib/promo";
 import { PROMO_COOKIE, UTM_COOKIE } from "@/lib/promo-cookie";
-
-// Yearly offer: $14 off forever ($49 -> $35, locked in for life). Set to "" to end the offer.
-const YEARLY_OFFER_COUPON: string = "wjveVSUF";
 
 // Helper to extract a cookie value by name
 function getCookieValue(cookieHeader: string, name: string): string {
