@@ -2,7 +2,6 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import { Suspense } from "react";
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { Navbar } from "@/components/layout";
@@ -13,6 +12,7 @@ import { SubscribeCTA } from "@/components/ui/SubscribeCTA";
 import { Pill } from "@/components/ssc/Glass";
 import { SiteFooter } from "@/components/ssc/SiteFooter";
 import { CatalogBrowser, type CatalogPack } from "@/components/ssc/catalog/CatalogBrowser";
+import { MemberCards } from "@/components/ssc/catalog/MemberCards";
 import { withCoverColors } from "@/lib/cover-color";
 import { compactPeaks } from "@/lib/peaks";
 import type { Sample, NotificationWithReadStatus, Profile } from "@/types/database";
@@ -203,20 +203,7 @@ export default async function FeedPage() {
             )}
           </header>
 
-          {isLoggedIn && (
-            <Link
-              href="/vault"
-              className="ssc-glass ssc-glass--plain group relative mt-8 flex items-center justify-between gap-4 rounded-2xl px-5 py-4 transition-colors hover:border-white/20"
-            >
-              <div>
-                <p className="ssc-label">Members only</p>
-                <p className="ssc-display mt-1 text-[1.3rem]">Drum Vault</p>
-              </div>
-              <span className="text-[12px] font-semibold uppercase tracking-[0.14em] text-white/75 transition-colors group-hover:text-white">
-                Hand-picked drum breaks, yours to keep →
-              </span>
-            </Link>
-          )}
+          {isLoggedIn && <MemberCards />}
 
           <div className="mt-8">
             <CatalogBrowser packs={packs} hasAccess={hasAccess} isLoggedIn={isLoggedIn} />

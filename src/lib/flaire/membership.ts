@@ -9,6 +9,7 @@ import {
   invoiceIsFullPrice,
   isStripeSubscription,
   rowGivesAccess,
+  type FlaireCreditsState,
   type FlaireMembership,
   type StripeSubscriptionFacts,
   type SubscriptionRow,
@@ -155,6 +156,23 @@ export async function getFlaireMembershipByEmail(rawEmail: string): Promise<Flai
   if (!email) return NOT_A_MEMBER;
   const profiles = await profilesByEmail(email);
   return getFlaireMembershipForUsers(profiles.map((p) => p.id));
+}
+
+/** Which Flaire entry a member sees (account page, catalog card). Anything slow or failing shows none. */
+export async function getFlaireCreditsState(email: string, connected: boolean): Promise<FlaireCreditsState> {
+  if (!flaireConfigured() || !email) return null;
+  try {
+    const membership = await Promise.race([
+      getFlaireMembershipByEmail(email),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), 4000)),
+    ]);
+    if (!membership?.active) return null;
+    if (connected) return "connected";
+    return membership.eligible ? "eligible" : "pending";
+  } catch (error) {
+    console.error("[flaire] credits state:", error instanceof Error ? error.message : error);
+    return null;
+  }
 }
 
 export class FlaireConnectError extends Error {}
