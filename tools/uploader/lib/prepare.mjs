@@ -69,7 +69,7 @@ export async function prepareRelease(release, log) {
     if (!t.stemFolder) continue;
     const zip = join(outDir, `${t.stemFolder}.zip`);
     files.stems[t.name] = zip;
-    const src = join(dir, "STEMS", t.stemFolder);
+    const src = join(release.stemsDir, t.stemFolder);
     if (await upToDate(zip, src)) {
       log({ step: `stems:${t.name}`, label: `Stems zip: ${t.name}`, status: "skip", note: "already made" });
       continue;
@@ -79,7 +79,7 @@ export async function prepareRelease(release, log) {
     await make(zip, async (tmp) => {
       const tmpZip = `${tmp}.zip`;
       await rm(tmpZip, { force: true });
-      await run(ZIP, zipArgs(tmpZip, t.stemFolder), { cwd: join(dir, "STEMS") });
+      await run(ZIP, zipArgs(tmpZip, t.stemFolder), { cwd: release.stemsDir });
       await rename(tmpZip, tmp);
     });
     log({ step: `stems:${t.name}`, status: "done" });

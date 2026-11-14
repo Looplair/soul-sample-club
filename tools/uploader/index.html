@@ -15,6 +15,9 @@
   header button { margin-left:auto; }
   .wrap { display:grid; grid-template-columns:320px 1fr; min-height:calc(100vh - 62px); }
   aside { border-right:1px solid var(--line); padding:18px 14px; overflow:auto; max-height:calc(100vh - 62px); position:sticky; top:0; }
+  .kinds { display:flex; gap:4px; padding:4px; margin:0 4px 6px; border:1px solid var(--line); border-radius:12px; }
+  .kinds button { flex:1; background:none; border:0; color:var(--dim); font:inherit; font-size:13px; font-weight:700; padding:8px; border-radius:9px; cursor:pointer; }
+  .kinds button.on { background:#fff; color:#000; }
   .month { margin:18px 10px 8px; font-size:11px; letter-spacing:.18em; color:var(--faint); font-weight:700; }
   .rel { display:flex; align-items:center; gap:10px; width:100%; text-align:left; background:none; border:1px solid transparent; color:var(--text);
          border-radius:12px; padding:10px 12px; cursor:pointer; font:inherit; }
@@ -81,13 +84,25 @@
   <button class="ghost" onclick="loadList()">Refresh</button>
 </header>
 <div class="wrap">
-  <aside id="list"><p class="faint" style="margin:10px">Reading Dropbox…</p></aside>
+  <aside>
+    <div class="kinds"><button data-kind="monthly">Monthly</button><button data-kind="bonus">Bonus</button></div>
+    <div id="list"><p class="faint" style="margin:10px">Reading Dropbox…</p></div>
+  </aside>
   <main id="main"><p class="empty">Pick a release on the left.</p></main>
 </div>
 <script>
 const $ = (s, el = document) => el.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 let releases = [], current = null, running = false;
+let kind = (() => { try { return localStorage.getItem("ssc-kind") === "bonus" ? "bonus" : "monthly"; } catch { return "monthly"; } })();
+
+/** YYYY-MM-DD plus n calendar months (31 Jan + 1 month -> 28/29 Feb, not 3 Mar) */
+function addMonths(date, n) {
+  const d = new Date(`${date}T12:00:00Z`), day = d.getUTCDate();
+  d.setUTCMonth(d.getUTCMonth() + n);
+  if (d.getUTCDate() !== day) d.setUTCDate(0);
+  return d.toISOString().slice(0, 10);
+}
 
 const fmtUTC = (iso) => {
   const d = new Date(iso);
@@ -106,8 +121,21 @@ function statusChip(r) {
   return `<span class="chip">Empty</span>`;
 }
 
+function setKind(k) {
+  if (running) return;
+  kind = k;
+  try { localStorage.setItem("ssc-kind", k); } catch {}
+  document.querySelectorAll(".kinds button").forEach((b) => b.classList.toggle("on", b.dataset.kind === kind));
+  $("#list").innerHTML = `<p class="faint" style="margin:10px">Reading Dropbox…</p>`;
+  loadList();
+}
+document.querySelectorAll(".kinds button").forEach((b) => (b.onclick = () => setKind(b.dataset.kind)));
+document.querySelectorAll(".kinds button").forEach((b) => b.classList.toggle("on", b.dataset.kind === kind));
+
 async function loadList() {
-  const res = await fetch("/api/releases").then((r) => r.json());
+  const want = kind;
+  const res = await fetch(`/api/releases?kind=${want}`).then((r) => r.json());
+  if (want !== kind) return; // switched while loading
   releases = res.releases;
   let html = "", month = "";
   for (const r of releases) {
@@ -130,6 +158,10 @@ async function openRelease(dir) {
     styles: p?.styles || [],
     releaseDate: p?.release_date?.slice(0, 10) || current.defaults.releaseDate,
   };
+  if (current.release.isBonus) {
+    current.form.endDate = p?.end_date?.slice(0, 10) || addMonths(current.form.releaseDate, 1);
+    current.endAuto = !p?.end_date; // follows the release date until changed by hand
+  }
   current.schedOn = !!current.site?.publishAt;
   const at = current.site?.publishAt ? new Date(current.site.publishAt) : null;
   current.goDate = at ? at.toISOString().slice(0, 10) : current.form.releaseDate;
@@ -145,6 +177,7 @@ function reminders() {
   if (!f.description.trim()) out.push("Write a short description.");
   if (!f.genres.length && !f.styles.length) out.push("No tags picked yet. Optional, but they help people find it.");
   if (new Date(f.releaseDate + "T12:00:00Z").getUTCDay() !== 5) out.push("The release date isn't a Friday.");
+  if (r.isBonus && f.endDate && f.endDate <= f.releaseDate) out.push("The end date has to be after the release date.");
   if (current.schedOn && current.goDate !== f.releaseDate) out.push("The go-live day is different from the release date.");
   return out;
 }
@@ -155,11 +188,6 @@ function render() {
   const live = site?.live;
   const tracks = current.order.map((n) => r.tracks.find((t) => t.name === n));
   const tagBtns = (kind) => tags[kind].map((t) => `<button class="tag ${f[kind].includes(t) ? "on" : ""}" data-kind="${kind}" data-tag="${esc(t)}">${esc(t)}</button>`).join("");
-  const checks = [
-    ...r.blockers.map((m) => `<div class="msg bad">${esc(m)}</div>`),
-    ...r.warnings.map((m) => `<div class="msg warn">${esc(m)}</div>`),
-    ...reminders().map((m) => `<div class="msg info">${esc(m)}</div>`),
-  ];
   const statusLine = live
     ? `<div class="msg ok">Live on the site. <a href="https://www.soulsampleclub.com/packs/${esc(site.slug)}" target="_blank">Open the pack page</a>. Edit it in the admin panel from here on.</div>`
     : site?.publishAt
@@ -172,14 +200,14 @@ function render() {
     <div class="top">
       ${r.cover ? `<img src="/api/file?path=${encodeURIComponent(r.cover.path)}" alt="">` : `<img alt="">`}
       <div style="flex:1">
-        <div class="faint">${esc(r.folder)}</div>
+        <div class="faint">${r.isBonus ? "Bonus pack · " : ""}${esc(r.folder)}</div>
         <h2>${esc(r.name)}</h2>
         <div class="muted">${r.tracks.length} tracks · ${mb(r.totalSize)}${r.licence ? " · Pre-Clearance Document" : ""}</div>
         ${statusLine}
       </div>
     </div>
 
-    ${checks.length ? `<div class="box"><h3>Before you go</h3>${checks.join("")}</div>` : `<div class="box"><div class="msg ok">Everything's here: cover, clearance document, ${r.tracks.length} WAVs with BPM and key, and stems for every track.</div></div>`}
+    <div class="box" id="checks">${checksHTML()}</div>
 
     <div class="box">
       <h3>Pack details</h3>
@@ -189,6 +217,8 @@ function render() {
       <label class="f">Styles</label><div class="tags">${tagBtns("styles")}</div>
       <label class="f">Release date</label>
       <div class="row"><input type="date" id="f-date" value="${esc(f.releaseDate)}" style="max-width:200px"><span class="faint">Shown on the pack. Usually the Friday.</span></div>
+      ${r.isBonus ? `<label class="f">End date</label>
+      <div class="row"><input type="date" id="f-end" value="${esc(f.endDate)}" style="max-width:200px"><span class="faint">When it leaves the site. Bonus packs usually get a month.</span></div>` : ""}
     </div>
 
     <div class="box">
@@ -207,7 +237,7 @@ function render() {
       <div class="row" style="margin-left:27px">
         <input type="date" id="g-date" value="${esc(current.goDate)}" style="max-width:190px" ${!current.schedOn ? "disabled" : ""}>
         <input type="time" id="g-time" value="${esc(current.goTime)}" style="max-width:130px" ${!current.schedOn ? "disabled" : ""}>
-        <span class="faint">UTC${current.schedOn ? ` · ${esc(fmtUTC(goISO()))}` : ""}</span>
+        <span class="faint" id="g-label">${goLabel()}</span>
       </div>
       <p class="faint" style="margin:10px 0 0">It goes live within about 5 minutes of that time, posts the "New pack" notification, and shows up on the homepage and catalog.</p>
       ${site && !live ? `<div class="actions">
@@ -225,7 +255,13 @@ function render() {
   // wiring
   $("#f-name")?.addEventListener("input", (e) => (f.name = e.target.value));
   $("#f-desc").addEventListener("input", (e) => (f.description = e.target.value));
-  $("#f-date").addEventListener("change", (e) => { f.releaseDate = e.target.value; if (!current.site?.publishAt) current.goDate = e.target.value; render(); });
+  // Date and time boxes never redraw the page: that threw the cursor out mid-typing
+  onDate("#f-date", (v) => {
+    f.releaseDate = v;
+    if (!current.site?.publishAt) current.goDate = v;
+    if (r.isBonus && current.endAuto && fullDate(v)) f.endDate = addMonths(v, 1);
+  });
+  onDate("#f-end", (v) => { f.endDate = v; current.endAuto = false; });
   document.querySelectorAll(".tag").forEach((b) => (b.onclick = () => {
     const list = f[b.dataset.kind], t = b.dataset.tag;
     f[b.dataset.kind] = list.includes(t) ? list.filter((x) => x !== t) : [...list, t];
@@ -237,12 +273,49 @@ function render() {
     render();
   }));
   document.querySelectorAll("input[name=sched]").forEach((x) => (x.onchange = () => { current.schedOn = x.value === "on" && x.checked; render(); }));
-  $("#g-date").addEventListener("change", (e) => { current.goDate = e.target.value; render(); });
-  $("#g-time").addEventListener("change", (e) => { current.goTime = e.target.value; render(); });
+  onDate("#g-date", (v) => { current.goDate = v; });
+  onDate("#g-time", (v) => { current.goTime = v; });
   $("#go").onclick = go;
   renderDropbox();
   $("#save-sched")?.addEventListener("click", () => schedule(current.schedOn ? goISO() : null));
   $("#go-now")?.addEventListener("click", () => confirm(`Put ${current.release.name} live on the site now?`) && schedule(null, true));
+}
+
+function checksHTML() {
+  const r = current.release;
+  const checks = [
+    ...r.blockers.map((m) => `<div class="msg bad">${esc(m)}</div>`),
+    ...r.warnings.map((m) => `<div class="msg warn">${esc(m)}</div>`),
+    ...reminders().map((m) => `<div class="msg info">${esc(m)}</div>`),
+  ];
+  return checks.length
+    ? `<h3>Before you go</h3>${checks.join("")}`
+    : `<div class="msg ok">Everything's here: cover, clearance document, ${r.tracks.length} WAVs with BPM and key, and stems for every track.</div>`;
+}
+
+const fullDate = (v) => /^(19|20)\d\d-\d\d-\d\d$/.test(v || "");
+const goLabel = () => {
+  if (!current.schedOn) return "UTC";
+  const iso = fullDate(current.goDate) && /^\d\d:\d\d$/.test(current.goTime || "") ? goISO() : null;
+  return iso ? `UTC · ${esc(fmtUTC(iso))}` : "UTC";
+};
+
+/** Saves a date/time box as you type, then refreshes only what depends on it */
+function onDate(sel, apply) {
+  const el = $(sel);
+  if (!el) return;
+  const update = () => {
+    if (!(el.type === "time" ? /^\d\d:\d\d$/.test(el.value) : fullDate(el.value))) return; // still typing
+    apply(el.value);
+    const sync = (id, v) => { const x = $(id); if (x && x !== document.activeElement && v && x.value !== v) x.value = v; };
+    sync("#f-end", current.form.endDate);
+    sync("#g-date", current.goDate);
+    $("#checks").innerHTML = checksHTML();
+    $("#g-label").innerHTML = goLabel();
+    renderDropbox();
+  };
+  el.addEventListener("input", update);
+  el.addEventListener("change", update);
 }
 
 const goISO = () => new Date(`${current.goDate}T${current.goTime || "12:00"}:00Z`).toISOString();
@@ -311,12 +384,9 @@ async function go() {
 
 // ---------- Patreon link (Dropbox) ----------
 const fmtDay = (iso) => new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
-function wantedExpiry(releaseDate) {
-  const d = new Date(`${releaseDate}T23:59:59Z`), day = d.getUTCDate();
-  d.setUTCMonth(d.getUTCMonth() + 3);
-  if (d.getUTCDate() !== day) d.setUTCDate(0);
-  return d.toISOString().slice(0, 10);
-}
+// Monthly: 3 months after release. Bonus: the pack's end date.
+const wantedExpiry = (c) => (c.release.isBonus ? c.form.endDate : addMonths(c.form.releaseDate, 3));
+const expiryWhy = (c) => (c.release.isBonus ? "the pack's end date" : `3 months after the ${fmtDay(c.form.releaseDate + "T12:00:00Z")} release`);
 
 async function loadDropbox(c) {
   c.dbx.status = await fetch("/api/dropbox/status").then((r) => r.json()).catch(() => ({ connected: false }));
@@ -337,7 +407,7 @@ function renderDropbox() {
   if (!status.connected) {
     const waiting = !!current.dbx.awaitingCode;
     box.innerHTML = `${head}
-      <p class="muted" style="margin-top:0">A view-and-download link to <b>${esc(current.release.folder)}</b> (samples, stems, cover and licence) that expires 3 months after release. Connect Dropbox once and it's made for you.</p>
+      <p class="muted" style="margin-top:0">A view-and-download link to <b>${esc(current.release.folder)}</b> (samples, stems, cover and licence) that expires ${current.release.isBonus ? "on the pack's end date" : "3 months after release"}. Connect Dropbox once and it's made for you.</p>
       <ol class="faint" style="padding-left:18px;line-height:1.9">
         <li>Open <a href="https://www.dropbox.com/developers/apps/create" target="_blank">dropbox.com/developers/apps/create</a>: <b>Scoped access</b>, <b>Full Dropbox</b>, name it e.g. "SSC Uploader".</li>
         <li><b>Permissions</b> tab: tick <b>files.metadata.read</b>, <b>sharing.read</b>, <b>sharing.write</b>, then Submit. No redirect URI needed.</li>
@@ -364,15 +434,15 @@ function renderDropbox() {
     });
     return;
   }
-  const want = wantedExpiry(current.form.releaseDate);
+  const want = wantedExpiry(current);
   const has = link?.expires ? link.expires.slice(0, 10) : null;
   const mismatch = link && has !== want;
   box.innerHTML = `${head}
     ${link === undefined ? `<p class="faint">Checking Dropbox…</p>` : link ? `
       <div class="row"><input type="text" id="dbx-url" value="${esc(link.url)}" readonly style="flex:1;min-width:260px"><button class="ghost" id="dbx-copy">Copy</button></div>
       <p class="faint" style="margin:8px 0 0">${has ? `Expires ${esc(fmtDay(link.expires))}` : "No expiry set"} · anyone with the link can view and download.</p>
-      ${mismatch ? `<div class="msg warn">Should expire ${esc(fmtDay(want + "T12:00:00Z"))}, 3 months after the ${esc(fmtDay(current.form.releaseDate + "T12:00:00Z"))} release.</div>` : ""}` : `
-      <p class="muted" style="margin-top:0">No link yet for <b>${esc(current.release.folder)}</b>. It'll expire ${esc(fmtDay(want + "T12:00:00Z"))}, 3 months after release.</p>`}
+      ${mismatch ? `<div class="msg warn">Should expire ${esc(fmtDay(want + "T12:00:00Z"))}, ${esc(expiryWhy(current))}.</div>` : ""}` : `
+      <p class="muted" style="margin-top:0">No link yet for <b>${esc(current.release.folder)}</b>. It'll expire ${esc(fmtDay(want + "T12:00:00Z"))}, ${esc(expiryWhy(current))}.</p>`}
     ${error ? `<div class="msg bad">${esc(error)}</div>` : ""}
     <div class="actions" style="margin-top:14px">
       ${!link || mismatch ? `<button class="btn" id="dbx-make" ${busy ? "disabled" : ""}>${busy ? "Making link…" : link ? "Fix the expiry" : "Make Patreon link"}</button>` : ""}
@@ -386,7 +456,7 @@ function renderDropbox() {
   $("#dbx-make")?.addEventListener("click", async () => {
     const c = current;
     c.dbx.busy = true; c.dbx.error = null; renderDropbox();
-    const r = await fetch(`/api/dropbox/link?dir=${encodeURIComponent(c.release.dir)}&releaseDate=${encodeURIComponent(c.form.releaseDate)}`, { method: "POST" }).then((r) => r.json()).catch((e) => ({ error: e.message }));
+    const r = await fetch(`/api/dropbox/link?dir=${encodeURIComponent(c.release.dir)}&releaseDate=${encodeURIComponent(c.form.releaseDate)}${c.release.isBonus ? `&expiresOn=${encodeURIComponent(c.form.endDate)}` : ""}`, { method: "POST" }).then((r) => r.json()).catch((e) => ({ error: e.message }));
     c.dbx.busy = false;
     if (r.link) c.dbx.link = r.link;
     c.dbx.error = r.error || null;

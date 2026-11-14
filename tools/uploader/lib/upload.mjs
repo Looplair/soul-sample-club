@@ -101,10 +101,14 @@ async function loadState(release) {
   return { state, save };
 }
 
-/** A cover under the covers bucket's 5 MB limit (the original isn't changed) */
+/** A cover under the covers bucket's 5 MB limit (the original isn't changed). GIFs go up as a PNG of the first frame, as done by hand. */
 async function coverFile(release) {
   const { path, size } = release.cover;
-  if (size <= 5 * 1024 * 1024) return { path, ext: extname(path).slice(1).toLowerCase(), type: `image/${extname(path).slice(1).toLowerCase().replace("jpg", "jpeg")}` };
+  if (/\.gif$/i.test(path)) {
+    const out = join(release.outDir, ".cover-for-site.png");
+    await sharp(path).resize({ width: 3000, height: 3000, fit: "inside", withoutEnlargement: true }).png().toFile(out);
+    if ((await stat(out)).size <= 5 * 1024 * 1024) return { path: out, ext: "png", type: "image/png" };
+  } else if (size <= 5 * 1024 * 1024) return { path, ext: extname(path).slice(1).toLowerCase(), type: `image/${extname(path).slice(1).toLowerCase().replace("jpg", "jpeg")}` };
   const out = join(release.outDir, ".cover-for-site.jpg");
   await sharp(path).resize({ width: 3000, height: 3000, fit: "inside", withoutEnlargement: true }).jpeg({ quality: 90 }).toFile(out);
   return { path: out, ext: "jpg", type: "image/jpeg" };
@@ -113,7 +117,7 @@ async function coverFile(release) {
 /**
  * release: from inspectRelease (tracks in the order they should appear)
  * files: from prepareRelease
- * details: { name, description, genres, styles, releaseDate }
+ * details: { name, description, genres, styles, releaseDate, endDate (bonus packs) }
  */
 export async function uploadRelease(release, files, details, log) {
   const { state, save } = await loadState(release);
@@ -125,6 +129,7 @@ export async function uploadRelease(release, files, details, log) {
     release_date: details.releaseDate,
     genres: details.genres || [],
     styles: details.styles || [],
+    ...(release.isBonus ? { end_date: details.endDate } : {}),
   };
   if (state.packId) {
     const { data } = await supabase.from("packs").select("id").eq("id", state.packId).maybeSingle();
@@ -134,11 +139,11 @@ export async function uploadRelease(release, files, details, log) {
   if (!state.packId) {
     const { data: clash } = await supabase.from("packs").select("id, is_published").ilike("name", details.name).limit(1);
     if (clash?.length) throw new Error(`A pack called "${details.name}" is already on the site. Rename it here, or delete the old one in the admin panel first.`);
-    log({ step: "pack", label: "Create draft pack", status: "run" });
+    log({ step: "pack", label: release.isBonus ? "Create draft bonus pack" : "Create draft pack", status: "run" });
     const slug = await uniqueSlug(details.name);
     const { data, error } = await supabase
       .from("packs")
-      .insert({ ...packFields, slug, end_date: null, is_published: false, is_bonus: false, is_returned: false })
+      .insert({ end_date: null, ...packFields, slug, is_published: false, is_bonus: !!release.isBonus, is_returned: false })
       .select("id, slug")
       .single();
     if (error) throw new Error(`Couldn't create the pack: ${error.message}`);

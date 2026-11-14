@@ -120,10 +120,10 @@ export async function findLink(localDir) {
   return links?.[0] ? shape(links[0]) : null;
 }
 
-/** Makes (or updates) the Patreon link: anyone with it can view and download, until 3 months after release */
-export async function makeLink(localDir, releaseDate) {
+/** Makes (or updates) the Patreon link: anyone with it can view and download, until 3 months after release (bonus packs: their end date) */
+export async function makeLink(localDir, releaseDate, expiresOn = null) {
   const path = dropboxPath(localDir);
-  const expires = expiryFor(releaseDate);
+  const expires = expiresOn ? `${expiresOn}T23:59:59Z` : expiryFor(releaseDate);
   const settings = { audience: "public", access: "viewer", allow_download: true, expires };
   try {
     return shape(await api("sharing/create_shared_link_with_settings", { path, settings }));

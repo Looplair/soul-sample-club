@@ -6,12 +6,12 @@ import { readFile } from "node:fs/promises";
 import { createReadStream, existsSync } from "node:fs";
 import { join, extname, resolve } from "node:path";
 import { exec } from "node:child_process";
-import { listReleases, inspectRelease } from "./lib/scan.mjs";
+import { listReleases, listBonusReleases, inspectRelease } from "./lib/scan.mjs";
 import { prepareRelease } from "./lib/prepare.mjs";
 import { uploadRelease, supabase } from "./lib/upload.mjs";
 import { setSchedule, runPublisher, siteStatus } from "./lib/schedule.mjs";
 import * as dropbox from "./lib/dropbox.mjs";
-import { DROPBOX, MONTHS_DIR, PORT, REPO, SITE } from "./lib/config.mjs";
+import { DROPBOX, MONTHS_DIR, BONUS_DIR, PORT, REPO, SITE } from "./lib/config.mjs";
 
 const HERE = join(REPO, "tools/uploader");
 let busy = null; // one job at a time
@@ -60,8 +60,9 @@ async function handle(req, res) {
   }
 
   if (p === "/api/releases") {
-    const releases = await listReleases();
-    const status = await siteStatus([...new Set(releases.map((r) => r.name))]);
+    const bonus = url.searchParams.get("kind") === "bonus";
+    const releases = bonus ? await listBonusReleases() : await listReleases();
+    const status = await siteStatus([...new Set(releases.map((r) => r.name))], { bonus });
     return json(res, 200, { releases: releases.map((r) => ({ ...r, site: status[r.name.toLowerCase()] || null })), busy: !!busy });
   }
 
@@ -69,11 +70,11 @@ async function handle(req, res) {
     const dir = url.searchParams.get("dir");
     if (!dir || !inDropbox(dir) || !existsSync(dir)) return json(res, 400, { error: "Unknown release folder" });
     const release = await inspectRelease(dir);
-    const [status, tags] = await Promise.all([siteStatus([release.name]), tagOptions()]);
+    const [status, tags] = await Promise.all([siteStatus([release.name], { bonus: release.isBonus }), tagOptions()]);
     let pack = null;
     const site = status[release.name.toLowerCase()] || null;
     if (site) {
-      const { data } = await supabase.from("packs").select("description, genres, styles, release_date").eq("id", site.id).single();
+      const { data } = await supabase.from("packs").select("description, genres, styles, release_date, end_date").eq("id", site.id).single();
       pack = data;
     }
     return json(res, 200, { release, site, pack, tags, defaults: { releaseDate: nextFriday() } });
@@ -82,7 +83,7 @@ async function handle(req, res) {
   if (p === "/api/file") {
     const path = url.searchParams.get("path");
     if (!path || !inDropbox(path) || !existsSync(path)) return json(res, 404, { error: "Not found" });
-    const type = { ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp" }[extname(path).toLowerCase()];
+    const type = { ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp", ".gif": "image/gif" }[extname(path).toLowerCase()];
     if (!type) return json(res, 403, { error: "Not an image" });
     res.writeHead(200, { "content-type": type, "cache-control": "max-age=60" });
     return createReadStream(path).pipe(res);
@@ -103,6 +104,8 @@ async function handle(req, res) {
       if (!d.name?.trim()) throw new Error("The pack needs a name.");
       if (!d.description?.trim()) throw new Error("Add a short description first.");
       if (!/^\d{4}-\d{2}-\d{2}$/.test(d.releaseDate || "")) throw new Error("Pick a release date.");
+      if (release.isBonus && !/^\d{4}-\d{2}-\d{2}$/.test(d.endDate || "")) throw new Error("Pick an end date for the bonus pack.");
+      if (release.isBonus && d.endDate <= d.releaseDate) throw new Error("The end date has to be after the release date.");
       if (Array.isArray(body.order)) {
         const rank = new Map(body.order.map((n, i) => [n, i]));
         release.tracks.sort((a, b) => (rank.get(a.name) ?? 99) - (rank.get(b.name) ?? 99));
@@ -113,7 +116,7 @@ async function handle(req, res) {
       const { packId, slug } = await uploadRelease(
         release,
         files,
-        { name: d.name.trim(), description: d.description.trim(), genres: d.genres, styles: d.styles, releaseDate: d.releaseDate },
+        { name: d.name.trim(), description: d.description.trim(), genres: d.genres, styles: d.styles, releaseDate: d.releaseDate, endDate: d.endDate },
         send
       );
       let schedule = null;
@@ -156,11 +159,13 @@ async function handle(req, res) {
   if (p === "/api/dropbox/link") {
     const dir = url.searchParams.get("dir");
     const releaseDate = url.searchParams.get("releaseDate");
+    const expiresOn = url.searchParams.get("expiresOn"); // bonus packs: the pack's end date
     if (!dir || !inDropbox(dir)) return json(res, 400, { error: "Unknown release folder" });
     try {
       if (req.method === "POST") {
         if (!/^\d{4}-\d{2}-\d{2}$/.test(releaseDate || "")) return json(res, 400, { error: "Pick a release date first." });
-        return json(res, 200, { link: await dropbox.makeLink(dir, releaseDate) });
+        if (expiresOn && !/^\d{4}-\d{2}-\d{2}$/.test(expiresOn)) return json(res, 400, { error: "Pick an end date first." });
+        return json(res, 200, { link: await dropbox.makeLink(dir, releaseDate, expiresOn || null) });
       }
       return json(res, 200, { link: await dropbox.findLink(dir) });
     } catch (e) {
@@ -194,6 +199,6 @@ createServer((req, res) =>
   })
 ).listen(PORT, "127.0.0.1", () => {
   console.log(`SSC Pack Uploader running at http://localhost:${PORT}`);
-  console.log(`Reading releases from ${MONTHS_DIR}`);
+  console.log(`Reading releases from ${MONTHS_DIR} and ${BONUS_DIR}`);
   if (process.argv.includes("--open")) exec(`open http://localhost:${PORT}`);
 });

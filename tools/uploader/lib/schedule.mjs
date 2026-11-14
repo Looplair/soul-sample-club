@@ -39,16 +39,24 @@ export async function runPublisher() {
   return res.json();
 }
 
+// Bonus folder names drift from the site's names ("Back Porch Soul 82" vs "Back Porch Soul '82",
+// "... Vol.1" vs no volume), so bonus packs also match on a loose key
+const loose = (s) => s.toLowerCase().replace(/&/g, "and").replace(/\bvol(ume)?\b/g, "").replace(/[^a-z0-9]/g, "");
+
 /** Site status for each pack name: draft / live / scheduled, with ids */
-export async function siteStatus(names) {
+export async function siteStatus(names, { bonus = false } = {}) {
   if (!names.length) return {};
-  const [{ data }, schedule] = await Promise.all([
-    supabase.from("packs").select("id, name, slug, is_published, release_date, samples(count)").in("name", names),
-    readSchedule(),
-  ]);
+  const query = supabase.from("packs").select("id, name, slug, is_published, release_date, samples(count)");
+  const [{ data }, schedule] = await Promise.all([bonus ? query.eq("is_bonus", true) : query.in("name", names), readSchedule()]);
+  const packs = data || [];
   const out = {};
-  for (const p of data || []) {
-    out[p.name.toLowerCase()] = {
+  for (const name of names) {
+    const key = loose(name);
+    const p =
+      packs.find((x) => x.name.toLowerCase() === name.toLowerCase()) ||
+      (bonus && key.length >= 6 ? packs.find((x) => { const k = loose(x.name); return k.length >= 6 && (k.startsWith(key) || key.startsWith(k)); }) : null);
+    if (!p) continue;
+    out[name.toLowerCase()] = {
       id: p.id,
       slug: p.slug,
       live: p.is_published,

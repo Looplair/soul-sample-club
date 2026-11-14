@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 export const REPO = join(dirname(fileURLToPath(import.meta.url)), "../../..");
 export const DROPBOX = "/Users/looplair/Library/CloudStorage/Dropbox/SOUL SAMPLE CLUB";
 export const MONTHS_DIR = join(DROPBOX, "MONTHLY PRODUCER PACK");
+export const BONUS_DIR = join(DROPBOX, "BONUS PACKS");
 export const OUTPUT_DIR = join(DROPBOX, "STEM ZIPS + MP3");
 export const SITE = "https://www.soulsampleclub.com";
 export const PORT = 4747;
