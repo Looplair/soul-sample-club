@@ -9,8 +9,8 @@ const COULDNT_REACH = "Couldn't reach Flaire. Try again in a minute.";
 const card = "ssc-glass ssc-glass--plain group relative flex flex-wrap items-center justify-between gap-x-4 gap-y-3 rounded-2xl px-5 py-4 text-left transition-colors";
 const action = "text-[12px] font-semibold uppercase tracking-[0.14em] text-white/75 transition-colors group-hover:text-white";
 
-/** The member perks above the catalog: Drum Vault, and Flaire once its status is known */
-export function MemberCards() {
+/** The member perks (catalog, and above "More from the catalog" on pack pages): Drum Vault, and Flaire once its status is known */
+export function MemberCards({ className = "mt-8" }: { className?: string }) {
   const [flaire, setFlaire] = useState<FlaireCreditsState>(null);
   const [opening, setOpening] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -54,7 +54,7 @@ export function MemberCards() {
     </Link>
   );
 
-  if (!flaire) return <div className="mt-8">{vault}</div>;
+  if (!flaire) return <div className={className}>{vault}</div>;
 
   const heading = (
     <div>
@@ -66,7 +66,7 @@ export function MemberCards() {
   );
 
   return (
-    <div className="mt-8 grid gap-3 md:grid-cols-2">
+    <div className={`${className} grid gap-3 md:grid-cols-2`}>
       {vault}
       {flaire === "pending" ? (
         <div className={card}>

@@ -27,6 +27,7 @@ import { GlassBox, Pill } from "@/components/ssc/Glass";
 import { PackCard, type CardPack } from "@/components/ssc/PackCard";
 import { Rail } from "@/components/ssc/Rail";
 import { SiteFooter } from "@/components/ssc/SiteFooter";
+import { MemberCards } from "@/components/ssc/catalog/MemberCards";
 
 // -----------------------------------------
 // TYPE DEFINITIONS
@@ -491,6 +492,9 @@ export default async function PackDetailPage({
               <SampleListWithModal samples={pack.samples} packId={pack.id} canDownload={canDownload} hasUsedTrial={hasUsedTrial} isLoggedIn={isLoggedIn} />
             </GlassBox>
           </section>
+
+          {/* Member perks, for people who never open the catalog */}
+          {isLoggedIn && <MemberCards className="mt-16" />}
 
           {/* More */}
           {more.length > 0 && (
