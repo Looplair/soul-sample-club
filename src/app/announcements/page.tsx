@@ -49,12 +49,13 @@ export default async function AnnouncementsPage() {
 
   const { notifications, unreadCount } = await getNotificationsForUser(user.id);
 
-  // Fetch published announcements
+  // Fetch published announcements (a future published date means scheduled: hidden until then)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data } = await (adminSupabase as any)
     .from("announcements")
     .select("*")
     .eq("is_published", true)
+    .lte("published_at", new Date().toISOString())
     .order("published_at", { ascending: false });
 
   const announcements = (data ?? []) as Announcement[];

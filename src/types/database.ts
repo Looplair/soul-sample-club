@@ -221,6 +221,12 @@ export interface Database {
           published_at: string | null;
           created_at: string;
           updated_at: string;
+          show_as_popup: boolean;
+          popup_starts_at: string | null;
+          popup_ends_at: string | null;
+          popup_button_text: string | null;
+          popup_button_url: string | null;
+          popup_image_url: string | null;
         };
         Insert: {
           id?: string;
@@ -232,6 +238,12 @@ export interface Database {
           published_at?: string | null;
           created_at?: string;
           updated_at?: string;
+          show_as_popup?: boolean;
+          popup_starts_at?: string | null;
+          popup_ends_at?: string | null;
+          popup_button_text?: string | null;
+          popup_button_url?: string | null;
+          popup_image_url?: string | null;
         };
         Update: {
           id?: string;
@@ -243,6 +255,12 @@ export interface Database {
           published_at?: string | null;
           created_at?: string;
           updated_at?: string;
+          show_as_popup?: boolean;
+          popup_starts_at?: string | null;
+          popup_ends_at?: string | null;
+          popup_button_text?: string | null;
+          popup_button_url?: string | null;
+          popup_image_url?: string | null;
         };
       };
       samples: {

@@ -10,6 +10,7 @@ import { KlaviyoTracking } from "@/components/analytics/KlaviyoTracking";
 import { MetaPixel } from "@/components/analytics/MetaPixel";
 import { FbclidCapture } from "@/components/analytics/FbclidCapture";
 import { PaymentFailedBanner } from "@/components/subscription/PaymentFailedBanner";
+import { AnnouncementPopup } from "@/components/announcements/AnnouncementPopup";
 import { createClient } from "@/lib/supabase/server";
 import { SITE_URL } from "@/lib/site";
 
@@ -110,6 +111,9 @@ export default async function RootLayout({
         <AudioProvider>
           <div className="flex-1 pb-20">{children}</div>
           <NowPlayingBar />
+          <Suspense fallback={null}>
+            <AnnouncementPopup />
+          </Suspense>
         </AudioProvider>
         <Suspense fallback={null}>
           <PaymentFailedBanner />

@@ -27,6 +27,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     .select("title, body")
     .eq("slug", params.slug)
     .eq("is_published", true)
+    .lte("published_at", new Date().toISOString())
     .single();
 
   if (!data) return { title: "Announcement | Soul Sample Club" };
@@ -70,6 +71,7 @@ export default async function AnnouncementDetailPage({ params }: { params: { slu
     .select("*")
     .eq("slug", params.slug)
     .eq("is_published", true)
+    .lte("published_at", new Date().toISOString())
     .single();
 
   if (error || !data) notFound();

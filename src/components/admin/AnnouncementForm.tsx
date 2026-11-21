@@ -8,6 +8,8 @@ import { Upload, X, AlertCircle, CheckCircle, Bell } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button, Input, Card, CardContent } from "@/components/ui";
 import type { Announcement } from "@/types/database";
+import { AnnouncementPopupView } from "@/components/announcements/AnnouncementPopupView";
+import { isoToNyInput, nyInputToIso, popupContent } from "@/lib/announcement-popup";
 
 interface AnnouncementFormProps {
   announcement?: Announcement;
@@ -34,6 +36,13 @@ export function AnnouncementForm({ announcement }: AnnouncementFormProps) {
   const [isPublished, setIsPublished] = useState(announcement?.is_published ?? false);
   const [coverImage, setCoverImage] = useState<File | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(announcement?.cover_image_url ?? null);
+  const [showAsPopup, setShowAsPopup] = useState(announcement?.show_as_popup ?? false);
+  const [popupStarts, setPopupStarts] = useState(isoToNyInput(announcement?.popup_starts_at));
+  const [popupEnds, setPopupEnds] = useState(isoToNyInput(announcement?.popup_ends_at));
+  const [popupButtonText, setPopupButtonText] = useState(announcement?.popup_button_text ?? "");
+  const [popupButtonUrl, setPopupButtonUrl] = useState(announcement?.popup_button_url ?? "");
+  const [popupImageUrl, setPopupImageUrl] = useState(announcement?.popup_image_url ?? "");
+  const [popupImageUploading, setPopupImageUploading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isSendingNotif, setIsSendingNotif] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -53,6 +62,30 @@ export function AnnouncementForm({ announcement }: AnnouncementFormProps) {
     },
   });
 
+  // The popup picture: dropped files go to the public covers bucket, then it's just a link
+  const popupDrop = useDropzone({
+    accept: { "image/*": [".jpeg", ".jpg", ".png", ".webp", ".gif"] },
+    maxFiles: 1,
+    maxSize: 5 * 1024 * 1024,
+    onDrop: async (files) => {
+      const file = files[0];
+      if (!file) return;
+      setPopupImageUploading(true);
+      setError(null);
+      try {
+        const ext = file.name.split(".").pop();
+        const path = `announcements/popup-${Date.now()}-${Math.random().toString(36).slice(2, 9)}.${ext}`;
+        const { error: uploadError } = await supabase.storage.from("covers").upload(path, file);
+        if (uploadError) throw uploadError;
+        setPopupImageUrl(supabase.storage.from("covers").getPublicUrl(path).data.publicUrl);
+      } catch (err: any) {
+        setError(err.message ?? "Couldn't upload the popup picture");
+      } finally {
+        setPopupImageUploading(false);
+      }
+    },
+  });
+
   const handleTitleChange = (value: string) => {
     setTitle(value);
     if (!isEditing) {
@@ -64,6 +97,13 @@ export function AnnouncementForm({ announcement }: AnnouncementFormProps) {
     e.preventDefault();
     setError(null);
     setSuccess(false);
+
+    const startsIso = nyInputToIso(popupStarts);
+    const endsIso = nyInputToIso(popupEnds);
+    if (showAsPopup && startsIso && endsIso && endsIso <= startsIso) {
+      setError("The popup's end has to be after its start");
+      return;
+    }
     setIsLoading(true);
 
     try {
@@ -94,6 +134,18 @@ export function AnnouncementForm({ announcement }: AnnouncementFormProps) {
         cover_image_url: coverImageUrl,
         published_at: isPublished ? (announcement?.published_at ?? new Date().toISOString()) : null,
         updated_at: new Date().toISOString(),
+        // Popup fields only once the table has them (or popup is switched on), so saving
+        // keeps working if the popup migration hasn't been run yet
+        ...(showAsPopup || (announcement && "show_as_popup" in announcement)
+          ? {
+              show_as_popup: showAsPopup,
+              popup_starts_at: startsIso,
+              popup_ends_at: endsIso,
+              popup_button_text: popupButtonText.trim() || null,
+              popup_button_url: popupButtonUrl.trim() || null,
+              popup_image_url: popupImageUrl.trim() || null,
+            }
+          : {}),
       };
 
       if (isEditing) {
@@ -245,6 +297,130 @@ export function AnnouncementForm({ announcement }: AnnouncementFormProps) {
               <div className="w-11 h-6 bg-steel rounded-full peer peer-checked:bg-velvet transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full" />
             </label>
             <span className="text-body text-snow">{isPublished ? "Published" : "Draft"}</span>
+          </div>
+
+          {/* Popup */}
+          <div className="border-t border-steel pt-24 space-y-16">
+            <div className="flex items-center gap-12">
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={showAsPopup}
+                  onChange={(e) => setShowAsPopup(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-steel rounded-full peer peer-checked:bg-velvet transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full" />
+              </label>
+              <div>
+                <span className="text-body text-snow">Show as popup</span>
+                <p className="text-caption text-snow/40">
+                  A small card for signed-in members, once a day each. Only while the announcement is published.
+                </p>
+              </div>
+            </div>
+
+            {showAsPopup && (
+              <div className="space-y-16">
+                <div className="grid gap-16 sm:grid-cols-2">
+                  <div>
+                    <label className="label">Popup shows from (New York time)</label>
+                    <input
+                      type="datetime-local"
+                      value={popupStarts}
+                      onChange={(e) => setPopupStarts(e.target.value)}
+                      className="input"
+                    />
+                    <p className="text-caption text-snow/40 mt-4">Empty: from when it&apos;s published</p>
+                  </div>
+                  <div>
+                    <label className="label">Popup shows until (New York time)</label>
+                    <input
+                      type="datetime-local"
+                      value={popupEnds}
+                      onChange={(e) => setPopupEnds(e.target.value)}
+                      className="input"
+                    />
+                    <p className="text-caption text-snow/40 mt-4">Empty: for as long as it&apos;s published</p>
+                  </div>
+                </div>
+                <div className="grid gap-16 sm:grid-cols-2">
+                  <Input
+                    label="Button text"
+                    value={popupButtonText}
+                    onChange={(e) => setPopupButtonText(e.target.value)}
+                    placeholder="Read more"
+                  />
+                  <Input
+                    label="Button link"
+                    value={popupButtonUrl}
+                    onChange={(e) => setPopupButtonUrl(e.target.value)}
+                    placeholder={`/announcements/${slug || "..."}`}
+                  />
+                </div>
+
+                <div>
+                  <label className="label">Picture (optional)</label>
+                  <p className="text-caption text-snow/40 mb-8">
+                    Wide pictures work best (16:9). Shown across the top of the card, and as a small square on phones.
+                  </p>
+                  <div className="flex flex-wrap items-start gap-12">
+                    <div
+                      {...popupDrop.getRootProps()}
+                      className={`border-2 border-dashed rounded-card px-16 py-12 text-center cursor-pointer transition-colors ${
+                        popupDrop.isDragActive ? "border-velvet bg-velvet/10" : "border-steel hover:border-velvet/50"
+                      }`}
+                    >
+                      <input {...popupDrop.getInputProps()} />
+                      <p className="text-body-sm text-snow/60">
+                        {popupImageUploading ? "Uploading..." : "Drop a picture or click"}
+                      </p>
+                    </div>
+                    <div className="flex-1 min-w-[240px]">
+                      <Input
+                        value={popupImageUrl}
+                        onChange={(e) => setPopupImageUrl(e.target.value)}
+                        placeholder="...or paste a link to a picture"
+                      />
+                    </div>
+                    {popupImageUrl && (
+                      <Button type="button" variant="ghost" onClick={() => setPopupImageUrl("")}>
+                        Remove
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="label">Preview</label>
+                  <p className="text-caption text-snow/40 mb-8">
+                    The line is the first paragraph of the body, shortened to fit.
+                  </p>
+                  {(() => {
+                    const preview = popupContent({
+                      id: "preview",
+                      title: title || "Announcement title",
+                      slug,
+                      body,
+                      popup_button_text: popupButtonText,
+                      popup_button_url: popupButtonUrl,
+                      popup_image_url: popupImageUrl,
+                    });
+                    return (
+                      <div className="flex flex-wrap items-end gap-16 rounded-card bg-black p-16">
+                        <div className="w-[340px] max-w-full">
+                          <p className="text-caption text-snow/40 mb-8">Desktop, bottom right</p>
+                          <AnnouncementPopupView content={preview} layout="card" onFollow={(e) => e.preventDefault()} />
+                        </div>
+                        <div className="w-[360px] max-w-full">
+                          <p className="text-caption text-snow/40 mb-8">Phone, along the bottom</p>
+                          <AnnouncementPopupView content={preview} layout="bar" onFollow={(e) => e.preventDefault()} />
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
