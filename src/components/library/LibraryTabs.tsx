@@ -33,6 +33,8 @@ interface LibraryTabsProps {
   downloadGroups: PackGroup[];
   likedSampleIds: string[];
   canDownload: boolean;
+  /** Lite members: packs they can't download (not Lite packs) */
+  liteLockedPackIds?: string[];
   totalLiked: number;
   totalDownloaded: number;
   /** Cover colour per pack id ("r, g, b"), so each pack box glows in its own light */
@@ -46,6 +48,7 @@ export function LibraryTabs({
   downloadGroups,
   likedSampleIds: initialLikedIds,
   canDownload,
+  liteLockedPackIds = [],
   totalLiked,
   totalDownloaded,
   packGlows = {},
@@ -212,7 +215,7 @@ export function LibraryTabs({
               glow={packGlows[group.pack.id]}
               isExpanded={expandedPacks.has(group.pack.id)}
               onToggle={() => togglePackExpanded(group.pack.id)}
-              canDownload={canDownload}
+              canDownload={canDownload && !liteLockedPackIds.includes(group.pack.id)}
               likedIds={likedIds}
               onToggleLike={handleToggleLike}
             />

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useDropzone } from "react-dropzone";
-import { Upload, X, AlertCircle, CheckCircle, Gift, Calendar, RotateCcw, PackageOpen } from "lucide-react";
+import { Upload, X, AlertCircle, CheckCircle, Gift, Calendar, RotateCcw, PackageOpen, Star } from "lucide-react";
 // hero_image_url removed - cover image is used as hero by default
 import { createClient } from "@/lib/supabase/client";
 import { Button, Input, Card, CardContent } from "@/components/ui";
@@ -31,6 +31,7 @@ export function PackForm({ pack }: PackFormProps) {
   const [isPublished, setIsPublished] = useState(pack?.is_published || false);
   const [isBonus, setIsBonus] = useState(pack?.is_bonus || false);
   const [isReturned, setIsReturned] = useState(pack?.is_returned || false);
+  const [isLite, setIsLite] = useState(pack?.is_lite || false);
   const [genres, setGenres] = useState<string[]>(pack?.genres || []);
   const [styles, setStyles] = useState<string[]>(pack?.styles || []);
   const [usedTags, setUsedTags] = useState<{ genres: string[]; styles: string[] }>({ genres: [], styles: [] });
@@ -206,6 +207,9 @@ export function PackForm({ pack }: PackFormProps) {
         is_published: isPublished,
         is_bonus: isBonus,
         is_returned: isReturned,
+        // Only once the packs table has the column (or it's switched on), so saving
+        // keeps working before the Lite migration has been run
+        ...(isLite || (pack && "is_lite" in pack) ? { is_lite: isLite } : {}),
         cover_image_url: coverImageUrl,
         genres,
         styles,
@@ -550,6 +554,23 @@ export function PackForm({ pack }: PackFormProps) {
               <span className="text-body text-snow flex items-center gap-8">
                 <RotateCcw className="w-4 h-4 text-emerald-500" />
                 {isReturned ? "Returned Pack" : "Not Returned"}
+              </span>
+            </div>
+
+            {/* Lite pack: the one pack a month Lite ($3.99) members can download */}
+            <div className="flex items-center gap-12">
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isLite}
+                  onChange={(e) => setIsLite(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-steel rounded-full peer peer-checked:bg-sky-500 transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full" />
+              </label>
+              <span className="text-body text-snow flex items-center gap-8">
+                <Star className="w-4 h-4 text-sky-400" />
+                {isLite ? "Lite pack (Lite members can download it)" : "Not a Lite pack"}
               </span>
             </div>
           </div>

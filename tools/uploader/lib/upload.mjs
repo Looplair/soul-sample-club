@@ -130,6 +130,8 @@ export async function uploadRelease(release, files, details, log) {
     genres: details.genres || [],
     styles: details.styles || [],
     ...(release.isBonus ? { end_date: details.endDate } : {}),
+    // Lite pack (the one Lite members get): only sent once the site has the column
+    ...(details.isLite || details.liteKnown ? { is_lite: !!details.isLite } : {}),
   };
   if (state.packId) {
     const { data } = await supabase.from("packs").select("id").eq("id", state.packId).maybeSingle();

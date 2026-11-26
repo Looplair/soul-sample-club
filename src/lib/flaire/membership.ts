@@ -108,7 +108,7 @@ export async function getFlaireMembershipForUsers(userIds: string[]): Promise<Fl
   const [subsResult, patreonResult] = await Promise.all([
     admin
       .from("subscriptions")
-      .select("status, stripe_subscription_id, stripe_customer_id, current_period_end")
+      .select("*") // "*" so the Lite plan column is read when it exists
       .in("user_id", userIds)
       .in("status", ["active", "trialing"]),
     admin.from("patreon_links").select("id").in("user_id", userIds).eq("is_active", true).limit(1),
@@ -116,7 +116,8 @@ export async function getFlaireMembershipForUsers(userIds: string[]): Promise<Fl
   if (subsResult.error) throw new Error(`subscriptions lookup failed: ${subsResult.error.message}`);
   if (patreonResult.error) throw new Error(`patreon lookup failed: ${patreonResult.error.message}`);
 
-  const subscriptions = (subsResult.data || []) as SubscriptionRow[];
+  // Lite ($3.99, one pack a month) doesn't include Flaire credits
+  const subscriptions = ((subsResult.data || []) as (SubscriptionRow & { plan?: string })[]).filter((r) => r.plan !== "lite");
   const patreonActive = (patreonResult.data?.length ?? 0) > 0;
   const stripeRows = subscriptions.filter((row) => rowGivesAccess(row, now) && isStripeSubscription(row));
 

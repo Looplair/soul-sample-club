@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { planOf } from "@/lib/stripe";
 import Stripe from "stripe";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -29,6 +30,7 @@ export async function POST() {
         current_period_start: new Date(updated.current_period_start * 1000).toISOString(),
         current_period_end: new Date(updated.current_period_end * 1000).toISOString(),
         cancel_at_period_end: updated.cancel_at_period_end,
+        plan: planOf(updated),
       })
       .eq("stripe_subscription_id", updated.id);
 

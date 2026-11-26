@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import { redirect } from "next/navigation";
+import { isLiteOnly, litePackIds } from "@/lib/lite";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { Heart, Download, Music, Package } from "lucide-react";
@@ -209,6 +210,11 @@ export default async function LibraryPage() {
   const lit = await withCoverColors(Array.from(packsInLibrary.values()).map((p) => ({ id: p.id, cover_image_url: p.cover_image_url })));
   const packGlows = Object.fromEntries(lit.map((p) => [p.id, p.glow]));
 
+  // Lite members can only download Lite packs
+  const liteOnly = canDownload ? await isLiteOnly(user.id) : false;
+  const litePacks = liteOnly ? await litePackIds() : new Set<string>();
+  const liteLockedPackIds = liteOnly ? Array.from(packsInLibrary.keys()).filter((id) => !litePacks.has(id)) : [];
+
   const packCount = new Set([...Array.from(likedByPack.keys()), ...Array.from(downloadsByPack.keys())]).size;
   const uniqueCount = new Set([...likedSamples.map((s) => s.id), ...downloadHistory.map((s) => s.id)]).size;
 
@@ -231,6 +237,7 @@ export default async function LibraryPage() {
           downloadGroups={downloadsGroupsArray}
           likedSampleIds={Array.from(likedIds)}
           canDownload={canDownload}
+          liteLockedPackIds={liteLockedPackIds}
           totalLiked={likedSamples.length}
           totalDownloaded={downloadHistory.length}
           packGlows={packGlows}

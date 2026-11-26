@@ -157,6 +157,8 @@ async function openRelease(dir) {
     genres: p?.genres || [],
     styles: p?.styles || [],
     releaseDate: p?.release_date?.slice(0, 10) || current.defaults.releaseDate,
+    isLite: !!p?.is_lite,
+    liteKnown: !!p && "is_lite" in p,
   };
   if (current.release.isBonus) {
     current.form.endDate = p?.end_date?.slice(0, 10) || addMonths(current.form.releaseDate, 1);
@@ -217,6 +219,8 @@ function render() {
       <label class="f">Styles</label><div class="tags">${tagBtns("styles")}</div>
       <label class="f">Release date</label>
       <div class="row"><input type="date" id="f-date" value="${esc(f.releaseDate)}" style="max-width:200px"><span class="faint">Shown on the pack. Usually the Friday.</span></div>
+      <label class="f">Lite</label>
+      <div class="row"><label style="display:flex;gap:8px;align-items:center;cursor:pointer"><input type="checkbox" id="f-lite" ${f.isLite ? "checked" : ""}> Lite pack</label><span class="faint">Lite ($3.99) members can download it. Pick one a month.</span></div>
       ${r.isBonus ? `<label class="f">End date</label>
       <div class="row"><input type="date" id="f-end" value="${esc(f.endDate)}" style="max-width:200px"><span class="faint">When it leaves the site. Bonus packs usually get a month.</span></div>` : ""}
     </div>
@@ -255,6 +259,7 @@ function render() {
   // wiring
   $("#f-name")?.addEventListener("input", (e) => (f.name = e.target.value));
   $("#f-desc").addEventListener("input", (e) => (f.description = e.target.value));
+  $("#f-lite").addEventListener("change", (e) => (f.isLite = e.target.checked));
   // Date and time boxes never redraw the page: that threw the cursor out mid-typing
   onDate("#f-date", (v) => {
     f.releaseDate = v;

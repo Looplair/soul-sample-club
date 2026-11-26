@@ -53,6 +53,12 @@ export function VaultClient({ breaks: initialBreaks, stats: initialStats, hasUse
           prev.map((b) => (b.id === breakId ? { ...b, is_collected: false } : b))
         );
         setStats((prev) => ({ ...prev, collected: prev.collected - 1 }));
+        // Lite members: the upgrade page, not the sign-up modal
+        const body = await res.json().catch(() => ({}));
+        if (body?.code === "lite") {
+          window.location.href = "/upgrade?from=/vault";
+          return;
+        }
         setModalOpen(true);
         return;
       }

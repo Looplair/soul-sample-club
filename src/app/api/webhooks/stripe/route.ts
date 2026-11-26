@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import Stripe from "stripe";
-import { stripe } from "@/lib/stripe";
+import { stripe, planOf } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { syncUserToKlaviyo } from "@/lib/klaviyo";
 import { sendStartTrialEvent } from "@/lib/meta-conversions";
@@ -115,6 +115,7 @@ export async function POST(request: Request) {
               subscription.current_period_end * 1000
             ).toISOString(),
             cancel_at_period_end: subscription.cancel_at_period_end,
+            plan: planOf(subscription),
           },
           {
             onConflict: "stripe_subscription_id",
@@ -263,6 +264,7 @@ export async function POST(request: Request) {
               freshSubscription.current_period_end * 1000
             ).toISOString(),
             cancel_at_period_end: freshSubscription.cancel_at_period_end,
+            plan: planOf(freshSubscription),
           },
           {
             onConflict: "stripe_subscription_id",
@@ -513,6 +515,7 @@ export async function POST(request: Request) {
                   subscription.current_period_end * 1000
                 ).toISOString(),
                 cancel_at_period_end: subscription.cancel_at_period_end,
+                plan: planOf(subscription),
               },
               {
                 onConflict: "stripe_subscription_id",
@@ -561,6 +564,7 @@ export async function POST(request: Request) {
                   subscription.current_period_end * 1000
                 ).toISOString(),
                 cancel_at_period_end: subscription.cancel_at_period_end,
+                plan: planOf(subscription),
                 updated_at: new Date().toISOString(),
               })
               .eq("stripe_subscription_id", subscription.id);

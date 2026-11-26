@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import { Suspense } from "react";
+import { isLiteOnly } from "@/lib/lite";
 import { yearlyOffer } from "@/lib/black-friday";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -131,6 +132,7 @@ export default async function FeedPage() {
   const [allPacks, userState, hasGuides] = await Promise.all([getAllPacks(), getUserState(), hasPublishedGuides()]);
   const { isLoggedIn, hasSubscription, hasPatreon, userId, hasUsedTrial } = userState;
   const hasAccess = hasSubscription || hasPatreon;
+  const liteOnly = hasSubscription && !hasPatreon && userId ? await isLiteOnly(userId) : false;
 
   const [{ notifications, unreadCount }, profile] = await Promise.all([
     userId
@@ -153,6 +155,7 @@ export default async function FeedPage() {
     glow: p.glow,
     archived: isArchived(p),
     isBonus: p.is_bonus,
+    isLite: !!(p as { is_lite?: boolean }).is_lite,
     genres: p.genres ?? [],
     sampleCount: p.samples.length,
     samples: [...p.samples]
@@ -207,7 +210,7 @@ export default async function FeedPage() {
           {isLoggedIn && <MemberCards />}
 
           <div className="mt-8">
-            <CatalogBrowser packs={packs} hasAccess={hasAccess} isLoggedIn={isLoggedIn} />
+            <CatalogBrowser packs={packs} hasAccess={hasAccess} isLoggedIn={isLoggedIn} liteOnly={liteOnly} />
           </div>
         </div>
       </main>

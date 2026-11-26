@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { isLiteOnly, litePackIds } from "@/lib/lite";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isPackExpiredWithEndDate } from "@/lib/utils";
@@ -71,6 +72,8 @@ export async function GET() {
 
     const hasPatreon = !!patreonResult.data;
     const active = hasStripe || hasPatreon;
+    // Lite members: only Lite packs can be downloaded, so the rest show as unavailable
+    const [liteOnly, litePacks] = active ? await Promise.all([isLiteOnly(user.id), litePackIds()]) : [false, new Set<string>()];
 
     const profileResult = await adminSupabase
       .from("profiles")
@@ -127,7 +130,7 @@ export async function GET() {
       cover_image_url: p.cover_image_url,
       release_date: p.release_date,
       end_date: p.end_date,
-      archived: isPackExpiredWithEndDate(p.release_date, p.end_date),
+      archived: isPackExpiredWithEndDate(p.release_date, p.end_date) || (liteOnly && !litePacks.has(p.id)),
       bonus: p.is_bonus,
     }));
 

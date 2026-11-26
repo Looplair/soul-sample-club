@@ -1,5 +1,6 @@
 // src/app/api/drum-vault/[id]/collect/route.ts
 import { NextResponse } from "next/server";
+import { isLiteOnly } from "@/lib/lite";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -47,6 +48,14 @@ export async function POST(
     if (!hasAccess) {
       return NextResponse.json(
         { error: "Active subscription required to collect breaks" },
+        { status: 403 }
+      );
+    }
+
+    // The Drum Vault is part of the full membership, not Lite
+    if (await isLiteOnly(user.id)) {
+      return NextResponse.json(
+        { error: "The Drum Vault comes with the full membership. Upgrade from Lite to collect breaks.", code: "lite" },
         { status: 403 }
       );
     }

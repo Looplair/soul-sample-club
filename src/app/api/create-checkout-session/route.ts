@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { stripe, STRIPE_PRICE_ID, yearlyCoupon, yearlyPriceId } from "@/lib/stripe";
+import { stripe, STRIPE_PRICE_ID, LITE_PRICE_ID, yearlyCoupon, yearlyPriceId } from "@/lib/stripe";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getBlockingPastDueSubscription } from "@/lib/payment-status";
@@ -15,7 +15,7 @@ function getCookieValue(cookieHeader: string, name: string): string {
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
-  const plan: "monthly" | "yearly" = body.plan === "yearly" ? "yearly" : "monthly";
+  const plan: "monthly" | "yearly" | "lite" = body.plan === "yearly" ? "yearly" : body.plan === "lite" ? "lite" : "monthly";
   // "free-pack": the $1.99 x 3 welcome offer shown after claiming the free pack (checked below)
   const wantsFreePackOffer = body.offer === "free-pack" && plan === "monthly";
 
@@ -196,7 +196,7 @@ export async function POST(request: Request) {
       metadata: {
         supabase_user_id: user.id,
       },
-      description: "Soul Sample Club Membership",
+      description: plan === "lite" ? "Soul Sample Club Lite" : "Soul Sample Club Membership",
     };
 
     // First charge reported to Meta: yearly is the plan price less the offer, monthly is the $0.99 intro
@@ -214,7 +214,9 @@ export async function POST(request: Request) {
 
     let firstChargeValue = yearlyPrice?.unit_amount
       ? (yearlyPrice.unit_amount - (yearlyOfferCoupon?.amount_off ?? 0)) / 100
-      : 0.99;
+      : plan === "lite"
+        ? 3.99
+        : 0.99;
     if (useFreePackOffer) {
       const [monthlyPrice, offerCoupon] = await Promise.all([
         stripe.prices.retrieve(STRIPE_PRICE_ID),
@@ -233,7 +235,7 @@ export async function POST(request: Request) {
       payment_method_types: ["card"],
       line_items: [
         {
-          price: plan === "yearly" ? yearlyPriceId() : p ? p.priceId : STRIPE_PRICE_ID,
+          price: plan === "yearly" ? yearlyPriceId() : plan === "lite" ? LITE_PRICE_ID : p ? p.priceId : STRIPE_PRICE_ID,
           quantity: 1,
         },
       ],
@@ -265,7 +267,9 @@ export async function POST(request: Request) {
         submit: {
           message: plan === "yearly"
             ? "Annual membership. No refunds on annual plans."
-            : p
+            : plan === "lite"
+              ? "Lite: $3.99/month for one pack a month, with full stems. Cancel anytime."
+              : p
               ? p.line
               : useFreePackOffer
                 ? "$1.99/month for your first 3 months, then $6.99/month. Cancel anytime."

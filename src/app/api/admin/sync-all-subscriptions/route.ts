@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { stripe } from "@/lib/stripe";
+import { stripe, planOf } from "@/lib/stripe";
 import { syncUserToKlaviyo } from "@/lib/klaviyo";
 
 export const dynamic = "force-dynamic";
@@ -97,6 +97,7 @@ export async function POST() {
               stripeSubscription.current_period_end * 1000
             ).toISOString(),
             cancel_at_period_end: stripeSubscription.cancel_at_period_end,
+            plan: planOf(stripeSubscription),
             updated_at: new Date().toISOString(),
           })
           .eq("stripe_subscription_id", sub.stripe_subscription_id);

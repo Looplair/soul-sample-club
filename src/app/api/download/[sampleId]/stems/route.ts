@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { liteBlocksPack, LITE_BLOCKED } from "@/lib/lite";
 import JSZip from "jszip";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -158,6 +159,11 @@ export async function GET(
         { error: "Pack has been archived and is no longer available for download" },
         { status: 403 }
       );
+    }
+
+    // Lite members only download Lite packs
+    if (await liteBlocksPack(user.id, sample.pack.id)) {
+      return NextResponse.json(LITE_BLOCKED, { status: 403 });
     }
 
     // Serve a stripped copy (no __MACOSX junk) rather than the original —
