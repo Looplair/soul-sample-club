@@ -363,6 +363,55 @@ export async function bulkSyncUsersToKlaviyo(
 
 
 /**
+ * Update many profiles' names and properties in one go with Klaviyo's bulk import job.
+ * One request per 10,000 profiles, so it finishes well inside a serverless time limit.
+ * It never touches email consent: unsubscribed people stay unsubscribed.
+ */
+export async function bulkImportProfiles(
+  profiles: KlaviyoProfile[]
+): Promise<{ success: boolean; queued: number; errors: string[] }> {
+  const errors: string[] = [];
+  let queued = 0;
+  const chunk = 10000;
+  for (let i = 0; i < profiles.length; i += chunk) {
+    const batch = profiles.slice(i, i + chunk);
+    try {
+      const response = await fetch(`${KLAVIYO_API_URL}/profile-bulk-import-jobs`, {
+        method: "POST",
+        headers: getHeaders(),
+        body: JSON.stringify({
+          data: {
+            type: "profile-bulk-import-job",
+            attributes: {
+              profiles: {
+                data: batch.map((p) => ({
+                  type: "profile",
+                  attributes: {
+                    email: p.email,
+                    ...(p.first_name ? { first_name: p.first_name } : {}),
+                    ...(p.last_name ? { last_name: p.last_name } : {}),
+                    properties: p.properties || {},
+                  },
+                })),
+              },
+            },
+          },
+        }),
+      });
+      if (response.ok) {
+        queued += batch.length;
+      } else {
+        const body = (await response.json().catch(() => ({}))) as KlaviyoResponse;
+        errors.push(body.errors?.[0]?.detail || `Klaviyo said ${response.status}`);
+      }
+    } catch (error) {
+      errors.push(error instanceof Error ? error.message : "Request failed");
+    }
+  }
+  return { success: errors.length === 0, queued, errors };
+}
+
+/**
  * Track a custom event (metric) for a profile, e.g. "Claimed Free Pack".
  * Flows in Klaviyo can trigger on it. Never throws.
  */
