@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { yearlyOffer } from "@/lib/black-friday";
 import { X, Download, Sparkles, Check, Loader2 } from "lucide-react";
 import Link from "next/link";
 
@@ -124,7 +125,7 @@ export function PremiumModal({ isOpen, onClose, hasUsedTrial, isLoggedIn }: Prem
                   className="flex items-center justify-center gap-2 w-full px-6 py-3 text-text-muted text-sm hover:text-white transition-colors disabled:opacity-60"
                 >
                   {yearlyLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                  or <s className="opacity-60">$49</s> $35/year, locked in for life
+                  or <s className="opacity-60">{yearlyOffer().was}</s> {yearlyOffer().price}/year{yearlyOffer().href ? ", Black Friday price" : ", locked in for life"}
                 </button>
               </>
             ) : (
@@ -140,7 +141,7 @@ export function PremiumModal({ isOpen, onClose, hasUsedTrial, isLoggedIn }: Prem
                   href="/subscribe"
                   className="flex items-center justify-center w-full px-6 py-3 text-text-muted text-sm hover:text-white transition-colors"
                 >
-                  or <s className="opacity-60">$49</s> $35/year, locked in for life
+                  or <s className="opacity-60">{yearlyOffer().was}</s> {yearlyOffer().price}/year{yearlyOffer().href ? ", Black Friday price" : ", locked in for life"}
                 </Link>
                 <Link
                   href="/login"

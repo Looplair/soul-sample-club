@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { yearlyOffer } from "@/lib/black-friday";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Navbar } from "@/components/layout";
@@ -261,10 +262,10 @@ export default async function HomePage() {
           ? { value: "$6.99", label: "a month, cancel anytime" }
           : { value: "$0.99", label: "first month, then $6.99" },
         {
-          value: "$35",
+          value: yearlyOffer().price,
           label: (
             <>
-              a year, offer price <span className="text-white">→</span>
+              a year, {yearlyOffer().note} <span className="text-white">→</span>
             </>
           ),
           wrap: (cell) => (
@@ -506,13 +507,15 @@ export default async function HomePage() {
                 </SubscribeCTA>
               </GlassBox>
               <GlassBox plain className="flex flex-col rounded-[28px] p-8">
-                <p className="ssc-label">Yearly · offer price</p>
+                <p className="ssc-label">Yearly · {yearlyOffer().note}</p>
                 <p className="mt-4 flex flex-wrap items-baseline gap-x-2 gap-y-1">
-                  <span className="text-2xl text-white/55 line-through">$49</span>
-                  <span className="ssc-display text-[clamp(2.6rem,13vw,3.4rem)]">$35</span>
+                  <span className="text-2xl text-white/55 line-through">{yearlyOffer().was}</span>
+                  <span className="ssc-display text-[clamp(2.6rem,13vw,3.4rem)]">{yearlyOffer().price}</span>
                   <span className="text-white/55">a year</span>
                 </p>
-                <p className="mt-1 text-[14px] text-white/55">Locked in for life while you stay a member.</p>
+                <p className="mt-1 text-[14px] text-white/55">
+                  {yearlyOffer().href ? "Black Friday price. Ends Mon 30 Nov." : "Locked in for life while you stay a member."}
+                </p>
                 <ul className="mt-6 flex-1 space-y-2.5">
                   {PERKS.slice(0, 3).map((perk) => (
                     <li key={perk} className="flex items-center gap-3 text-[15px] text-white/75">
@@ -522,7 +525,7 @@ export default async function HomePage() {
                   ))}
                 </ul>
                 <SubscribeCTA isLoggedIn={isLoggedIn} hasSubscription={false} plan="yearly" bare className="ssc-btn ssc-btn--ghost mt-8 w-full">
-                  Start for $35 a year
+                  Start for {yearlyOffer().price} a year
                 </SubscribeCTA>
               </GlassBox>
             </div>

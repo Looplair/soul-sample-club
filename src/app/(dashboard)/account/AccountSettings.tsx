@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { yearlyOffer } from "@/lib/black-friday";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   User,
@@ -378,7 +379,8 @@ function BillingTab({
               disabled={isLoading}
               className="text-[14px] text-white/75 underline underline-offset-4 transition-colors hover:text-white disabled:opacity-60"
             >
-              or <s className="text-white/55">$49</s> <span className="font-semibold text-white">$35/year</span>, locked in for life
+              or <s className="text-white/55">{yearlyOffer().was}</s> <span className="font-semibold text-white">{yearlyOffer().price}/year</span>
+              {yearlyOffer().href ? ", Black Friday price" : ", locked in for life"}
             </button>
           </div>
         )}

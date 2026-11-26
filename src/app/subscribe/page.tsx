@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { yearlyOffer } from "@/lib/black-friday";
 import Link from "next/link";
 import Image from "next/image";
 import { Drum, Gift } from "lucide-react";
@@ -114,7 +115,7 @@ export default async function SubscribePage() {
             </h1>
             <p className="ssc-body mt-6 max-w-xl text-[clamp(1rem,1.4vw,1.2rem)] leading-relaxed">
               One sample clearance can cost $5,000 to six figures.
-              <br />A year of Soul Sample Club is $35.
+              <br />A year of Soul Sample Club is {yearlyOffer().price}{yearlyOffer().href ? " this Black Friday" : ""}.
             </p>
             <MemberCap className="mt-6 justify-center" />
           </header>
@@ -172,12 +173,12 @@ export default async function SubscribePage() {
             {/* Yearly: the one to pick, so it's the lit box */}
             <GlassBox glow={glow} className="ssc-breathe flex flex-col rounded-[28px] p-7 sm:p-9">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <p className="ssc-label">Yearly · offer price</p>
+                <p className="ssc-label">Yearly · {yearlyOffer().note}</p>
                 <span className="rounded-full bg-white px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-black">Best value</span>
               </div>
               <p className="mt-6 flex items-baseline gap-2">
-                <span className="text-2xl text-white/55 line-through">$49</span>
-                <span className="ssc-display text-[clamp(3rem,6vw,4.2rem)]">$35</span>
+                <span className="text-2xl text-white/55 line-through">{yearlyOffer().was}</span>
+                <span className="ssc-display text-[clamp(3rem,6vw,4.2rem)]">{yearlyOffer().price}</span>
                 <span className="text-white/55">a year</span>
               </p>
               <p className="mt-2 min-h-[1.5em] text-[14px] text-white/55">Save over 50% vs monthly</p>
@@ -192,7 +193,9 @@ export default async function SubscribePage() {
                     Lock in yearly
                   </Link>
                 )}
-                <p className="mt-3 text-center text-[12px] text-white/55">Offer price, locked in for life. Won&apos;t last forever.</p>
+                <p className="mt-3 text-center text-[12px] text-white/55">
+                  {yearlyOffer().href ? "Black Friday price. Ends Mon 30 Nov." : <>Offer price, locked in for life. Won&apos;t last forever.</>}
+                </p>
               </div>
             </GlassBox>
           </div>

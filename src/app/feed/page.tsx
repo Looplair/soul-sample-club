@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import { Suspense } from "react";
+import { yearlyOffer } from "@/lib/black-friday";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { Navbar } from "@/components/layout";
@@ -195,9 +196,9 @@ export default async function FeedPage() {
                 <span className="text-[13px] text-white/55">
                   Or{" "}
                   <SubscribeCTA isLoggedIn={isLoggedIn} hasSubscription={false} plan="yearly" bare className="font-medium text-white underline underline-offset-4">
-                    $35 a year
+                    {yearlyOffer().price} a year
                   </SubscribeCTA>
-                  , offer price
+                  , {yearlyOffer().note}
                 </span>
               </div>
             )}

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { stripe, STRIPE_PRICE_ID, STRIPE_YEARLY_PRICE_ID, YEARLY_OFFER_COUPON } from "@/lib/stripe";
+import { stripe, STRIPE_PRICE_ID, STRIPE_YEARLY_PRICE_ID, yearlyCoupon } from "@/lib/stripe";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getBlockingPastDueSubscription } from "@/lib/payment-status";
@@ -200,11 +200,11 @@ export async function POST(request: Request) {
     };
 
     // First charge reported to Meta: yearly is the plan price less the offer, monthly is the $0.99 intro
-    const [yearlyPrice, yearlyCoupon] =
+    const [yearlyPrice, yearlyOfferCoupon] =
       plan === "yearly"
         ? await Promise.all([
             stripe.prices.retrieve(STRIPE_YEARLY_PRICE_ID),
-            YEARLY_OFFER_COUPON ? stripe.coupons.retrieve(YEARLY_OFFER_COUPON) : null,
+            yearlyCoupon() ? stripe.coupons.retrieve(yearlyCoupon()) : null,
           ])
         : [null, null];
     // Welcome offer only while the 30-minute window after the free pack download is open
@@ -213,7 +213,7 @@ export async function POST(request: Request) {
     const monthlyCoupon = useFreePackOffer ? FREE_PACK_OFFER_COUPON : "ktZFClXu";
 
     let firstChargeValue = yearlyPrice?.unit_amount
-      ? (yearlyPrice.unit_amount - (yearlyCoupon?.amount_off ?? 0)) / 100
+      ? (yearlyPrice.unit_amount - (yearlyOfferCoupon?.amount_off ?? 0)) / 100
       : 0.99;
     if (useFreePackOffer) {
       const [monthlyPrice, offerCoupon] = await Promise.all([
@@ -240,8 +240,8 @@ export async function POST(request: Request) {
       ...(p
         ? { discounts: [{ promotion_code: p.id }] }
         : plan === "monthly" && { discounts: [{ coupon: monthlyCoupon }] }),
-      ...(plan === "yearly" && YEARLY_OFFER_COUPON
-        ? { discounts: [{ coupon: YEARLY_OFFER_COUPON }] }
+      ...(plan === "yearly" && yearlyCoupon()
+        ? { discounts: [{ coupon: yearlyCoupon() }] }
         : {}),
       subscription_data: p
         ? { ...subscriptionData, metadata: { ...subscriptionData.metadata, promo_code: p.code, ...utm } }

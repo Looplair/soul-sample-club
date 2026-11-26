@@ -11,6 +11,8 @@ import { MetaPixel } from "@/components/analytics/MetaPixel";
 import { FbclidCapture } from "@/components/analytics/FbclidCapture";
 import { PaymentFailedBanner } from "@/components/subscription/PaymentFailedBanner";
 import { AnnouncementPopup } from "@/components/announcements/AnnouncementPopup";
+import { BlackFridayBanner } from "@/components/layout/BlackFridayBanner";
+import { blackFridayOn } from "@/lib/black-friday";
 import { createClient } from "@/lib/supabase/server";
 import { SITE_URL } from "@/lib/site";
 
@@ -108,6 +110,7 @@ export default async function RootLayout({
         <Suspense fallback={null}>
           <NavigationProgress />
         </Suspense>
+        {blackFridayOn() && <BlackFridayBanner />}
         <AudioProvider>
           <div className="flex-1 pb-20">{children}</div>
           <NowPlayingBar />

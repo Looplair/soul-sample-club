@@ -1,4 +1,5 @@
 import Stripe from "stripe";
+import { blackFridayOn } from "@/lib/black-friday";
 
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error("STRIPE_SECRET_KEY is not set");
@@ -14,3 +15,8 @@ export const STRIPE_YEARLY_PRICE_ID = process.env.STRIPE_YEARLY_PRICE_ID!;
 
 // Yearly offer: $14 off forever ($49 -> $35, locked in for life). Set to "" to end the offer.
 export const YEARLY_OFFER_COUPON: string = "wjveVSUF";
+
+/** The coupon yearly gets right now: none during Black Friday (yearly is the plain $49), else the offer. */
+export function yearlyCoupon(): string {
+  return blackFridayOn() ? "" : YEARLY_OFFER_COUPON;
+}

@@ -3,6 +3,7 @@
 export const revalidate = 60;
 
 import { cache } from "react";
+import { yearlyOffer } from "@/lib/black-friday";
 import { notFound, permanentRedirect } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -468,9 +469,9 @@ export default async function PackDetailPage({
                     <p className="text-[13px] text-white/55">
                       {isLoggedIn && hasUsedTrial ? "$6.99 a month" : "Then $6.99 a month"}, cancel anytime. Or{" "}
                       <SubscribeCTA isLoggedIn={isLoggedIn} hasSubscription={false} plan="yearly" bare className="font-medium text-white underline underline-offset-4">
-                        $35 a year
+                        {yearlyOffer().price} a year
                       </SubscribeCTA>
-                      , offer price.
+                      , {yearlyOffer().note}.
                     </p>
                   </div>
                 )}
