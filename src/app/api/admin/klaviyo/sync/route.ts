@@ -145,6 +145,8 @@ export async function POST() {
             // For segments like "monthly members who aren't leaving"
             billing: paying && sub ? billingOf(sub) : "",
             cancelling: paying && !!sub?.cancel_at_period_end,
+            // Paid before (card or Patreon) and doesn't now: the people to win back
+            ex_member: !paying && subscriptionType !== "patreon" && (!!sub || patreonMap[u.id] === false),
             joined_at: u.created_at,
             source: "soul_sample_club",
           },
