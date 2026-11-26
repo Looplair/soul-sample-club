@@ -367,6 +367,7 @@ export interface Database {
           link_new_tab: boolean;
           created_by: string | null;
           expires_at: string | null;
+          show_at?: string | null;
           created_at: string;
         };
         Insert: {
@@ -379,6 +380,7 @@ export interface Database {
           link_new_tab?: boolean;
           created_by?: string | null;
           expires_at?: string | null;
+          show_at?: string | null;
           created_at?: string;
         };
         Update: {
@@ -391,6 +393,7 @@ export interface Database {
           link_new_tab?: boolean;
           created_by?: string | null;
           expires_at?: string | null;
+          show_at?: string | null;
           created_at?: string;
         };
       };

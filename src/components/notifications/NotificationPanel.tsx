@@ -229,7 +229,7 @@ function NotificationItem({
           {notification.message}
         </p>
         <p className="text-[10px] text-text-muted/50 mt-1">
-          {timeAgo(notification.created_at)}
+          {timeAgo(notification.show_at ?? notification.created_at)}
         </p>
       </div>
 

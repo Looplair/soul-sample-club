@@ -37,6 +37,17 @@ const typeLabels: Record<string, string> = {
   custom: "Custom",
 };
 
+// e.g. "Fri 27 Nov, 12:00pm New York"
+const nyLabel = (iso: string) =>
+  new Date(iso).toLocaleString("en-US", {
+    timeZone: "America/New_York",
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    hour: "numeric",
+    minute: "2-digit",
+  }) + " New York";
+
 export default function AdminNotificationsPage() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -111,12 +122,19 @@ export default function AdminNotificationsPage() {
                         <Badge className={`text-[10px] ${colorClass}`}>
                           {label}
                         </Badge>
+                        {notification.show_at && new Date(notification.show_at).getTime() > Date.now() && (
+                          <Badge className="text-[10px] bg-sky-500/20 text-sky-300">
+                            Scheduled for {nyLabel(notification.show_at)}
+                          </Badge>
+                        )}
                       </div>
                       <p className="text-xs text-text-muted line-clamp-2">
                         {notification.message}
                       </p>
                       <div className="flex items-center gap-3 mt-2 text-[10px] text-text-muted/60">
-                        <span>{formatDate(notification.created_at)}</span>
+                        <span>
+                          {notification.show_at ? `Goes out ${nyLabel(notification.show_at)}` : formatDate(notification.created_at)}
+                        </span>
                         {notification.expires_at && (
                           <span>
                             Expires {formatDate(notification.expires_at)}

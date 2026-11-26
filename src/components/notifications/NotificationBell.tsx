@@ -38,11 +38,13 @@ export function NotificationBell({
           table: "notifications",
         },
         async () => {
-          // Fetch latest notifications
+          // Fetch latest notifications (a scheduled one saved now stays hidden until its time)
+          const now = new Date().toISOString();
           const { data } = await supabase
             .from("notifications")
             .select("*")
-            .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
+            .or(`expires_at.is.null,expires_at.gt.${now}`)
+            .or(`show_at.is.null,show_at.lte.${now}`)
             .order("created_at", { ascending: false })
             .limit(20);
 

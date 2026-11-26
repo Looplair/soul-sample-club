@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button, Input } from "@/components/ui";
 import { Modal } from "@/components/ui/Modal";
+import { nyInputToIso } from "@/lib/announcement-popup";
 
 interface CreateNotificationButtonProps {
   onCreated?: () => void;
@@ -19,11 +20,24 @@ export function CreateNotificationButton({ onCreated }: CreateNotificationButton
   const [type, setType] = useState<"announcement" | "custom">("announcement");
   const [linkUrl, setLinkUrl] = useState("");
   const [linkNewTab, setLinkNewTab] = useState(false);
+  const [scheduled, setScheduled] = useState(false);
+  const [showAt, setShowAt] = useState(""); // New York time, "YYYY-MM-DDTHH:mm"
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const supabase = createClient();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
+    const showAtIso = scheduled ? nyInputToIso(showAt) : null;
+    if (scheduled && !showAtIso) {
+      setError("Pick the date and time it should go out.");
+      return;
+    }
+    if (showAtIso && new Date(showAtIso).getTime() <= Date.now()) {
+      setError("That time has already passed. Pick a time in the future, or send it now.");
+      return;
+    }
     setIsLoading(true);
 
     try {
@@ -39,6 +53,8 @@ export function CreateNotificationButton({ onCreated }: CreateNotificationButton
         link_url: linkUrl || null,
         link_new_tab: linkUrl ? linkNewTab : false,
         created_by: user?.id,
+        // Only sent when scheduling, so sending now works even before the schedule column exists
+        ...(showAtIso ? { show_at: showAtIso } : {}),
       });
 
       if (error) throw error;
@@ -49,6 +65,8 @@ export function CreateNotificationButton({ onCreated }: CreateNotificationButton
       setType("announcement");
       setLinkUrl("");
       setLinkNewTab(false);
+      setScheduled(false);
+      setShowAt("");
       onCreated?.();
     } catch (error) {
       console.error("Error creating notification:", error);
@@ -123,6 +141,35 @@ export function CreateNotificationButton({ onCreated }: CreateNotificationButton
             </select>
           </div>
 
+          <div>
+            <label className="label">When</label>
+            <div className="flex gap-2">
+              {[
+                { on: false, label: "Send now" },
+                { on: true, label: "Schedule" },
+              ].map((o) => (
+                <button
+                  key={o.label}
+                  type="button"
+                  onClick={() => setScheduled(o.on)}
+                  className={`rounded-full px-4 py-1.5 text-sm transition-colors ${
+                    scheduled === o.on ? "bg-white text-black font-semibold" : "border border-white/15 text-text-muted hover:text-white"
+                  }`}
+                >
+                  {o.label}
+                </button>
+              ))}
+            </div>
+            {scheduled && (
+              <div className="mt-3">
+                <input type="datetime-local" value={showAt} onChange={(e) => setShowAt(e.target.value)} className="input" />
+                <p className="mt-1 text-xs text-text-muted">New York time. Members see it from then on.</p>
+              </div>
+            )}
+          </div>
+
+          {error && <p className="text-sm text-red-400">{error}</p>}
+
           <div className="flex gap-3 justify-end pt-2">
             <Button
               type="button"
@@ -132,7 +179,7 @@ export function CreateNotificationButton({ onCreated }: CreateNotificationButton
               Cancel
             </Button>
             <Button type="submit" isLoading={isLoading}>
-              Create
+              {scheduled ? "Schedule" : "Send now"}
             </Button>
           </div>
         </form>
