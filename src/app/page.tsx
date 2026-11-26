@@ -329,13 +329,13 @@ export default async function HomePage() {
           secondaryLine={
             bfHero ? (
               <>
-                Not ready to commit to a year?{" "}
+                <span className="block">Not ready to commit to a year?</span>
                 <SubscribeCTA
                   isLoggedIn={isLoggedIn}
                   hasSubscription={false}
                   plan="monthly"
                   bare
-                  className="font-medium text-white underline underline-offset-4"
+                  className="mt-1 inline-block font-medium text-white underline underline-offset-4"
                 >
                   {isLoggedIn && hasUsedTrial ? "Go monthly for $6.99" : "Start for $0.99, then $6.99 a month"}
                 </SubscribeCTA>
