@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { liteBlocksPack, LITE_BLOCKED } from "@/lib/lite";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
@@ -126,6 +127,11 @@ export async function GET(
         { error: "Pack has been archived and is no longer available for download" },
         { status: 403 }
       );
+    }
+
+    // Lite members only download Lite packs
+    if (await liteBlocksPack(user.id, sample.pack.id)) {
+      return NextResponse.json(LITE_BLOCKED, { status: 403 });
     }
 
     // Generate signed URL for the sample file (valid for 60 seconds)

@@ -26,3 +26,11 @@ export function yearlyCoupon(): string {
 export function yearlyPriceId(): string {
   return blackFridayOn() || !YEARLY_59_PRICE_ID ? STRIPE_YEARLY_PRICE_ID : YEARLY_59_PRICE_ID;
 }
+
+// Lite: $3.99 a month, one pack a month (its own product, "Soul Sample Club Lite")
+export const LITE_PRICE_ID = "price_1Ug3SuK1yj9piOqqHOuegTep";
+
+/** Which plan a Stripe subscription is: "lite" for the Lite price, otherwise "full". */
+export function planOf(sub: { items: { data: { price: { id: string } }[] } }): "full" | "lite" {
+  return sub.items.data.some((i) => i.price.id === LITE_PRICE_ID) ? "lite" : "full";
+}

@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
+import { LITE } from "@/lib/lite-plan";
 import { yearlyOffer } from "@/lib/black-friday";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -297,6 +299,7 @@ function BillingTab({
                   <StatusChip strong={subscription.status === "active" || subscription.status === "trialing"}>
                     {subscription.status === "trialing" ? "Trial" : subscription.status}
                   </StatusChip>
+                  {isStripeActive && subscription.plan === "lite" && <StatusChip>Lite</StatusChip>}
                   {subscription.cancel_at_period_end && subscription.status === "trialing" && (
                     <span className="text-[12px] text-white/75">Trial canceled</span>
                   )}
@@ -314,6 +317,16 @@ function BillingTab({
                 </div>
               )}
             </div>
+
+            {/* Lite: one pack a month, with the upgrade to everything */}
+            {isStripeActive && subscription.plan === "lite" && (
+              <Notice title="You're on Lite">
+                One pack a month. Want every pack in the catalog? It&apos;s only {LITE.extra} more a month.{" "}
+                <Link href="/upgrade?from=/account" className="font-semibold text-white underline underline-offset-4">
+                  Upgrade
+                </Link>
+              </Notice>
+            )}
 
             {/* Canceled trial notice */}
             {subscription.status === "trialing" && subscription.cancel_at_period_end && (
@@ -333,7 +346,11 @@ function BillingTab({
             {/* Post-cancellation: status is canceled */}
             {subscription.status === "canceled" && (
               <Notice title="Subscription ended">
-                Your subscription has ended. Subscribe again to regain access to downloads.
+                Your subscription has ended. Subscribe again to regain access to downloads. Or try Lite: one pack a month for{" "}
+                {LITE.price}.{" "}
+                <Link href="/lite" className="font-semibold text-white underline underline-offset-4">
+                  See Lite
+                </Link>
               </Notice>
             )}
 

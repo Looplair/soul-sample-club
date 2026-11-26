@@ -68,6 +68,7 @@ export interface Database {
           current_period_start: string;
           current_period_end: string;
           cancel_at_period_end: boolean;
+          plan: "full" | "lite";
           created_at: string;
           updated_at: string;
         };
@@ -80,6 +81,7 @@ export interface Database {
           current_period_start: string;
           current_period_end: string;
           cancel_at_period_end?: boolean;
+          plan?: "full" | "lite";
           created_at?: string;
           updated_at?: string;
         };
@@ -92,6 +94,7 @@ export interface Database {
           current_period_start?: string;
           current_period_end?: string;
           cancel_at_period_end?: boolean;
+          plan?: "full" | "lite";
           created_at?: string;
           updated_at?: string;
         };
@@ -170,6 +173,7 @@ export interface Database {
           is_published: boolean;
           is_staff_pick?: boolean;
           is_bonus: boolean;
+          is_lite?: boolean;
           is_returned?: boolean;
           genres?: string[];
           styles?: string[];
@@ -189,6 +193,7 @@ export interface Database {
           is_published?: boolean;
           is_staff_pick?: boolean;
           is_bonus?: boolean;
+          is_lite?: boolean;
           is_returned?: boolean;
           created_at?: string;
           updated_at?: string;
@@ -205,6 +210,7 @@ export interface Database {
           is_published?: boolean;
           is_staff_pick?: boolean;
           is_bonus?: boolean;
+          is_lite?: boolean;
           is_returned?: boolean;
           created_at?: string;
           updated_at?: string;

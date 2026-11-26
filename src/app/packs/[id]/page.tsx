@@ -3,6 +3,8 @@
 export const revalidate = 60;
 
 import { cache } from "react";
+import { isLiteOnly } from "@/lib/lite";
+import { LiteLock, upgradeHref } from "@/components/lite/LiteLock";
 import { yearlyOffer } from "@/lib/black-friday";
 import { notFound, permanentRedirect } from "next/navigation";
 import Image from "next/image";
@@ -181,14 +183,14 @@ export async function generateMetadata({
 // FETCH ACCESS (subscription OR patreon)
 // -----------------------------------------
 // Uses admin client to bypass RLS for subscription checks
-async function getUserAccess(): Promise<{ hasAccess: boolean; isLoggedIn: boolean; userId: string | null; hasUsedTrial: boolean; profile: Profile | null }> {
+async function getUserAccess(): Promise<{ hasAccess: boolean; liteOnly: boolean; isLoggedIn: boolean; userId: string | null; hasUsedTrial: boolean; profile: Profile | null }> {
   const supabase = await createClient();
   const adminSupabase = createAdminClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) return { hasAccess: false, isLoggedIn: false, userId: null, hasUsedTrial: false, profile: null };
+  if (!user) return { hasAccess: false, liteOnly: false, isLoggedIn: false, userId: null, hasUsedTrial: false, profile: null };
 
   // Fetch user profile
   const profileResult = await adminSupabase
@@ -231,6 +233,7 @@ async function getUserAccess(): Promise<{ hasAccess: boolean; isLoggedIn: boolea
 
   return {
     hasAccess: hasSubscription || hasPatreon,
+    liteOnly: hasSubscription && !hasPatreon ? await isLiteOnly(user.id) : false,
     isLoggedIn: true,
     userId: user.id,
     hasUsedTrial: (anySubResult.data?.length ?? 0) > 0,
@@ -324,7 +327,7 @@ export default async function PackDetailPage({
     permanentRedirect(packPath(pack));
   }
 
-  const { hasAccess, isLoggedIn, userId, hasUsedTrial, profile } = userState;
+  const { hasAccess, liteOnly, isLoggedIn, userId, hasUsedTrial, profile } = userState;
 
   // Fetch notifications for logged-in users
   const { notifications, unreadCount } = userId
@@ -350,7 +353,9 @@ export default async function PackDetailPage({
 
   // Expired packs: everyone can preview, no one can download
   // Active packs: subscribers/patrons can download, others can preview
-  const canDownload = hasAccess && !isExpired;
+  // Lite members download Lite packs only; on the rest they get an upgrade lock
+  const liteLocked = hasAccess && liteOnly && !pack.is_lite;
+  const canDownload = hasAccess && !isExpired && !liteLocked;
 
   // Calculate total file size (WAV files only - stems sizes not tracked)
   const totalSize = pack.samples.reduce(
@@ -449,6 +454,8 @@ export default async function PackDetailPage({
                       <VoteBringBack packId={pack.id} initialHasVoted={voteData.hasVoted} initialVoteCount={voteData.voteCount} isLoggedIn={isLoggedIn} />
                     </div>
                   </GlassBox>
+                ) : liteLocked ? (
+                  <LiteLock from={packPath(pack)} />
                 ) : canDownload ? (
                   <div className="flex flex-wrap items-center gap-3">
                     {pack.pack_zip_path && <DownloadAllButton packId={pack.id} />}
@@ -490,7 +497,14 @@ export default async function PackDetailPage({
               <span className="text-[13px] text-white/55">{isExpired ? "Preview only" : `${pack.samples.length} with previews`}</span>
             </div>
             <GlassBox plain className="rounded-[24px] p-2 sm:p-4">
-              <SampleListWithModal samples={pack.samples} packId={pack.id} canDownload={canDownload} hasUsedTrial={hasUsedTrial} isLoggedIn={isLoggedIn} />
+              <SampleListWithModal
+                samples={pack.samples}
+                packId={pack.id}
+                canDownload={canDownload}
+                hasUsedTrial={hasUsedTrial}
+                isLoggedIn={isLoggedIn}
+                liteUpgradeHref={liteLocked && !isExpired ? upgradeHref(packPath(pack)) : undefined}
+              />
             </GlassBox>
           </section>
 

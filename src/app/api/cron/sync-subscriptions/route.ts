@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { stripe } from "@/lib/stripe";
+import { stripe, planOf } from "@/lib/stripe";
 import { syncUserToKlaviyo } from "@/lib/klaviyo";
 import { selectAll } from "@/lib/supabase/select-all";
 
@@ -134,6 +134,7 @@ export async function GET(request: Request) {
               stripeSubscription.current_period_end * 1000
             ).toISOString(),
             cancel_at_period_end: stripeSubscription.cancel_at_period_end,
+            plan: planOf(stripeSubscription),
             updated_at: new Date().toISOString(),
           })
           .eq("stripe_subscription_id", sub.stripe_subscription_id);

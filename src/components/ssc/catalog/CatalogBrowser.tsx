@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { LITE } from "@/lib/lite-plan";
 import Image from "next/image";
 import Link from "next/link";
 import { ChevronDown, Download, Layers, Loader2, Lock, Pause, Play, Search, X } from "lucide-react";
@@ -29,6 +30,8 @@ export interface CatalogSample {
 export interface CatalogPack extends CardPack {
   genres: string[];
   isBonus: boolean;
+  /** One of the packs Lite members can download */
+  isLite?: boolean;
   samples: CatalogSample[];
 }
 
@@ -70,7 +73,7 @@ function Select({ value, onChange, options, label }: { value: string; onChange: 
   );
 }
 
-export function CatalogBrowser({ packs, hasAccess, isLoggedIn }: { packs: CatalogPack[]; hasAccess: boolean; isLoggedIn: boolean }) {
+export function CatalogBrowser({ packs, hasAccess, isLoggedIn, liteOnly = false }: { packs: CatalogPack[]; hasAccess: boolean; isLoggedIn: boolean; liteOnly?: boolean }) {
   const [view, setView] = useState<View>("packs");
   const [query, setQuery] = useState("");
   const [key, setKey] = useState("");
@@ -232,7 +235,7 @@ export function CatalogBrowser({ packs, hasAccess, isLoggedIn }: { packs: Catalo
               ))}
             </div>
             {rows.slice(0, shown).map(({ s, p }) => (
-              <SampleLine key={s.id} sample={s} pack={p} canDownload={hasAccess && !p.archived} isLoggedIn={isLoggedIn} />
+              <SampleLine key={s.id} sample={s} pack={p} canDownload={hasAccess && !p.archived && !(liteOnly && !p.isLite)} liteLocked={hasAccess && liteOnly && !p.isLite} isLoggedIn={isLoggedIn} />
             ))}
             {rows.length === 0 && <p className="px-5 py-16 text-center text-white/55">Nothing matches those filters.</p>}
           </div>
@@ -266,7 +269,7 @@ function ResultLine({ count, noun, onClear }: { count: number; noun: string; onC
 }
 
 /** One row of the Samples view, laid out like the desktop app */
-function SampleLine({ sample: s, pack: p, canDownload, isLoggedIn }: { sample: CatalogSample; pack: CatalogPack; canDownload: boolean; isLoggedIn: boolean }) {
+function SampleLine({ sample: s, pack: p, canDownload, liteLocked = false, isLoggedIn }: { sample: CatalogSample; pack: CatalogPack; canDownload: boolean; liteLocked?: boolean; isLoggedIn: boolean }) {
   const player = usePreviewPlayer();
   const { currentTrack, currentTime, duration } = useAudio();
   const [busy, setBusy] = useState<null | "wav" | "stems">(null);
@@ -340,6 +343,11 @@ function SampleLine({ sample: s, pack: p, canDownload, isLoggedIn }: { sample: C
           </>
         ) : p.archived ? (
           <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/55">Archived</span>
+        ) : liteLocked ? (
+          <Link href={`/upgrade?from=${encodeURIComponent("/feed")}`} aria-label={`Upgrade to grab ${s.name}`} title={`Upgrade to grab this, only ${LITE.extra} more a month`} className="flex h-9 items-center gap-1.5 rounded-full border border-white/12 px-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-white/75 transition-colors hover:border-white/35 hover:text-white">
+            <Lock className="h-3.5 w-3.5" />
+            Upgrade
+          </Link>
         ) : (
           <Link href="/subscribe" aria-label={isLoggedIn ? "Subscribe to download" : "Join to download"} title="Join to download" className="flex h-9 w-9 items-center justify-center rounded-full border border-white/12 text-white/75 transition-colors hover:border-white/35 hover:text-white">
             <Lock className="h-4 w-4" />

@@ -10,7 +10,8 @@ import { GlassBox } from "@/components/ssc/Glass";
 function SubscribeContent({ promoLine }: { promoLine: string | null }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const plan = searchParams.get("plan") === "yearly" ? "yearly" : "monthly";
+  const planParam = searchParams.get("plan");
+  const plan = planParam === "yearly" ? "yearly" : planParam === "lite" ? "lite" : "monthly";
   const [status, setStatus] = useState<"loading" | "redirecting" | "error">("loading");
   const [errorMessage, setErrorMessage] = useState<string>("");
 
@@ -21,7 +22,7 @@ function SubscribeContent({ promoLine }: { promoLine: string | null }) {
       const { data: { user } } = await supabase.auth.getUser();
 
       if (!user) {
-        const redirectTo = plan === "yearly" ? "/checkout?plan=yearly" : "/checkout";
+        const redirectTo = plan === "monthly" ? "/checkout" : `/checkout?plan=${plan}`;
         router.push(`/login?redirect=${encodeURIComponent(redirectTo)}`);
         return;
       }

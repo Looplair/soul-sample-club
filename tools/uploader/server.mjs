@@ -74,7 +74,7 @@ async function handle(req, res) {
     let pack = null;
     const site = status[release.name.toLowerCase()] || null;
     if (site) {
-      const { data } = await supabase.from("packs").select("description, genres, styles, release_date, end_date").eq("id", site.id).single();
+      const { data } = await supabase.from("packs").select("*").eq("id", site.id).single();
       pack = data;
     }
     return json(res, 200, { release, site, pack, tags, defaults: { releaseDate: nextFriday() } });
@@ -116,7 +116,7 @@ async function handle(req, res) {
       const { packId, slug } = await uploadRelease(
         release,
         files,
-        { name: d.name.trim(), description: d.description.trim(), genres: d.genres, styles: d.styles, releaseDate: d.releaseDate, endDate: d.endDate },
+        { name: d.name.trim(), description: d.description.trim(), genres: d.genres, styles: d.styles, releaseDate: d.releaseDate, endDate: d.endDate, isLite: !!d.isLite, liteKnown: !!d.liteKnown },
         send
       );
       let schedule = null;

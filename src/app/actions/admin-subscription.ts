@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { stripe } from "@/lib/stripe";
+import { stripe, planOf } from "@/lib/stripe";
 
 interface GrantAccessResult {
   success: boolean;
@@ -150,6 +150,7 @@ export async function syncSubscriptionFromStripe(
           current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
           current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
           cancel_at_period_end: subscription.cancel_at_period_end,
+          plan: planOf(subscription),
           updated_at: new Date().toISOString(),
         })
         .eq("user_id", userId);
@@ -166,6 +167,7 @@ export async function syncSubscriptionFromStripe(
           current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
           current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
           cancel_at_period_end: subscription.cancel_at_period_end,
+          plan: planOf(subscription),
         });
       error = result.error;
     }
