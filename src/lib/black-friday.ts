@@ -18,7 +18,7 @@ export const BLACK_FRIDAY = {
  * The $59/year Stripe price used once Black Friday is over. Until it's filled in,
  * yearly stays at $49 everywhere (site and checkout agree either way).
  */
-export const YEARLY_59_PRICE_ID: string = "";
+export const YEARLY_59_PRICE_ID: string = "price_1Ug3JnK1yj9piOqqYOkcoxiP"; // live, $59/year
 
 export function blackFridayOn(now: number = Date.now()): boolean {
   return BLACK_FRIDAY.LIVE && now < Date.parse(BLACK_FRIDAY.END);
