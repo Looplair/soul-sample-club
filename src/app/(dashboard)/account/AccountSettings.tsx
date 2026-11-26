@@ -380,7 +380,7 @@ function BillingTab({
               className="text-[14px] text-white/75 underline underline-offset-4 transition-colors hover:text-white disabled:opacity-60"
             >
               or <s className="text-white/55">{yearlyOffer().was}</s> <span className="font-semibold text-white">{yearlyOffer().price}/year</span>
-              {yearlyOffer().href ? ", Black Friday price" : ", locked in for life"}
+              {yearlyOffer().href ? ", Black Friday price" : ", billed once a year"}
             </button>
           </div>
         )}

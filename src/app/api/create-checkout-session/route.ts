@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { stripe, STRIPE_PRICE_ID, STRIPE_YEARLY_PRICE_ID, yearlyCoupon } from "@/lib/stripe";
+import { stripe, STRIPE_PRICE_ID, yearlyCoupon, yearlyPriceId } from "@/lib/stripe";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getBlockingPastDueSubscription } from "@/lib/payment-status";
@@ -203,7 +203,7 @@ export async function POST(request: Request) {
     const [yearlyPrice, yearlyOfferCoupon] =
       plan === "yearly"
         ? await Promise.all([
-            stripe.prices.retrieve(STRIPE_YEARLY_PRICE_ID),
+            stripe.prices.retrieve(yearlyPriceId()),
             yearlyCoupon() ? stripe.coupons.retrieve(yearlyCoupon()) : null,
           ])
         : [null, null];
@@ -233,7 +233,7 @@ export async function POST(request: Request) {
       payment_method_types: ["card"],
       line_items: [
         {
-          price: plan === "yearly" ? STRIPE_YEARLY_PRICE_ID : p ? p.priceId : STRIPE_PRICE_ID,
+          price: plan === "yearly" ? yearlyPriceId() : p ? p.priceId : STRIPE_PRICE_ID,
           quantity: 1,
         },
       ],

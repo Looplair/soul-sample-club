@@ -1,5 +1,5 @@
 import type Stripe from "stripe";
-import { stripe, STRIPE_YEARLY_PRICE_ID, yearlyCoupon } from "@/lib/stripe";
+import { stripe, yearlyCoupon, yearlyPriceId } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 // Monthly -> yearly switch for an existing card member, reached only from the
@@ -48,13 +48,13 @@ export async function getSwitchState(userId: string): Promise<SwitchState> {
   }
 
   const [yearly, coupon, preview] = await Promise.all([
-    stripe.prices.retrieve(STRIPE_YEARLY_PRICE_ID),
+    stripe.prices.retrieve(yearlyPriceId()),
     yearlyCoupon() ? stripe.coupons.retrieve(yearlyCoupon()) : null,
     stripe.invoices.createPreview({
       customer: subscription.customer as string,
       subscription: subscription.id,
       subscription_details: {
-        items: [{ id: item.id, price: STRIPE_YEARLY_PRICE_ID }],
+        items: [{ id: item.id, price: yearlyPriceId() }],
         proration_behavior: "always_invoice",
       },
       discounts: yearlyCoupon() ? [{ coupon: yearlyCoupon() }] : "",
@@ -76,7 +76,7 @@ export async function getSwitchState(userId: string): Promise<SwitchState> {
 
 export async function switchToYearly(state: Extract<SwitchState, { kind: "ready" }>) {
   return stripe.subscriptions.update(state.subscription.id, {
-    items: [{ id: state.itemId, price: STRIPE_YEARLY_PRICE_ID }],
+    items: [{ id: state.itemId, price: yearlyPriceId() }],
     discounts: yearlyCoupon() ? [{ coupon: yearlyCoupon() }] : "",
     proration_behavior: "always_invoice",
     // A declined card leaves them on monthly, untouched

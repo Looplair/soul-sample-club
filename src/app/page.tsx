@@ -514,7 +514,7 @@ export default async function HomePage() {
                   <span className="text-white/55">a year</span>
                 </p>
                 <p className="mt-1 text-[14px] text-white/55">
-                  {yearlyOffer().href ? "Black Friday price. Ends Mon 30 Nov." : "Locked in for life while you stay a member."}
+                  {yearlyOffer().fine}
                 </p>
                 <ul className="mt-6 flex-1 space-y-2.5">
                   {PERKS.slice(0, 3).map((perk) => (

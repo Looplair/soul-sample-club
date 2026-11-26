@@ -181,7 +181,7 @@ export default async function SubscribePage() {
                 <span className="ssc-display text-[clamp(3rem,6vw,4.2rem)]">{yearlyOffer().price}</span>
                 <span className="text-white/55">a year</span>
               </p>
-              <p className="mt-2 min-h-[1.5em] text-[14px] text-white/55">Save over 50% vs monthly</p>
+              <p className="mt-2 min-h-[1.5em] text-[14px] text-white/55">Save {yearlyOffer().save} vs monthly</p>
 
               <div className="mt-auto pt-8">
                 {isLoggedIn ? (
@@ -194,7 +194,7 @@ export default async function SubscribePage() {
                   </Link>
                 )}
                 <p className="mt-3 text-center text-[12px] text-white/55">
-                  {yearlyOffer().href ? "Black Friday price. Ends Mon 30 Nov." : <>Offer price, locked in for life. Won&apos;t last forever.</>}
+                  {yearlyOffer().fine}
                 </p>
               </div>
             </GlassBox>

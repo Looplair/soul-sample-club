@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import Stripe from "stripe";
-import { stripe, STRIPE_YEARLY_PRICE_ID } from "@/lib/stripe";
+import { stripe } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { syncUserToKlaviyo } from "@/lib/klaviyo";
 import { sendStartTrialEvent } from "@/lib/meta-conversions";
@@ -162,7 +162,7 @@ export async function POST(request: Request) {
             }).catch((err) => console.error("Meta Conversions API error:", err));
 
             // Notify admin of new subscription (annual vs monthly)
-            const isAnnual = subscription.items.data[0]?.price.id === STRIPE_YEARLY_PRICE_ID;
+            const isAnnual = subscription.items.data[0]?.price.recurring?.interval === "year"; // $49 and $59 yearly prices
             if (isAnnual) {
               notifyNewAnnualSubscriber({
                 email: profileData.email,
