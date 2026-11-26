@@ -11,6 +11,7 @@ import { SubscribeCTA } from "@/components/ui/SubscribeCTA";
 import { getNotificationsForUser } from "@/lib/notifications";
 import { getSwitchState, type SwitchState } from "@/lib/switch-yearly";
 import { BLACK_FRIDAY, blackFridayOn } from "@/lib/black-friday";
+import { LITE } from "@/lib/lite-plan";
 import { SwitchYearlyBody } from "@/app/switch-yearly/SwitchYearlyBody";
 import type { Profile } from "@/types/database";
 
@@ -164,6 +165,22 @@ function PatreonNote() {
   );
 }
 
+/** For people not ready to pay for a year: the cheaper way in */
+function LiteNote() {
+  return (
+    <Link
+      href="/lite"
+      className="mt-4 flex items-center justify-between gap-4 rounded-[22px] border border-white/10 p-5 transition-colors hover:border-white/25"
+    >
+      <span>
+        <span className="block text-[15px] font-semibold text-white">Not ready for a whole year?</span>
+        <span className="ssc-body mt-1 block text-[14px]">Try Lite: one hand-picked pack a month, stems included, for {LITE.price} a month.</span>
+      </span>
+      <span className="shrink-0 text-[14px] font-semibold text-white underline underline-offset-4">See Lite</span>
+    </Link>
+  );
+}
+
 function Action({ who }: { who: Who }) {
   switch (who.kind) {
     case "guest":
@@ -181,6 +198,7 @@ function Action({ who }: { who: Who }) {
             to switch to yearly.
           </p>
         </PriceBox>
+        <LiteNote />
         <PatreonNote />
         </>
       );
@@ -192,6 +210,7 @@ function Action({ who }: { who: Who }) {
               Get a year for {BLACK_FRIDAY.price}
             </SubscribeCTA>
           </PriceBox>
+          <LiteNote />
           <PatreonNote />
         </>
       );
