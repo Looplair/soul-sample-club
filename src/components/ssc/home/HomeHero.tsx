@@ -27,12 +27,15 @@ export function HomeHero({
   primaryCta,
   secondaryLine,
   extra,
+  promo,
 }: {
   covers: HeroCover[];
   tracks: FreePackTrack[];
   primaryCta: ReactNode;
   secondaryLine?: ReactNode;
   extra?: ReactNode;
+  /** A time-limited offer takes over the pill, headline and intro (e.g. Black Friday) */
+  promo?: { pill: ReactNode; headline: ReactNode; intro: ReactNode; timer?: ReactNode };
 }) {
   const [front, ...back] = covers;
   const reel = useHighlightReel(tracks, front?.name ?? "");
@@ -41,22 +44,74 @@ export function HomeHero({
     <section className="relative overflow-hidden px-5 pb-[clamp(48px,7vw,96px)] pt-[clamp(28px,5vw,64px)] sm:px-8" style={glowStyle(front?.glow)}>
       <div className="mx-auto grid max-w-[1240px] items-center gap-12 lg:grid-cols-[1.15fr_1fr] lg:gap-8">
         <div className="relative z-10 flex flex-col items-start">
-          {front && (
-            <Pill dot glow={front.glow}>
-              New this week · {front.name}
+          {promo ? (
+            <Pill dot glow={front?.glow}>
+              {promo.pill}
             </Pill>
+          ) : (
+            front && (
+              <Pill dot glow={front.glow}>
+                New this week · {front.name}
+              </Pill>
+            )
           )}
           <h1 className="ssc-display mt-6 text-[clamp(2.5rem,5.6vw,4.9rem)]">
-            Original soul, cleared before you press play
+            {promo ? promo.headline : "Original soul, cleared before you press play"}
           </h1>
           <p className="ssc-body mt-6 max-w-[34rem] text-[clamp(1.05rem,1.5vw,1.25rem)] leading-relaxed">
-            A new pack of soul compositions every week, made in house, with full stems on every release. Preview
-            everything free.
+            {promo
+              ? promo.intro
+              : "A new pack of soul compositions every week, made in house, with full stems on every release. Preview everything free."}
           </p>
+          {promo?.timer && <div className="mt-7">{promo.timer}</div>}
+
+          {/* Phones: the promo pushes the covers far down, so this week's pack plays right here */}
+          {promo && front && (
+            <div
+              className="ssc-glass mt-7 flex w-full items-center gap-3.5 rounded-[22px] p-2.5 pr-3.5 lg:hidden"
+              style={glowStyle(front.glow)}
+            >
+              <Link href={front.href} className="relative h-[68px] w-[68px] flex-shrink-0 overflow-hidden rounded-[14px]">
+                {front.cover_image_url && <Image src={front.cover_image_url} alt={front.name} fill sizes="68px" className="object-cover" />}
+              </Link>
+              <div className="min-w-0 flex-1">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/55">New this week</p>
+                <Link href={front.href} className="mt-0.5 block truncate text-[16px] font-semibold text-white">
+                  {front.name}
+                </Link>
+                {tracks.length > 0 && (
+                  <>
+                    <div className="mt-2 h-[3px] overflow-hidden rounded-full bg-white/[0.12]">
+                      <div className="h-full bg-white transition-[width] duration-200" style={{ width: `${reel.progress * 100}%` }} />
+                    </div>
+                    <p className="mt-1.5 truncate text-[12px] text-white/55">
+                      {reel.playing && reel.current ? reel.current.name : `${tracks.length} tracks · tap play to hear it`}
+                    </p>
+                  </>
+                )}
+              </div>
+              {tracks.length > 0 && (
+                <button
+                  type="button"
+                  onClick={reel.toggle}
+                  aria-label={reel.playing ? "Pause this week's pack" : "Play this week's pack"}
+                  className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-white text-black transition-transform active:scale-95"
+                >
+                  {reel.loading ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : reel.playing ? (
+                    <Pause className="h-5 w-5" fill="currentColor" />
+                  ) : (
+                    <Play className="ml-0.5 h-5 w-5" fill="currentColor" />
+                  )}
+                </button>
+              )}
+            </div>
+          )}
           <div className="mt-8 flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
             {primaryCta}
             {tracks.length > 0 && (
-              <button type="button" onClick={reel.toggle} className="ssc-btn ssc-btn--ghost">
+              <button type="button" onClick={reel.toggle} className={cn("ssc-btn ssc-btn--ghost", promo && "max-lg:!hidden")}>
                 {reel.loading ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : reel.playing ? (

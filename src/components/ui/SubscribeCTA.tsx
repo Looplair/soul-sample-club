@@ -17,6 +17,8 @@ interface SubscribeCTAProps {
   hideArrow?: boolean;
   /** Render a plain link/button styled only by className (redesign buttons) */
   bare?: boolean;
+  /** Where logged-out visitors go instead of the /subscribe offer page */
+  guestHref?: string;
 }
 
 export function SubscribeCTA({
@@ -29,6 +31,7 @@ export function SubscribeCTA({
   plan = "monthly",
   hideArrow = false,
   bare = false,
+  guestHref,
 }: SubscribeCTAProps) {
   const [isLoading, setIsLoading] = useState(false);
 
@@ -39,7 +42,7 @@ export function SubscribeCTA({
 
   // If not logged in, link to signup (preserve plan for yearly)
   if (!isLoggedIn) {
-    const signupHref = "/subscribe";
+    const signupHref = guestHref ?? "/subscribe";
     if (bare) {
       return (
         <Link href={signupHref} className={className}>

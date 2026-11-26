@@ -1,5 +1,6 @@
 import Image from "next/image";
-import { yearlyOffer } from "@/lib/black-friday";
+import { yearlyOffer, blackFridayOn, BLACK_FRIDAY } from "@/lib/black-friday";
+import { Countdown } from "@/components/ssc/home/Countdown";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Navbar } from "@/components/layout";
@@ -244,10 +245,32 @@ export default async function HomePage() {
       linkLabel: "Read the sample clearance guide",
     }));
 
+  // Black Friday: non-members see the deal front and centre, with a countdown
+  const bfHero = blackFridayOn() && !hasSubscription;
+  const promo = bfHero
+    ? {
+        pill: `Black Friday · ${BLACK_FRIDAY.endsLabel}`,
+        headline: `A whole year for ${BLACK_FRIDAY.price}`,
+        intro: `A new pack of soul compositions every week, made in house, full stems, pre-cleared for real releases. ${BLACK_FRIDAY.price} for the year instead of ${BLACK_FRIDAY.monthlyYear}.`,
+        timer: <Countdown to={BLACK_FRIDAY.END} label="Black Friday price ends in" />,
+      }
+    : undefined;
+
   const primaryCta = hasSubscription ? (
     <Link href="/feed" className="ssc-btn ssc-btn--primary">
       Open the catalog
     </Link>
+  ) : bfHero ? (
+    <SubscribeCTA
+      isLoggedIn={isLoggedIn}
+      hasSubscription={false}
+      plan="yearly"
+      bare
+      guestHref={`/signup?redirect=${encodeURIComponent("/checkout?plan=yearly")}`}
+      className="ssc-btn ssc-btn--primary"
+    >
+      Get a year for {BLACK_FRIDAY.price}
+    </SubscribeCTA>
   ) : (
     <SubscribeCTA isLoggedIn={isLoggedIn} hasSubscription={false} plan="monthly" bare className="ssc-btn ssc-btn--primary">
       {isLoggedIn && hasUsedTrial ? "Subscribe now" : "Start for $0.99"}
@@ -302,6 +325,23 @@ export default async function HomePage() {
           tracks={reelTracks}
           primaryCta={primaryCta}
           extra={!hasSubscription ? heroStats : undefined}
+          promo={promo}
+          secondaryLine={
+            bfHero ? (
+              <>
+                Not ready to commit to a year?{" "}
+                <SubscribeCTA
+                  isLoggedIn={isLoggedIn}
+                  hasSubscription={false}
+                  plan="monthly"
+                  bare
+                  className="font-medium text-white underline underline-offset-4"
+                >
+                  {isLoggedIn && hasUsedTrial ? "Go monthly for $6.99" : "Start for $0.99, then $6.99 a month"}
+                </SubscribeCTA>
+              </>
+            ) : undefined
+          }
         />
 
         {/* THIS WEEK'S PACK */}
