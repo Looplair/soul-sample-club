@@ -136,10 +136,39 @@ function PriceBox({ children, fine }: { children: React.ReactNode; fine: string 
 
 const FINE = `Renews at ${BLACK_FRIDAY.price} a year. No refunds on annual plans.`;
 
+const PATREON_URL = "https://www.patreon.com/settings/memberships";
+
+/** Patreon members pay on Patreon, so the deal for them is Patreon's annual discount */
+function PatreonSteps() {
+  return (
+    <ol className="mt-3 list-decimal space-y-1 pl-5 text-[14px] text-white/75">
+      <li>On the Patreon website, go to Settings, then Memberships</li>
+      <li>Open Looplair</li>
+      <li>Under Billing frequency, choose Switch to annual</li>
+    </ol>
+  );
+}
+
+function PatreonNote() {
+  return (
+    <div className="mt-4 rounded-[22px] border border-white/10 p-5">
+      <p className="text-[15px] font-semibold text-white">Already a member through Patreon?</p>
+      <p className="ssc-body mt-1 text-[14px]">
+        Don&apos;t sign up here. Switch to annual on Patreon instead and the Black Friday discount comes off there. Ends Monday 30 November.
+      </p>
+      <PatreonSteps />
+      <a href={PATREON_URL} target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex text-[14px] font-semibold text-white underline underline-offset-4">
+        Open my Patreon memberships
+      </a>
+    </div>
+  );
+}
+
 function Action({ who }: { who: Who }) {
   switch (who.kind) {
     case "guest":
       return (
+        <>
         <PriceBox fine={FINE}>
           <Link href={`/signup?redirect=${encodeURIComponent("/checkout?plan=yearly")}`} className="ssc-btn ssc-btn--primary w-full">
             Get a year for {BLACK_FRIDAY.price}
@@ -152,14 +181,19 @@ function Action({ who }: { who: Who }) {
             to switch to yearly.
           </p>
         </PriceBox>
+        <PatreonNote />
+        </>
       );
     case "new":
       return (
-        <PriceBox fine={FINE}>
-          <SubscribeCTA isLoggedIn hasSubscription={false} plan="yearly" bare className="ssc-btn ssc-btn--primary w-full">
-            Get a year for {BLACK_FRIDAY.price}
-          </SubscribeCTA>
-        </PriceBox>
+        <>
+          <PriceBox fine={FINE}>
+            <SubscribeCTA isLoggedIn hasSubscription={false} plan="yearly" bare className="ssc-btn ssc-btn--primary w-full">
+              Get a year for {BLACK_FRIDAY.price}
+            </SubscribeCTA>
+          </PriceBox>
+          <PatreonNote />
+        </>
       );
     case "patreon":
       // Patreon members: the same Black Friday deal, as Patreon's annual discount
@@ -168,11 +202,11 @@ function Action({ who }: { who: Who }) {
           <p className="ssc-label">For Patreon members · {BLACK_FRIDAY.endsLabel}</p>
           <p className="mt-4 text-[17px] font-semibold text-white">Go annual on Patreon and save 42%</p>
           <p className="ssc-body mt-2 text-[14px] leading-relaxed">
-            On Patreon, edit your membership and switch to paying annually. The Black Friday discount comes off automatically, about
-            $49 for the year. It ends Monday 30 November.
+            You pay through Patreon, so switch to annual there and the Black Friday discount comes off. It ends Monday 30 November.
           </p>
-          <a href="https://www.patreon.com/Looplair" target="_blank" rel="noopener noreferrer" className="ssc-btn ssc-btn--primary mt-6 w-full">
-            Go annual on Patreon
+          <PatreonSteps />
+          <a href={PATREON_URL} target="_blank" rel="noopener noreferrer" className="ssc-btn ssc-btn--primary mt-6 w-full">
+            Open my Patreon memberships
           </a>
         </GlassBox>
       );
