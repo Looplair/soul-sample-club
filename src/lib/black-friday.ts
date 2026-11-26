@@ -6,7 +6,7 @@
 // 11:59pm New York): the banner goes and yearly becomes $59.
 
 export const BLACK_FRIDAY = {
-  LIVE: false,
+  LIVE: true,
   END: "2026-12-01T04:59:00Z", // Mon 30 Nov 2026, 11:59pm New York
   price: "$49",
   /** What a year costs paying monthly, for the comparison */
