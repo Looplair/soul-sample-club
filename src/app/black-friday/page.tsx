@@ -162,10 +162,19 @@ function Action({ who }: { who: Who }) {
         </PriceBox>
       );
     case "patreon":
+      // Patreon members: the same Black Friday deal, as Patreon's annual discount
       return (
-        <Notice title="You're with us through Patreon">
-          This deal is for memberships paid on the site. If you&apos;d like to move over to it, get in touch and we&apos;ll sort it out for you.
-        </Notice>
+        <GlassBox className="ssc-breathe rounded-[28px] p-7 sm:p-9">
+          <p className="ssc-label">For Patreon members · {BLACK_FRIDAY.endsLabel}</p>
+          <p className="mt-4 text-[17px] font-semibold text-white">Go annual on Patreon and save 42%</p>
+          <p className="ssc-body mt-2 text-[14px] leading-relaxed">
+            On Patreon, edit your membership and switch to paying annually. The Black Friday discount comes off automatically, about
+            $49 for the year. It ends Monday 30 November.
+          </p>
+          <a href="https://www.patreon.com/Looplair" target="_blank" rel="noopener noreferrer" className="ssc-btn ssc-btn--primary mt-6 w-full">
+            Go annual on Patreon
+          </a>
+        </GlassBox>
       );
     case "member":
       // Monthly card members switch in place: same membership, now yearly
