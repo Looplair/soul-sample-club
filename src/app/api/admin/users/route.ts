@@ -45,7 +45,7 @@ export async function GET() {
           full_name,
           is_admin,
           created_at,
-          subscription:subscriptions(status, current_period_end)
+          subscription:subscriptions(status, current_period_end, plan)
         `
         )
         .order("created_at", { ascending: false })

@@ -35,6 +35,7 @@ interface Subscription {
   user_id: string;
   status: string;
   current_period_end: string | null;
+  plan: string | null;
 }
 
 interface PatreonLink {
@@ -52,6 +53,7 @@ interface UnifiedSubscription {
   stripePeriodEnd: string | null;
   patreonActive: boolean;
   patreonTier: string | null;
+  plan: "full" | "lite" | null;
   hasAccess: boolean;
   accessSource: "stripe_active" | "stripe_trialing" | "patreon" | "none";
   joinedAt: string;
@@ -82,7 +84,7 @@ async function getSubscriptionData() {
   for (let p = 0; ; p++) {
     const { data } = await adminSupabase
       .from("subscriptions")
-      .select("user_id, status, current_period_end")
+      .select("user_id, status, current_period_end, plan")
       .range(p * PAGE, (p + 1) * PAGE - 1);
     if (!data || data.length === 0) break;
     subscriptions.push(...(data as Subscription[]));
@@ -102,9 +104,19 @@ async function getSubscriptionData() {
   }
 
   // Build lookup maps
+  // One person can have several rows (old cancelled + new live one): keep the live one,
+  // then the one that runs latest.
+  const live = (s: Subscription) => s.status === "active" || s.status === "trialing";
   const subMap = new Map<string, Subscription>();
   for (const sub of subscriptions) {
-    subMap.set(sub.user_id, sub);
+    const cur = subMap.get(sub.user_id);
+    if (
+      !cur ||
+      (live(sub) && !live(cur)) ||
+      (live(sub) === live(cur) && (sub.current_period_end ?? "") > (cur.current_period_end ?? ""))
+    ) {
+      subMap.set(sub.user_id, sub);
+    }
   }
 
   const patreonMap = new Map<string, PatreonLink>();
@@ -121,6 +133,13 @@ async function getSubscriptionData() {
     const stripePeriodEnd = stripeSub?.current_period_end || null;
     const patreonActive = patreonLink?.is_active || false;
     const patreonTier = patreonLink?.tier_title || null;
+
+    // Lite only counts when Lite is all they have (same rule as src/lib/lite.ts)
+    const plan: UnifiedSubscription["plan"] = patreonActive
+      ? "full"
+      : stripeSub && live(stripeSub)
+      ? stripeSub.plan === "lite" ? "lite" : "full"
+      : null;
 
     // Determine access
     let hasAccess = false;
@@ -145,6 +164,7 @@ async function getSubscriptionData() {
       stripePeriodEnd,
       patreonActive,
       patreonTier,
+      plan,
       hasAccess,
       accessSource,
       joinedAt: profile.created_at,
@@ -159,6 +179,8 @@ async function getSubscriptionData() {
     stripeTrialing: unified.filter((u) => u.accessSource === "stripe_trialing").length,
     patreonActive: unified.filter((u) => u.accessSource === "patreon").length,
     noAccess: unified.filter((u) => !u.hasAccess).length,
+    full: unified.filter((u) => u.plan === "full").length,
+    lite: unified.filter((u) => u.plan === "lite").length,
     stripeCanceled: unified.filter((u) => u.stripeStatus === "canceled").length,
   };
 
@@ -187,7 +209,7 @@ export default async function AdminSubscriptionsPage() {
       </div>
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-8 gap-4">
         <QuickStat
           label="Total Users"
           value={stats.total}
@@ -219,6 +241,18 @@ export default async function AdminSubscriptionsPage() {
           color="patreon"
         />
         <QuickStat
+          label="Full"
+          value={stats.full}
+          icon={<CheckCircle className="w-4 h-4" />}
+          color="default"
+        />
+        <QuickStat
+          label="Lite"
+          value={stats.lite}
+          icon={<CheckCircle className="w-4 h-4" />}
+          color="lite"
+        />
+        <QuickStat
           label="Canceled"
           value={stats.stripeCanceled}
           icon={<XCircle className="w-4 h-4" />}
@@ -234,6 +268,12 @@ export default async function AdminSubscriptionsPage() {
               <span className="text-snow/60">Access breakdown: </span>
               <span className="text-snow font-medium">
                 {stats.stripeActive} Stripe paid + {stats.stripeTrialing} Stripe trial + {stats.patreonActive} Patreon = {stats.withAccess} total
+              </span>
+            </div>
+            <div>
+              <span className="text-snow/60">Plan: </span>
+              <span className="text-snow font-medium">
+                {stats.full} Full + {stats.lite} Lite
               </span>
             </div>
           </div>
@@ -258,7 +298,7 @@ function QuickStat({
   label: string;
   value: number;
   icon: React.ReactNode;
-  color?: "default" | "mint" | "warning" | "patreon" | "primary";
+  color?: "default" | "mint" | "warning" | "patreon" | "primary" | "lite";
 }) {
   const colorClasses = {
     default: "bg-grey-700 text-snow/60",
@@ -266,6 +306,7 @@ function QuickStat({
     warning: "bg-amber-500/20 text-amber-500",
     patreon: "bg-[#FF424D]/20 text-[#FF424D]",
     primary: "bg-info/20 text-info",
+    lite: "bg-sky-400/20 text-sky-300",
   };
 
   return (

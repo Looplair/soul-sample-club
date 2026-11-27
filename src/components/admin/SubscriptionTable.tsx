@@ -29,6 +29,7 @@ interface UnifiedSubscription {
   stripePeriodEnd: string | null;
   patreonActive: boolean;
   patreonTier: string | null;
+  plan: "full" | "lite" | null;
   hasAccess: boolean;
   accessSource: "stripe_active" | "stripe_trialing" | "patreon" | "none";
   joinedAt: string;
@@ -38,7 +39,7 @@ interface SubscriptionTableProps {
   subscriptions: UnifiedSubscription[];
 }
 
-type FilterType = "all" | "with_access" | "stripe_active" | "stripe_trialing" | "patreon" | "no_access" | "canceled";
+type FilterType = "all" | "with_access" | "full" | "lite" | "stripe_active" | "stripe_trialing" | "patreon" | "no_access" | "canceled";
 
 const ITEMS_PER_PAGE = 25;
 
@@ -57,6 +58,10 @@ export function SubscriptionTable({ subscriptions }: SubscriptionTableProps) {
         switch (filter) {
           case "with_access":
             return sub.hasAccess;
+          case "full":
+            return sub.plan === "full";
+          case "lite":
+            return sub.plan === "lite";
           case "stripe_active":
             return sub.accessSource === "stripe_active";
           case "stripe_trialing":
@@ -111,6 +116,8 @@ export function SubscriptionTable({ subscriptions }: SubscriptionTableProps) {
   const filterOptions: { value: FilterType; label: string; count: number }[] = [
     { value: "all", label: "All", count: subscriptions.length },
     { value: "with_access", label: "With Access", count: subscriptions.filter((s) => s.hasAccess).length },
+    { value: "full", label: "Full", count: subscriptions.filter((s) => s.plan === "full").length },
+    { value: "lite", label: "Lite", count: subscriptions.filter((s) => s.plan === "lite").length },
     { value: "stripe_active", label: "Stripe Active", count: subscriptions.filter((s) => s.accessSource === "stripe_active").length },
     { value: "stripe_trialing", label: "Stripe Trial", count: subscriptions.filter((s) => s.accessSource === "stripe_trialing").length },
     { value: "patreon", label: "Patreon", count: subscriptions.filter((s) => s.accessSource === "patreon").length },
@@ -204,6 +211,7 @@ export function SubscriptionTable({ subscriptions }: SubscriptionTableProps) {
                 <th className="px-4 py-3 text-left text-label text-snow/60">Stripe</th>
                 <th className="px-4 py-3 text-left text-label text-snow/60">Patreon</th>
                 <th className="px-4 py-3 text-left text-label text-snow/60">Access</th>
+                <th className="px-4 py-3 text-left text-label text-snow/60">Plan</th>
                 <th className="px-4 py-3 text-left text-label text-snow/60">Source</th>
                 <th className="px-4 py-3 text-left text-label text-snow/60">Joined</th>
               </tr>
@@ -267,6 +275,9 @@ export function SubscriptionTable({ subscriptions }: SubscriptionTableProps) {
                       )}
                     </td>
                     <td className="px-4 py-3">
+                      <PlanBadge plan={sub.plan} />
+                    </td>
+                    <td className="px-4 py-3">
                       <span className={`text-sm ${sub.hasAccess ? "text-snow" : "text-snow/40"}`}>
                         {sub.accessSource === "stripe_active" && "Stripe (paid)"}
                         {sub.accessSource === "stripe_trialing" && "Stripe (trial)"}
@@ -281,7 +292,7 @@ export function SubscriptionTable({ subscriptions }: SubscriptionTableProps) {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={7} className="px-4 py-12 text-center">
+                  <td colSpan={8} className="px-4 py-12 text-center">
                     <Search className="w-8 h-8 text-snow/20 mx-auto mb-2" />
                     <p className="text-snow/40 text-sm">No members found</p>
                     {searchQuery && (
@@ -363,5 +374,19 @@ export function SubscriptionTable({ subscriptions }: SubscriptionTableProps) {
         </div>
       )}
     </div>
+  );
+}
+
+export function PlanBadge({ plan }: { plan: "full" | "lite" | null }) {
+  if (!plan) return <span className="text-snow/40 text-sm">—</span>;
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold",
+        plan === "lite" ? "bg-sky-400/20 text-sky-300" : "bg-white/10 text-snow"
+      )}
+    >
+      {plan === "lite" ? "Lite" : "Full"}
+    </span>
   );
 }

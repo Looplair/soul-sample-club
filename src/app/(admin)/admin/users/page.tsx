@@ -28,6 +28,7 @@ import {
   syncUserSubscription,
   revokeAccess,
 } from "@/app/actions/admin-subscription";
+import { PlanBadge } from "@/components/admin/SubscriptionTable";
 
 // Patreon Icon
 const PatreonIcon = () => (
@@ -46,7 +47,27 @@ interface UserRow {
   subscription: Array<{
     status: string;
     current_period_end: string;
+    plan?: string | null;
   }> | null;
+}
+
+const isLive = (status?: string) => status === "active" || status === "trialing";
+
+/** Someone can have several subscription rows (old cancelled + new live one): use the live one, then the latest. */
+function bestSub(user: UserRow) {
+  const rows = user.subscription ?? [];
+  return [...rows].sort((a, b) => {
+    const live = Number(isLive(b.status)) - Number(isLive(a.status));
+    return live || (b.current_period_end ?? "").localeCompare(a.current_period_end ?? "");
+  })[0];
+}
+
+/** Lite only when Lite is all they have (same rule as src/lib/lite.ts). */
+function planOf(user: UserRow, patreonActive: boolean): "full" | "lite" | null {
+  if (patreonActive) return "full";
+  const sub = bestSub(user);
+  if (!sub || !isLive(sub.status)) return null;
+  return sub.plan === "lite" ? "lite" : "full";
 }
 
 interface PatreonLink {
@@ -61,7 +82,7 @@ interface DownloadCount {
 
 type SortField = "created_at" | "email" | "full_name" | "downloads";
 type SortDirection = "asc" | "desc";
-type SubscriptionFilter = "all" | "active" | "trialing" | "past_due" | "canceled" | "patreon" | "none";
+type SubscriptionFilter = "all" | "full" | "lite" | "active" | "trialing" | "past_due" | "canceled" | "patreon" | "none";
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<UserRow[]>([]);
@@ -140,9 +161,12 @@ export default function AdminUsersPage() {
     // Subscription filter
     if (subscriptionFilter !== "all") {
       result = result.filter((user) => {
-        const sub = user.subscription?.[0];
+        const sub = bestSub(user);
         const patreon = patreonLinks[user.id];
 
+        if (subscriptionFilter === "full" || subscriptionFilter === "lite") {
+          return planOf(user, !!patreon?.is_active) === subscriptionFilter;
+        }
         if (subscriptionFilter === "none") {
           return !sub && !patreon?.is_active;
         }
@@ -183,15 +207,16 @@ export default function AdminUsersPage() {
   const stats = useMemo(() => {
     const total = users.length;
     const withStripeSub = users.filter((u) => {
-      const status = u.subscription?.[0]?.status;
+      const status = bestSub(u)?.status;
       return status === "active" || status === "trialing";
     }).length;
     const withPatreon = users.filter((u) => patreonLinks[u.id]?.is_active).length;
-    const noSub = users.filter((u) => !u.subscription?.[0] && !patreonLinks[u.id]?.is_active).length;
-    const canceled = users.filter((u) => u.subscription?.[0]?.status === "canceled").length;
-    const pastDue = users.filter((u) => u.subscription?.[0]?.status === "past_due").length;
+    const noSub = users.filter((u) => !bestSub(u) && !patreonLinks[u.id]?.is_active).length;
+    const canceled = users.filter((u) => bestSub(u)?.status === "canceled").length;
+    const pastDue = users.filter((u) => bestSub(u)?.status === "past_due").length;
+    const lite = users.filter((u) => planOf(u, !!patreonLinks[u.id]?.is_active) === "lite").length;
 
-    return { total, withStripeSub, withPatreon, noSub, canceled, pastDue };
+    return { total, withStripeSub, withPatreon, noSub, canceled, pastDue, lite };
   }, [users, patreonLinks]);
 
   // Export emails function
@@ -199,14 +224,15 @@ export default function AdminUsersPage() {
     const emails = filteredUsers.map((u) => u.email);
 
     if (format === "csv") {
-      const csvContent = "data:text/csv;charset=utf-8,email,name,subscription_type,joined\n" +
+      const csvContent = "data:text/csv;charset=utf-8,email,name,subscription_type,plan,joined\n" +
         filteredUsers.map((u) => {
-          const subType = u.subscription?.[0]?.status
-            ? `stripe_${u.subscription[0].status}`
+          const subType = bestSub(u)?.status
+            ? `stripe_${bestSub(u)!.status}`
             : patreonLinks[u.id]?.is_active
               ? "patreon"
               : "free";
-          return `${u.email},${u.full_name || ""},${subType},${u.created_at.split("T")[0]}`;
+          const plan = planOf(u, !!patreonLinks[u.id]?.is_active) ?? "";
+          return `${u.email},${u.full_name || ""},${subType},${plan},${u.created_at.split("T")[0]}`;
         }).join("\n");
 
       const encodedUri = encodeURI(csvContent);
@@ -408,7 +434,7 @@ export default function AdminUsersPage() {
       )}
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-7 gap-4">
         <QuickStat
           label="Total Users"
           value={stats.total}
@@ -425,6 +451,11 @@ export default function AdminUsersPage() {
           value={stats.withPatreon}
           icon={<PatreonIcon />}
           color="patreon"
+        />
+        <QuickStat
+          label="Lite"
+          value={stats.lite}
+          icon={<Check className="w-4 h-4" />}
         />
         <QuickStat
           label="Free Users"
@@ -481,6 +512,8 @@ export default function AdminUsersPage() {
               <div className="flex flex-wrap gap-2">
                 {[
                   { value: "all", label: "All" },
+                  { value: "full", label: "Full" },
+                  { value: "lite", label: "Lite" },
                   { value: "active", label: "Stripe Active" },
                   { value: "trialing", label: "Stripe Trialing" },
                   { value: "past_due", label: "Past Due" },
@@ -593,12 +626,13 @@ export default function AdminUsersPage() {
                 </thead>
                 <tbody className="divide-y divide-grey-700">
                   {filteredUsers.map((user) => {
-                    const subscription = user.subscription?.[0];
+                    const subscription = bestSub(user);
                     const patreon = patreonLinks[user.id];
                     const isStripeActive =
                       subscription?.status === "active" ||
                       subscription?.status === "trialing";
                     const isPatreonActive = patreon?.is_active;
+                    const plan = planOf(user, !!isPatreonActive);
 
                     return (
                       <tr
@@ -646,6 +680,7 @@ export default function AdminUsersPage() {
                                 </span>
                               </div>
                             )}
+                            {plan && <PlanBadge plan={plan} />}
                             {!subscription && !isPatreonActive && (
                               <span className="text-snow/50 text-sm">—</span>
                             )}
